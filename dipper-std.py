@@ -2886,7 +2886,7 @@ class Atlas(gobject.GObject):
             if (designation == '') or (designation == 'None'):
                 designation = ' '
                 
-            if (taxa_statistics[item[0]]['common_name'] == '') or (taxa_statistics[item[0]]['common_name'] == None):
+            if (taxa_statistics[item[0]]['common_name'] == '') or (taxa_statistics[item[0]]['common_name'] == 'None'):
                 common_name = ''
             else:
                 common_name = taxa_statistics[item[0]]['common_name']
@@ -3225,7 +3225,7 @@ class Atlas(gobject.GObject):
             if taxon_parts[0].lower() not in genus_index:
                 genus_index[taxon_parts[0].lower()] = ['genus', pdf.num_page_no()+pdf.toc_length]
 
-            if taxa_statistics[item[0]]['common_name'] not in common_name_index:
+            if taxa_statistics[item[0]]['common_name'] not in common_name_index and taxa_statistics[item[0]]['common_name'] != 'None':
                 common_name_index[taxa_statistics[item[0]]['common_name']] = ['common', pdf.num_page_no()+pdf.toc_length]
                 
             if taxon_parts[len(taxon_parts)-1] == 'agg.':
@@ -3293,27 +3293,30 @@ class Atlas(gobject.GObject):
         
         pdf.set_y(pdf.y0+20)
         for taxon in sorted(index, key=lambda taxon: taxon.lower()):
-            if taxon[0].upper() != initial:
-                if taxon[0].upper() != 'A':
-                    pdf.ln(3)
-                pdf.set_font('Helvetica', 'B', 12)
-                pdf.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
-                initial = taxon[0].upper()
-            
-            if index[taxon][0] == 'species':
-                pos = taxon.find(', ')
-                #capitalize the first letter of the genus
-                display_taxon = list(taxon)
-                display_taxon[pos+2] = display_taxon[pos+2].upper()
-                display_taxon = ''.join(display_taxon)
-                pdf.set_font('Helvetica', '', 12)             
-                pdf.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
-            elif index[taxon][0] == 'genus':
-                pdf.set_font('Helvetica', '', 12)
-                pdf.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0)
-            elif index[taxon][0] == 'common':
-                pdf.set_font('Helvetica', '', 12)
-                pdf.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+            try:
+                if taxon[0].upper() != initial:
+                    if taxon[0].upper() != 'A':
+                        pdf.ln(3)
+                    pdf.set_font('Helvetica', 'B', 12)
+                    pdf.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
+                    initial = taxon[0].upper()
+                
+                if index[taxon][0] == 'species':
+                    pos = taxon.find(', ')
+                    #capitalize the first letter of the genus
+                    display_taxon = list(taxon)
+                    display_taxon[pos+2] = display_taxon[pos+2].upper()
+                    display_taxon = ''.join(display_taxon)
+                    pdf.set_font('Helvetica', '', 12)             
+                    pdf.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+                elif index[taxon][0] == 'genus':
+                    pdf.set_font('Helvetica', '', 12)
+                    pdf.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0)
+                elif index[taxon][0] == 'common':
+                    pdf.set_font('Helvetica', '', 12)
+                    pdf.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+            except IndexError:
+                pass
 
         pdf.setcol(0)
                        
