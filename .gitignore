@@ -61,3 +61,6 @@ datasets/
 
 #Compile batch script
 compile.bat
+
+#Binary release
+binary-release/
