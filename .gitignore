@@ -64,3 +64,6 @@ compile.bat
 
 #Binary release
 binary-release/
+
+#Gedit backups
+*.*~
