@@ -817,7 +817,7 @@ class Run():
             if response == gtk.RESPONSE_OK:
 
                 #add the extension if it's missing
-                if output[:-4] != '.pdf':
+                if output[-4:] != '.pdf':
                     output = ''.join([output, '.pdf'])
                         
                 if notebook.get_current_page() == 0:
@@ -837,9 +837,12 @@ class Run():
                     
                     coverage_colour = self.builder.get_object('colorbutton4').get_color()
                     grid_colour = self.builder.get_object('colorbutton1').get_color()
-                    date_band_1_colour = self.builder.get_object('colorbutton2').get_color()
-                    date_band_2_colour = self.builder.get_object('colorbutton3').get_color()
-                    date_band_3_colour = self.builder.get_object('colorbutton6').get_color()
+                    date_band_1_fill_colour = self.builder.get_object('colorbutton2').get_color()
+                    date_band_2_fill_colour = self.builder.get_object('colorbutton3').get_color()
+                    date_band_3_fill_colour = self.builder.get_object('colorbutton6').get_color()
+                    date_band_1_border_colour = self.builder.get_object('colorbutton7').get_color()
+                    date_band_2_border_colour = self.builder.get_object('colorbutton8').get_color()
+                    date_band_3_border_colour = self.builder.get_object('colorbutton9').get_color()
                     boundary_colour = self.builder.get_object('colorbutton5').get_color()
                     
                     date_band_1_from = self.builder.get_object('spinbutton3').get_value()
@@ -910,9 +913,12 @@ class Run():
                     atlas.set_date_band_1_show(self.builder.get_object('checkbutton3').get_active())
                     atlas.set_date_band_2_show(self.builder.get_object('checkbutton4').get_active())
                     atlas.set_date_band_3_show(self.builder.get_object('checkbutton5').get_active())
-                    atlas.set_date_band_1_colour(date_band_1_colour)
-                    atlas.set_date_band_2_colour(date_band_2_colour)
-                    atlas.set_date_band_3_colour(date_band_3_colour)
+                    atlas.set_date_band_1_fill_colour(date_band_1_fill_colour)
+                    atlas.set_date_band_2_fill_colour(date_band_2_fill_colour)
+                    atlas.set_date_band_3_fill_colour(date_band_3_fill_colour)
+                    atlas.set_date_band_1_border_colour(date_band_1_border_colour)
+                    atlas.set_date_band_2_border_colour(date_band_2_border_colour)
+                    atlas.set_date_band_3_border_colour(date_band_3_border_colour)
                     atlas.set_date_band_1_style(date_band_1_style)
                     atlas.set_date_band_2_style(date_band_2_style)
                     atlas.set_date_band_3_style(date_band_3_style)
@@ -2149,9 +2155,12 @@ class Atlas(gobject.GObject):
         self.date_band_1_show = None
         self.date_band_2_show = None
         self.date_band_3_show = None
-        self.date_band_1_colour = None
-        self.date_band_2_colour = None
-        self.date_band_3_colour = None
+        self.date_band_1_fill_colour = None
+        self.date_band_2_fill_colour = None
+        self.date_band_3_fill_colour = None
+        self.date_band_1_border_colour = None
+        self.date_band_2_border_colour = None
+        self.date_band_3_border_colour = None
         self.date_band_1_style = None
         self.date_band_2_style = None
         self.date_band_3_style = None
@@ -2217,16 +2226,28 @@ class Atlas(gobject.GObject):
         self.date_band_3_show = show
         
         
-    def set_date_band_1_colour(self, colour):
-        self.date_band_1_colour = colour
+    def set_date_band_1_fill_colour(self, colour):
+        self.date_band_1_fill_colour = colour
         
         
-    def set_date_band_2_colour(self, colour):
-        self.date_band_2_colour = colour
+    def set_date_band_2_fill_colour(self, colour):
+        self.date_band_2_fill_colour = colour
         
         
-    def set_date_band_3_colour(self, colour):
-        self.date_band_3_colour = colour
+    def set_date_band_3_fill_colour(self, colour):
+        self.date_band_3_fill_colour = colour
+        
+        
+    def set_date_band_1_border_colour(self, colour):
+        self.date_band_1_border_colour = colour
+        
+        
+    def set_date_band_2_border_colour(self, colour):
+        self.date_band_2_border_colour = colour
+        
+        
+    def set_date_band_3_border_colour(self, colour):
+        self.date_band_3_border_colour = colour
         
         
     def set_date_band_1_style(self, style):
@@ -2682,30 +2703,31 @@ class Atlas(gobject.GObject):
                 if name.strip() not in contrib_data.keys():
                     parts = name.strip().split()
                     
-                    initials = []
-                    
-                    if parts[0].strip() == 'Mr':
-                        initials.append('Mr')
-                    elif parts[0].strip() == 'Mrs':
-                        initials.append('Mrs')
-                    elif parts[0].strip() == 'Dr':
-                        initials.append('Dr')
+                    if len(name) > 0:
+                        initials = []
+                        
+                        if parts[0].strip() == 'Mr':
+                            initials.append('Mr')
+                        elif parts[0].strip() == 'Mrs':
+                            initials.append('Mrs')
+                        elif parts[0].strip() == 'Dr':
+                            initials.append('Dr')
 
-                    for qwert in parts[len(initials):]:
-                        initials.append(qwert[0:1])
-                                            
-                    working_part = len(parts)-1
-                    check_val = 1
+                        for qwert in parts[len(initials):]:
+                            initials.append(qwert[0:1])
+                                                
+                        working_part = len(parts)-1
+                        check_val = 1
 
-                    while ''.join(initials) in contrib_data.values():
-                        if check_val <= len(parts[working_part]):
-                            initials[working_part] = parts[working_part][0:check_val]
-                            check_val = check_val + 1
-                        elif check_val > len(parts[working_part]):
-                            working_part = working_part - 1
-                            check_val = 1
-                    
-                    contrib_data[name.strip()] = ''.join(initials)
+                        while ''.join(initials) in contrib_data.values():
+                            if check_val <= len(parts[working_part]):
+                                initials[working_part] = parts[working_part][0:check_val]
+                                check_val = check_val + 1
+                            elif check_val > len(parts[working_part]):
+                                working_part = working_part - 1
+                                check_val = 1
+                        
+                        contrib_data[name.strip()] = ''.join(initials)
             
         self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
                                     FROM data')
@@ -2918,7 +2940,8 @@ class Atlas(gobject.GObject):
                         for deter_name in sorted(detees):
                             deter = ','.join([deter, contrib_data[deter_name.strip()]])
                     
-                        det = ''.join([' det. ', deter[1:]])
+                        if deter[1:] != '':
+                            det = ''.join([' det. ', deter[1:]])
                     else:
                         det = ''
                         
@@ -3065,10 +3088,7 @@ class Atlas(gobject.GObject):
                             px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                             py = (self.bounds_top_y - y) * self.scalefactor
                             pixels.append((px,py))
-                        if self.date_band_1_style == 'Circles':
-                            current_map_draw.polygon(pixels, fill='rgb(255,255,255)', outline='rgb(' + str(int(self.date_band_1_colour.red_float*255)) + ',' + str(int(self.date_band_1_colour.green_float*255)) + ',' + str(int(self.date_band_1_colour.blue_float*255)) + ')')  
-                        else:
-                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_1_colour.red_float*255)) + ',' + str(int(self.date_band_1_colour.green_float*255)) + ',' + str(int(self.date_band_1_colour.blue_float*255)) + ')')  
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_1_fill_colour.red_float*255)) + ',' + str(int(self.date_band_1_fill_colour.green_float*255)) + ',' + str(int(self.date_band_1_fill_colour.blue_float*255)) + ')', outline='rgb(' + str(int(self.date_band_1_border_colour.red_float*255)) + ',' + str(int(self.date_band_1_border_colour.green_float*255)) + ',' + str(int(self.date_band_1_border_colour.blue_float*255)) + ')')    
 
 
             if self.date_band_2_show:
@@ -3083,10 +3103,7 @@ class Atlas(gobject.GObject):
                             px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                             py = (self.bounds_top_y - y) * self.scalefactor
                             pixels.append((px,py))
-                        if self.date_band_2_style == 'Circles':
-                            current_map_draw.polygon(pixels, fill='rgb(255,255,255)', outline='rgb(' + str(int(self.date_band_2_colour.red_float*255)) + ',' + str(int(self.date_band_2_colour.green_float*255)) + ',' + str(int(self.date_band_2_colour.blue_float*255)) + ')')  
-                        else:
-                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_2_colour.red_float*255)) + ',' + str(int(self.date_band_2_colour.green_float*255)) + ',' + str(int(self.date_band_2_colour.blue_float*255)) + ')')  
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_2_fill_colour.red_float*255)) + ',' + str(int(self.date_band_2_fill_colour.green_float*255)) + ',' + str(int(self.date_band_2_fill_colour.blue_float*255)) + ')', outline='rgb(' + str(int(self.date_band_2_border_colour.red_float*255)) + ',' + str(int(self.date_band_2_border_colour.green_float*255)) + ',' + str(int(self.date_band_2_border_colour.blue_float*255)) + ')')    
 
 
             if self.date_band_1_show:
@@ -3101,10 +3118,7 @@ class Atlas(gobject.GObject):
                             px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                             py = (self.bounds_top_y - y) * self.scalefactor
                             pixels.append((px,py))
-                        if self.date_band_3_style == 'Circles':
-                            current_map_draw.polygon(pixels, fill='rgb(255,255,255)', outline='rgb(' + str(int(self.date_band_3_colour.red_float*255)) + ',' + str(int(self.date_band_3_colour.green_float*255)) + ',' + str(int(self.date_band_3_colour.blue_float*255)) + ')')  
-                        else:
-                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_3_colour.red_float*255)) + ',' + str(int(self.date_band_3_colour.green_float*255)) + ',' + str(int(self.date_band_3_colour.blue_float*255)) + ')')  
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_3_fill_colour.red_float*255)) + ',' + str(int(self.date_band_3_fill_colour.green_float*255)) + ',' + str(int(self.date_band_3_fill_colour.blue_float*255)) + ')', outline='rgb(' + str(int(self.date_band_3_border_colour.red_float*255)) + ',' + str(int(self.date_band_3_border_colour.green_float*255)) + ',' + str(int(self.date_band_3_border_colour.blue_float*255)) + ')')    
 
 
                         
