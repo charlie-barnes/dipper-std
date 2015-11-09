@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-### 2008-2010 Charlie Barnes.
+### 2008-2015 Charlie Barnes.
 
 ### This program is free software; you can redistribute it and/or modify
 ### it under the terms of the GNU General Public License as published by
@@ -17,13 +17,7 @@
 ### along with this program; if not, write to the Free Software
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-###changes: recorder/det name abbreviation code
-###         import of common name
-###         add common name to atlas gen code
-###         add common name to atlas index
-###         modded glade main ui
-
-###to do: TOC option for families or common names
+__version__ = "1.0a1"
 
 import gobject
 import gtk
@@ -48,12 +42,17 @@ from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
 import pygtk_chart
 from pygtk_chart import bar_chart
-from fpdf import FPDF
+
+try:
+    from fpdf import FPDF
+except ImportError:
+    from pyfpdf import FPDF
 
 import shapefile
 from PIL import Image
 from PIL import ImageDraw
 
+#gis layers for the mapping dots
 gis = { }
 
 gis['Squares'] = {}
@@ -79,7 +78,8 @@ gis['Dots']['10km'] = 'Circles_10km.shp'
 gis['Dots']['5km'] = 'Circles_5km.shp'
 gis['Dots']['2km'] = 'Circles_2km.shp'
 gis['Dots']['1km'] = 'Circles_1km.shp'
-        
+
+#vice county list - number & filename         
 vc_list = [[1, 'West Cornwall'],
          [2, 'East Cornwall'],
          [3, 'South Devon'],
@@ -198,18 +198,6 @@ def repeat_to_length(string_to_expand, length):
 
 
 class Run():
-
-    def update_preview_cb(self, file_chooser, preview):
-        filename = file_chooser.get_preview_filename()
-
-        try:
-            pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(filename, 256, 256)
-            preview.set_from_pixbuf(pixbuf)
-            have_preview = True
-        except:
-            have_preview = False
-        file_chooser.set_preview_widget_active(have_preview)
-        return
 
 
     def __init__(self, filename=None):
@@ -462,11 +450,25 @@ class Run():
         
         dialog = self.builder.get_object('dialog1')
         dialog.show()
+        
+
+    def update_preview_cb(self, file_chooser, preview):
+        filename = file_chooser.get_preview_filename()
+
+        try:
+            pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(filename, 256, 256)
+            preview.set_from_pixbuf(pixbuf)
+            have_preview = True
+        except:
+            have_preview = False
+        file_chooser.set_preview_widget_active(have_preview)
+        return
 
     def show_about(self, widget):
+        """Show the about dialog."""
         dialog = gtk.AboutDialog()
         dialog.set_name('VA&CG')
-        dialog.set_version('0.1')
+        dialog.set_version(__version__)
         dialog.set_authors(['Charlie Barnes'])
         dialog.set_license("This is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the Licence, or (at your option) any later version.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA")
         dialog.set_wrap_license(True) 
@@ -475,6 +477,14 @@ class Run():
         dialog.destroy()
 
     def update_title(self, selection):
+        """Update the title of the generated document based on the selection
+        in the families list, appending the families to the current input.
+ 
+        - if more than 2 are selected use a range approach.
+        - if 2 are selected, append both.
+        - if just 1, append it.       
+
+        """    
         model, selected = selection.get_selected_rows()
         iters = [model.get_iter(path) for path in selected]
 
@@ -504,12 +514,15 @@ class Run():
 
 
     def select_all_families(widget, treeview):
+        """Select all families in the selection."""
         treeview.get_selection().select_all()
 
-    def unselect_image(widget, filechoooserbutton):        
+    def unselect_image(widget, filechoooserbutton):  
+        """Clear the cover image file selection."""      
         filechoooserbutton.unselect_all()
 
     def open_dataset(self, widget):
+        """Open a data file."""
         self.builder.get_object('notebook1').set_sensitive(False)
         self.dataset = Dataset(self, widget.get_filename())
         
@@ -787,10 +800,12 @@ class Run():
        #     print "failed"
         
     def quit(self, widget, third=None):
+        """Quit."""
         gtk.main_quit()
         sys.exit()
 
     def generate(self, widget):
+        """Process the data file and configuration."""
         if self.dataset is not None:
             vbox = widget.get_parent().get_parent()
             notebook = vbox.get_children()[1]
@@ -810,6 +825,11 @@ class Run():
                 
             response = dialog.run()
             output = dialog.get_filename()
+
+
+            #add the extension if it's missing
+            if output[:-4] != '.pdf':
+                output = ''.join([output, '.pdf'])
 
             dialog.destroy()
                     
@@ -2124,7 +2144,7 @@ class List(gobject.GObject):
         if record_count > 1:
             record_text = 'records.'
         else:
-            record_text = 'record'
+            record_text = 'record.'
         
         pdf.set_y(pdf.get_y()+10) 
         pdf.set_font('Helvetica', 'I', 10)
@@ -3333,7 +3353,7 @@ class Atlas(gobject.GObject):
         #else:
         #print self.section, self.num_page_no()        
         if pdf.num_page_no() >= 4 and pdf.section != 'Contents':
-            pdf.cell(0, 10, "mm"+str(pdf.num_page_no()+pdf.toc_length), '', 0, 'C')
+            pdf.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data © Crown copyright and database right ', str(datetime.now().year), '.']), '', 0, 'C')
               
         #pdf.p_add_page()
         pdf.section = ''
