@@ -52,32 +52,11 @@ import shapefile
 from PIL import Image
 from PIL import ImageDraw
 
-#gis layers for the mapping dots
-gis = { }
+markers = []
 
-gis['Squares'] = {}
-gis['Squares']['100km'] = 'Squares_100km.shp'
-gis['Squares']['50km'] = 'Squares_50km.shp'
-gis['Squares']['10km'] = 'Squares_10km.shp'
-gis['Squares']['5km'] = 'Squares_5km.shp'
-gis['Squares']['2km'] = 'Squares_2km.shp'
-gis['Squares']['1km'] = 'Squares_1km.shp'
-
-gis['Circles'] = {}
-gis['Circles']['100km'] = 'Circles_100km.shp'
-gis['Circles']['50km'] = 'Circles_50km.shp'
-gis['Circles']['10km'] = 'Circles_10km.shp'
-gis['Circles']['5km'] = 'Circles_5km.shp'
-gis['Circles']['2km'] = 'Circles_2km.shp'
-gis['Circles']['1km'] = 'Circles_1km.shp'
-
-gis['Dots'] = {}
-gis['Dots']['100km'] = 'Circles_100km.shp'
-gis['Dots']['50km'] = 'Circles_50km.shp'
-gis['Dots']['10km'] = 'Circles_10km.shp'
-gis['Dots']['5km'] = 'Circles_5km.shp'
-gis['Dots']['2km'] = 'Circles_2km.shp'
-gis['Dots']['1km'] = 'Circles_1km.shp'
+#walk the markers directory searching for GIS markers
+for style in os.listdir('markers/'):
+    markers.append(style)
 
 #vice county list - number & filename         
 vc_list = [[1, 'West Cornwall'],
@@ -203,7 +182,7 @@ class Run():
     def __init__(self, filename=None):
         
         self.builder = gtk.Builder()
-        self.builder.add_from_file('gui.glade')
+        self.builder.add_from_file('./gui/gui.glade')
         
         signals = {'quit':self.quit,
                    'generate':self.generate,
@@ -337,9 +316,10 @@ class Run():
         combo.add_attribute(cell, 'text',0)
 
         coverage_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        coverage_liststore.append(['Square'])
-        coverage_liststore.append(['Circle'])
-        coverage_liststore.append(['Dot'])
+
+        for i in range(len(markers)):
+            coverage_liststore.append([markers[i]])
+            
         combo = self.builder.get_object('combobox6')
         combo.set_model(coverage_liststore)
         cell = gtk.CellRendererText()
@@ -347,9 +327,10 @@ class Run():
         combo.add_attribute(cell, 'text',0)
         
         date_band_1_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        date_band_1_liststore.append(['Square'])
-        date_band_1_liststore.append(['Circle'])
-        date_band_1_liststore.append(['Dot'])
+        
+        for i in range(len(markers)):
+            date_band_1_liststore.append([markers[i]])
+            
         combo = self.builder.get_object('combobox2')
         combo.set_model(date_band_1_liststore)
         cell = gtk.CellRendererText()
@@ -357,9 +338,10 @@ class Run():
         combo.add_attribute(cell, 'text',0)
 
         date_band_2_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        date_band_2_liststore.append(['Square'])
-        date_band_2_liststore.append(['Circle'])
-        date_band_2_liststore.append(['Dot'])
+        
+        for i in range(len(markers)):
+            date_band_2_liststore.append([markers[i]])
+            
         combo = self.builder.get_object('combobox4')
         combo.set_model(date_band_2_liststore)
         cell = gtk.CellRendererText()
@@ -367,9 +349,10 @@ class Run():
         combo.add_attribute(cell, 'text',0)
 
         date_band_3_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        date_band_3_liststore.append(['Square'])
-        date_band_3_liststore.append(['Circle'])
-        date_band_3_liststore.append(['Dot'])
+        
+        for i in range(len(markers)):
+            date_band_3_liststore.append([markers[i]])
+            
         combo = self.builder.get_object('combobox7')
         combo.set_model(date_band_3_liststore)
         cell = gtk.CellRendererText()
@@ -826,17 +809,16 @@ class Run():
             response = dialog.run()
             output = dialog.get_filename()
 
-
-            #add the extension if it's missing
-            if output[:-4] != '.pdf':
-                output = ''.join([output, '.pdf'])
-
             dialog.destroy()
                     
             watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
             self.builder.get_object('dialog1').window.set_cursor(watch)
 
             if response == gtk.RESPONSE_OK:
+
+                #add the extension if it's missing
+                if output[:-4] != '.pdf':
+                    output = ''.join([output, '.pdf'])
                         
                 if notebook.get_current_page() == 0:
 
@@ -893,41 +875,11 @@ class Run():
                     elif grid_lines == 4:
                         grid_lines = '1km'
                     
-                    date_band_1_style = self.builder.get_object('combobox2').get_active()
-
-                    if date_band_1_style == 0:
-                        date_band_1_style = 'Squares'
-                    elif date_band_1_style == 1:
-                        date_band_1_style = 'Circles'
-                    elif date_band_1_style == 2:
-                        date_band_1_style = 'Dots'
+                    date_band_1_style = self.builder.get_object('combobox2').get_active_text()                    
+                    date_band_2_style = self.builder.get_object('combobox4').get_active_text()                    
+                    date_band_3_style = self.builder.get_object('combobox7').get_active_text() 
                     
-                    date_band_2_style = self.builder.get_object('combobox4').get_active()
-
-                    if date_band_2_style == 0:
-                        date_band_2_style = 'Squares'
-                    elif date_band_2_style == 1:
-                        date_band_2_style = 'Circles'
-                    elif date_band_2_style == 2:
-                        date_band_2_style = 'Dots'
-                    
-                    date_band_3_style = self.builder.get_object('combobox7').get_active()
-
-                    if date_band_3_style == 0:
-                        date_band_3_style = 'Squares'
-                    elif date_band_3_style == 1:
-                        date_band_3_style = 'Circles'
-                    elif date_band_3_style == 2:
-                        date_band_3_style = 'Dots'
-                    
-                    coverage_style = self.builder.get_object('combobox6').get_active()
-
-                    if coverage_style == 0:
-                        coverage_style = 'Squares'
-                    elif coverage_style == 1:
-                        coverage_style = 'Circles'
-                    elif coverage_style == 2:
-                        coverage_style = 'Dots'
+                    coverage_style = self.builder.get_object('combobox6').get_active_text()
                     
                     orientation = self.builder.get_object('combobox8').get_active()
                     
@@ -1221,7 +1173,7 @@ class Read(gobject.GObject):
         
         if (book.nsheets)-ignore_sheets > 1:
             builder = gtk.Builder()
-            builder.add_from_file('select_sheet_dialog.glade')
+            builder.add_from_file('./gui/select_sheet_dialog.glade')
             dialog = builder.get_object('dialog')
                 
             combobox = gtk.combo_box_new_text()
@@ -1584,8 +1536,9 @@ class Read(gobject.GObject):
 
                 for row in data:
                     self.dataset.cursor.execute('INSERT INTO species_data \
-                                                VALUES (?, ?, ?, ?, ?, ?, ?)',
+                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                                                 [row[0],
+                                                None,
                                                 None,
                                                 None,
                                                 None,
@@ -2310,7 +2263,7 @@ class Atlas(gobject.GObject):
         model, selected = selection.get_selected_rows()
         iters = [model.get_iter(path) for path in selected]
         for iter in iters:
-            layers.append('./vc/'+vc_list[int(model.get_value(iter, 0))-1][1]+'.shp')
+            layers.append('./vice-counties/'+vc_list[int(model.get_value(iter, 0))-1][1]+'.shp')
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -2342,7 +2295,7 @@ class Atlas(gobject.GObject):
         base_map = Image.new('RGB', (int(xdist*scalefactor)+1, int(ydist*scalefactor)+1), 'white')
         base_map_draw = ImageDraw.Draw(base_map)
 
-        miniscale = Image.open('miniscale.png', 'r')    
+        miniscale = Image.open('./backgrounds/miniscale.png', 'r')    
         region = miniscale.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, (1300000/100)-int(bounds_bottom_y/100)))
         region.save('crop', format='PNG')
         
@@ -2365,7 +2318,7 @@ class Atlas(gobject.GObject):
             gridsdict[tup[0]] = tup[1]
             #print tup[0]
 
-        r = shapefile.Reader('./grids/' + gis[self.coverage_style][self.distribution_unit])
+        r = shapefile.Reader('./markers/' + self.coverage_style + '/' + self.distribution_unit)
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -2413,7 +2366,7 @@ class Atlas(gobject.GObject):
 
         #add the grid lines
         if self.grid_lines_show:
-            r = shapefile.Reader('./grids/' + gis['Squares'][self.grid_lines])
+            r = shapefile.Reader('./markers/squares/' + self.grid_lines)
             #loop through each object in the shapefile
             for obj in r.shapes():
                 pixels = []
@@ -2486,7 +2439,7 @@ class Atlas(gobject.GObject):
         model, selected = selection.get_selected_rows()
         iters = [model.get_iter(path) for path in selected]
         for iter in iters:
-            layers.append('./vc/'+vc_list[int(model.get_value(iter, 0))-1][1]+'.shp')
+            layers.append('./vice-counties/'+vc_list[int(model.get_value(iter, 0))-1][1]+'.shp')
 
         self.bounds_bottom_x = 700000
         self.bounds_bottom_y = 1300000
@@ -2530,7 +2483,7 @@ class Atlas(gobject.GObject):
             grids.append(tup[0])
             #print tup[0]
 
-        r = shapefile.Reader('./grids/' + gis[self.coverage_style][self.distribution_unit])
+        r = shapefile.Reader('./markers/' + self.coverage_style + '/' + self.distribution_unit)
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -2547,7 +2500,7 @@ class Atlas(gobject.GObject):
 
         #create date band 1 grid array
         if self.date_band_1_show:
-            r = shapefile.Reader('./grids/' + gis[self.date_band_1_style][self.distribution_unit])
+            r = shapefile.Reader('./markers/' + self.date_band_1_style + '/' + self.distribution_unit)
             #loop through each object in the shapefile
             for obj in r.shapeRecords():        
                 if obj.record[0] in grids:
@@ -2555,7 +2508,7 @@ class Atlas(gobject.GObject):
 
         #create date band 2 grid array
         if self.date_band_2_show:
-            r = shapefile.Reader('./grids/' + gis[self.date_band_2_style][self.distribution_unit])
+            r = shapefile.Reader('./markers/' + self.date_band_2_style + '/' + self.distribution_unit)
             #loop through each object in the shapefile
             for obj in r.shapeRecords():        
                 if obj.record[0] in grids:
@@ -2563,7 +2516,7 @@ class Atlas(gobject.GObject):
 
         #create date band 3 grid array
         if self.date_band_3_show:
-            r = shapefile.Reader('./grids/' + gis[self.date_band_3_style][self.distribution_unit])
+            r = shapefile.Reader('./markers/' + self.date_band_3_style + '/' + self.distribution_unit)
             #loop through each object in the shapefile
             for obj in r.shapeRecords():        
                 if obj.record[0] in grids:
@@ -2571,7 +2524,7 @@ class Atlas(gobject.GObject):
 
         #add the grid lines
         if self.grid_lines_show:
-            r = shapefile.Reader('./grids/' + gis['Squares'][self.grid_lines])
+            r = shapefile.Reader('./markers/squares/' + self.grid_lines)
             #loop through each object in the shapefile
             for obj in r.shapes():
                 pixels = []
@@ -2766,29 +2719,30 @@ class Atlas(gobject.GObject):
                     parts = name.strip().split()
                     
                     initials = []
-                    
-                    if parts[0].strip() == 'Mr':
-                        initials.append('Mr')
-                    elif parts[0].strip() == 'Mrs':
-                        initials.append('Mrs')
-                    elif parts[0].strip() == 'Dr':
-                        initials.append('Dr')
-                    
-                    for qwert in parts[len(initials):]:
-                        initials.append(qwert[0:1])
-                                            
-                    working_part = len(parts)-1
-                    check_val = 1
+  
+                    if len(name) > 0:
+                        if parts[0].strip() == 'Mr':
+                            initials.append('Mr')
+                        elif parts[0].strip() == 'Mrs':
+                            initials.append('Mrs')
+                        elif parts[0].strip() == 'Dr':
+                            initials.append('Dr')
+                        
+                        for qwert in parts[len(initials):]:
+                            initials.append(qwert[0:1])
+                                                
+                        working_part = len(parts)-1
+                        check_val = 1
 
-                    while ''.join(initials) in contrib_data.values():
-                        if check_val <= len(parts[working_part]):
-                            initials[working_part] = parts[working_part][0:check_val]
-                            check_val = check_val + 1
-                        elif check_val > len(parts[working_part]):
-                            working_part = working_part - 1
-                            check_val = 1
-                    
-                    contrib_data[name.strip()] = ''.join(initials)
+                        while ''.join(initials) in contrib_data.values():
+                            if check_val <= len(parts[working_part]):
+                                initials[working_part] = parts[working_part][0:check_val]
+                                check_val = check_val + 1
+                            elif check_val > len(parts[working_part]):
+                                working_part = working_part - 1
+                                check_val = 1
+                        
+                        contrib_data[name.strip()] = ''.join(initials)
 
         #the pdf
         pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.page_size)
