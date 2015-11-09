@@ -559,7 +559,6 @@ class Run():
                 self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['coverage colour']))
 
                 #date band 1
-                self.builder.get_object('checkbutton3').set_active(True)
                 if self.dataset.atlas_config['date band 1'] == 'Square':
                     val = 0
                 elif self.dataset.atlas_config['date band 1'] == 'Circle':
@@ -567,7 +566,6 @@ class Run():
                 elif self.dataset.atlas_config['date band 1'] == 'Dot':
                     val = 2
                 else:
-                    self.builder.get_object('checkbutton3').set_active(False)
                     val = 1
              
                 self.builder.get_object('combobox2').set_active(val)
@@ -910,9 +908,10 @@ class Run():
                     atlas.set_coverage_colour(coverage_colour)
                     atlas.set_coverage_style(coverage_style)
                     atlas.set_grid_colour(grid_colour)
-                    atlas.set_date_band_1_show(self.builder.get_object('checkbutton3').get_active())
                     atlas.set_date_band_2_show(self.builder.get_object('checkbutton4').get_active())
                     atlas.set_date_band_3_show(self.builder.get_object('checkbutton5').get_active())
+                    atlas.set_date_band_2_overlay(self.builder.get_object('checkbutton7').get_active())
+                    atlas.set_date_band_3_overlay(self.builder.get_object('checkbutton11').get_active())
                     atlas.set_date_band_1_fill_colour(date_band_1_fill_colour)
                     atlas.set_date_band_2_fill_colour(date_band_2_fill_colour)
                     atlas.set_date_band_3_fill_colour(date_band_3_fill_colour)
@@ -1466,7 +1465,7 @@ class Read(gobject.GObject):
                                                      national_status,
                                                      None,
                                                      description,
-																										 common_name])
+                                                     common_name])
                                                  
                 statuss = {}
                 
@@ -2152,9 +2151,11 @@ class Atlas(gobject.GObject):
         self.grid_colour = None
         self.grid_lines_show = None
         self.grid_lines = None
-        self.date_band_1_show = None
+        self.date_band_1_show = True
         self.date_band_2_show = None
         self.date_band_3_show = None
+        self.date_band_2_overlay = None
+        self.date_band_3_overlay = None
         self.date_band_1_fill_colour = None
         self.date_band_2_fill_colour = None
         self.date_band_3_fill_colour = None
@@ -2212,11 +2213,7 @@ class Atlas(gobject.GObject):
 
     def set_grid_lines_show(self, show):
         self.grid_lines_show = show
-        
-        
-    def set_date_band_1_show(self, show):
-        self.date_band_1_show = show
-        
+               
         
     def set_date_band_2_show(self, show):
         self.date_band_2_show = show
@@ -2224,6 +2221,14 @@ class Atlas(gobject.GObject):
         
     def set_date_band_3_show(self, show):
         self.date_band_3_show = show
+        
+        
+    def set_date_band_2_overlay(self, overlay):
+        self.date_band_2_overlay = overlay
+        
+        
+    def set_date_band_3_overlay(self, overlay):
+        self.date_band_3_overlay = overlay
         
         
     def set_date_band_1_fill_colour(self, colour):
@@ -2881,10 +2886,10 @@ class Atlas(gobject.GObject):
             if (designation == '') or (designation == 'None'):
                 designation = ' '
                 
-            if (taxa_statistics[item[0]]['common_name'] == '') or (taxa_statistics[item[0]]['common_name'] == 'None'):
-                common_name_add = ''
+            if (taxa_statistics[item[0]]['common_name'] == '') or (taxa_statistics[item[0]]['common_name'] == None):
+                common_name = ''
             else:
-                common_name_add = ', '
+                common_name = taxa_statistics[item[0]]['common_name']
                 
             if item[0] not in taxa_statistics:
                 taxa_statistics[item[0]] = {}
@@ -2913,8 +2918,9 @@ class Atlas(gobject.GObject):
             pdf.set_fill_color(59, 59, 59)
             pdf.set_line_width(0.1)
             pdf.set_font('Helvetica', 'BI', 12)
-            pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, ''.join([taxa_statistics[item[0]]['common_name'], common_name_add, ''.join([item[0]])])       , 1, 'L', True)
+            pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, ''.join([item[0]]), 'TLB', 0, 'L', True)
             pdf.set_font('Helvetica', 'B', 12)
+            pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
             pdf.set_x(x_padding)
             pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, ''.join([designation]), 1, 'L', True)
 
@@ -2938,9 +2944,10 @@ class Atlas(gobject.GObject):
                         deter = ''
                         
                         for deter_name in sorted(detees):
-                            deter = ','.join([deter, contrib_data[deter_name.strip()]])
+                            if deter_name != '':
+                                deter = ','.join([deter, contrib_data[deter_name.strip()]])
                     
-                        if deter[1:] != '':
+                        if deter != '':
                             det = ''.join([' det. ', deter[1:]])
                     else:
                         det = ''
@@ -3032,7 +3039,8 @@ class Atlas(gobject.GObject):
 
                 date_band_2_grids = []
 
-                if self.date_band_3_show:
+                #show 3 and overlay 3
+                if self.date_band_3_show and not self.date_band_3_overlay:
                     for tup in date_band_2:
                         if tup[0] not in date_band_3_grids:
                             date_band_2_grids.append(tup[0])
@@ -3051,26 +3059,39 @@ class Atlas(gobject.GObject):
                                             AND data.year_from < ' + str(int(self.date_band_1_to)))
                     
                 date_band_1 = self.dataset.cursor.fetchall()
-
                 date_band_1_grids = []
-
-                #only add those date band 1 grids where there isn't a date band 2 or 3 grid (so we don't get overlapping squares/circles)   
-								########
-								######## mod so we can choose if we want overlapping dots
-								########
-								                 
-                if self.date_band_2_show and self.date_band_3_show:
+                
+                #show 2 and 3, don't overlay 2 and 3								                 
+                if self.date_band_2_show and self.date_band_3_show and not self.date_band_2_overlay and not self.date_band_3_overlay:
                     for tup in date_band_1:
                         if tup[0] not in date_band_3_grids and tup[0] not in date_band_2_grids:
                             date_band_1_grids.append(tup[0])
-                elif self.date_band_2_show and not self.date_band_3_show:
+                            				
+                #show 2 and 3, overlay 2 not 3			                 
+                elif self.date_band_2_show and self.date_band_3_show and self.date_band_2_overlay and not self.date_band_3_overlay:
+                    for tup in date_band_1:
+                        if tup[0] not in date_band_3_grids:
+                            date_band_1_grids.append(tup[0])
+                            				
+                #show 2 and 3, overlay 3 not 2			                 
+                elif self.date_band_2_show and self.date_band_3_show and not self.date_band_2_overlay and self.date_band_3_overlay:
+                    for tup in date_band_1:
+                        if tup[0] not in date_band_2_grids:
+                            date_band_1_grids.append(tup[0])
+                            
+                #show 2, don't overlay 2
+                elif self.date_band_2_show and not self.date_band_3_show and not self.date_band_2_overlay:
                     for tup in date_band_1:
                         if tup[0] and tup[0] not in date_band_2_grids:
                             date_band_1_grids.append(tup[0])
-                elif not self.date_band_2_show and self.date_band_3_show:
+
+                #show 3, don't overlay 3
+                elif not self.date_band_2_show and self.date_band_3_show and not self.date_band_3_overlay:
                     for tup in date_band_1:
                         if tup[0] and tup[0] not in date_band_3_grids:
                             date_band_1_grids.append(tup[0])
+
+                #else use all                            
                 else:       
                     for tup in date_band_1:
                             date_band_1_grids.append(tup[0])
@@ -3321,7 +3342,7 @@ class Atlas(gobject.GObject):
         #else:
         #print self.section, self.num_page_no()        
         if pdf.num_page_no() >= 4 and pdf.section != 'Contents':
-            pdf.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data © Crown copyright and database right ', str(datetime.now().year), '.']), '', 0, 'C')
+            pdf.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), '', 0, 'C')
               
         #pdf.p_add_page()
         pdf.section = ''
