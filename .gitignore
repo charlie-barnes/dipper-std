@@ -58,6 +58,4 @@ target/
 
 # Test datasets
 datasets/
-
-# Compile batch
 compile.bat
