@@ -37,11 +37,11 @@ import copy
 from PIL import ImageChops
 import math
 from subprocess import call
+import ConfigParser
+from pygtk_chart import bar_chart
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
-import pygtk_chart
-from pygtk_chart import bar_chart
 
 try:
     from fpdf import FPDF
@@ -544,76 +544,44 @@ class Run():
               
                 self.builder.get_object('combobox3').set_active(val)
                 
-                self.builder.get_object('checkbutton1').set_active(True)   
-                if self.dataset.atlas_config['coverage'] == 'Square':
-                    val = 0
-                elif self.dataset.atlas_config['coverage'] == 'Circle':
-                    val = 1
-                elif self.dataset.atlas_config['coverage'] == 'Dot':
-                    val = 2
-                else:
+                #set the coverage style from config - if it fails, deactivate coverage
+                try:
+                    self.builder.get_object('checkbutton1').set_active(True)
+                    self.builder.get_object('combobox6').set_active(markers.index(self.dataset.atlas_config['coverage']))
+                    self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['coverage colour']))
+                except ValueError:
                     self.builder.get_object('checkbutton1').set_active(False)  
-                    val = 0
-             
-                self.builder.get_object('combobox6').set_active(val)
-                self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['coverage colour']))
-
-                #date band 1
-                if self.dataset.atlas_config['date band 1'] == 'Square':
-                    val = 0
-                elif self.dataset.atlas_config['date band 1'] == 'Circle':
-                    val = 1
-                elif self.dataset.atlas_config['date band 1'] == 'Dot':
-                    val = 2
-                else:
-                    val = 1
-             
-                self.builder.get_object('combobox2').set_active(val)
+                                    
+                #set the date band 1 style from config - if it fails, deactivate coverage
+                try:
+                    self.builder.get_object('combobox2').set_active(markers.index(self.dataset.atlas_config['date band 1']))
+                    self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 1 colour']))
+                    self.builder.get_object('spinbutton3').set_value(self.dataset.atlas_config['date band 1 from'])
+                    self.builder.get_object('spinbutton4').set_value(self.dataset.atlas_config['date band 1 to'])
+                except ValueError:
+                    pass 
+                    
+                #set the date band 2 style from config - if it fails, deactivate coverage
+                try:
+                    self.builder.get_object('checkbutton4').set_active(True)  
+                    self.builder.get_object('combobox4').set_active(markers.index(self.dataset.atlas_config['date band 2']))
+                    self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 2 colour']))
+                    self.builder.get_object('spinbutton1').set_value(self.dataset.atlas_config['date band 2 from'])
+                    self.builder.get_object('spinbutton2').set_value(self.dataset.atlas_config['date band 2 to'])
+                except ValueError:
+                    self.builder.get_object('checkbutton4').set_active(False)  
                 
-                self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 1 colour']))
-
-                self.builder.get_object('spinbutton3').set_value(self.dataset.atlas_config['date band 1 from'])
-                self.builder.get_object('spinbutton4').set_value(self.dataset.atlas_config['date band 1 to'])
-                
-                #date band 2
-                self.builder.get_object('checkbutton4').set_active(True)
-                if self.dataset.atlas_config['date band 2'] == 'Square':
-                    val = 0
-                elif self.dataset.atlas_config['date band 2'] == 'Circle':
-                    val = 1
-                elif self.dataset.atlas_config['date band 2'] == 'Dot':
-                    val = 2
-                else:
-                    self.builder.get_object('checkbutton4').set_active(False)
-                    val = 0
-             
-                self.builder.get_object('combobox4').set_active(val)
-                
-                self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 2 colour']))
-
-                self.builder.get_object('spinbutton1').set_value(self.dataset.atlas_config['date band 2 from'])
-                self.builder.get_object('spinbutton2').set_value(self.dataset.atlas_config['date band 2 to'])
-
-                #date band 3
-                self.builder.get_object('checkbutton5').set_active(True)
-                if self.dataset.atlas_config['date band 3'] == 'Square':
-                    val = 0
-                elif self.dataset.atlas_config['date band 3'] == 'Circle':
-                    val = 1
-                elif self.dataset.atlas_config['date band 3'] == 'Dot':
-                    val = 2
-                else:
-                    self.builder.get_object('checkbutton5').set_active(False)
-                    val = 1
-             
-                self.builder.get_object('combobox7').set_active(val)
-                
-                self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 3 colour']))
-
-                self.builder.get_object('spinbutton5').set_value(self.dataset.atlas_config['date band 3 from'])
-                self.builder.get_object('spinbutton6').set_value(self.dataset.atlas_config['date band 3 to'])
-
-                
+                #set the date band 3 style from config - if it fails, deactivate coverage
+                try:
+                    self.builder.get_object('checkbutton5').set_active(True)  
+                    self.builder.get_object('combobox7').set_active(markers.index(self.dataset.atlas_config['date band 3']))
+                    self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 3 colour']))
+                    self.builder.get_object('spinbutton5').set_value(self.dataset.atlas_config['date band 3 from'])
+                    self.builder.get_object('spinbutton6').set_value(self.dataset.atlas_config['date band 3 to'])
+                except ValueError:
+                    self.builder.get_object('checkbutton5').set_active(False) 
+                    
+                #set the vc colour from config    
                 self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['vcs colour']))
 
                 #grid lines
