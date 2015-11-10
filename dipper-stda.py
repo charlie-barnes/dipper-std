@@ -965,17 +965,150 @@ class Run():
                     listing.set_page_orientation(orientation)      
                     listing.set_page_size(size)                  
                     listing.generate()
-                                
+            
+            self.create_config()                    
             vbox.set_sensitive(True)
             self.builder.get_object('dialog1').window.set_cursor(None)
 
-    def create_config(self):
+    def create_config(self, ):
         config = ConfigParser.SafeConfigParser()
-        config.add_section('Section1')
+    
+        #atlas
+        config.add_section('Atlas')
         
-        with open(''.join([self.filename, '.cfg']), 'wb') as configfile:
-            config.write(configfile)
+        config.set('Atlas', 'title', self.builder.get_object('entry3').get_text())
+        config.set('Atlas', 'author', self.builder.get_object('entry2').get_text())
+        
+        try:
+            config.set('Atlas', 'cover_image', self.builder.get_object('filechooserbutton1').get_filename())
+        except TypeError:
+            config.set('Atlas', 'cover_image', '')
+
+        buffer = self.builder.get_object('textview1').get_buffer()
+        startiter, enditer = buffer.get_bounds()
+        inside_cover = buffer.get_text(startiter, enditer, True)
+        config.set('Atlas', 'inside_cover', inside_cover)
+
+        buffer = self.builder.get_object('textview3').get_buffer()
+        startiter, enditer = buffer.get_bounds()
+        introduction = buffer.get_text(startiter, enditer, True)
+
+        config.set('Atlas', 'introduction', introduction)
+        config.set('Atlas', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
+        
+        #grab a comma delimited list of families
+        selection = self.builder.get_object('treeview2').get_selection()
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        families = ''
+        
+        for iter in iters:
+            families = ','.join([families, model.get_value(iter, 0)])          
+        
+        config.set('Atlas', 'families', families[1:])
+        
+        #grab a comma delimited list of vcs
+        selection = self.builder.get_object('treeview1').get_selection()
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        vcs = ''
+        
+        for iter in iters:
+            vcs = ','.join([vcs, model.get_value(iter, 0)])          
+        
+        config.set('Atlas', 'vice-counties', vcs[1:])
+                    
+        #date band 1
+        config.set('Atlas', 'date_band_1_style', self.builder.get_object('combobox2').get_active_text())
+        config.set('Atlas', 'date_band_1_fill', str(self.builder.get_object('colorbutton2').get_color()))
+        config.set('Atlas', 'date_band_1_outline', str(self.builder.get_object('colorbutton7').get_color()))
+        config.set('Atlas', 'date_band_1_from', str(self.builder.get_object('spinbutton3').get_value()))
+        config.set('Atlas', 'date_band_1_to', str(self.builder.get_object('spinbutton4').get_value()))
             
+        #date band 2
+        config.set('Atlas', 'date_band_2_visible', str(self.builder.get_object('checkbutton4').get_active()))
+        config.set('Atlas', 'date_band_2_style', self.builder.get_object('combobox4').get_active_text())
+        config.set('Atlas', 'date_band_2_overlay', str(self.builder.get_object('checkbutton7').get_active()))
+        config.set('Atlas', 'date_band_2_fill', str(self.builder.get_object('colorbutton3').get_color()))
+        config.set('Atlas', 'date_band_2_outline', str(self.builder.get_object('colorbutton8').get_color()))
+        config.set('Atlas', 'date_band_2_from', str(self.builder.get_object('spinbutton1').get_value()))
+        config.set('Atlas', 'date_band_2_to', str(self.builder.get_object('spinbutton2').get_value()))
+            
+        #date band 3
+        config.set('Atlas', 'date_band_3_visible', str(self.builder.get_object('checkbutton5').get_active()))
+        config.set('Atlas', 'date_band_3_style', self.builder.get_object('combobox7').get_active_text())
+        config.set('Atlas', 'date_band_3_overlay', str(self.builder.get_object('checkbutton11').get_active()))
+        config.set('Atlas', 'date_band_3_fill', str(self.builder.get_object('colorbutton6').get_color()))
+        config.set('Atlas', 'date_band_3_outline', str(self.builder.get_object('colorbutton9').get_color()))
+        config.set('Atlas', 'date_band_3_from', str(self.builder.get_object('spinbutton5').get_value()))
+        config.set('Atlas', 'date_band_3_to', str(self.builder.get_object('spinbutton6').get_value()))
+        
+        #coverage
+        config.set('Atlas', 'coverage_visible', str(self.builder.get_object('checkbutton1').get_active()))
+        config.set('Atlas', 'coverage_style', self.builder.get_object('combobox6').get_active_text())
+        config.set('Atlas', 'coverage_colour', str(self.builder.get_object('colorbutton4').get_color()))
+        
+        #grid lines
+        config.set('Atlas', 'grid_lines_visible', str(self.builder.get_object('checkbutton2').get_active()))
+        config.set('Atlas', 'grid_lines_style', self.builder.get_object('combobox1').get_active_text())
+        config.set('Atlas', 'grid_lines_colour', str(self.builder.get_object('colorbutton1').get_color()))
+
+        #page setup
+        config.set('Atlas', 'paper_size', self.builder.get_object('combobox10').get_active_text())
+        config.set('Atlas', 'orientation', self.builder.get_object('combobox8').get_active_text()[0:1])
+
+        #table of contents
+        config.set('Atlas', 'toc_show_families', str(self.builder.get_object('checkbutton6').get_active()))
+        config.set('Atlas', 'toc_show_species_names', str(self.builder.get_object('checkbutton9').get_active()))
+        config.set('Atlas', 'toc_show_common_names', str(self.builder.get_object('checkbutton10').get_active()))
+
+        #species accounts
+        config.set('Atlas', 'species_accounts_show_descriptions', str(self.builder.get_object('checkbutton12').get_active()))
+        config.set('Atlas', 'species_accounts_show_latest', str(self.builder.get_object('checkbutton13').get_active()))
+        config.set('Atlas', 'species_accounts_show_statistics', str(self.builder.get_object('checkbutton14').get_active()))
+        config.set('Atlas', 'species_accounts_show_status', str(self.builder.get_object('checkbutton16').get_active()))
+        config.set('Atlas', 'species_accounts_show_phenology', str(self.builder.get_object('checkbutton15').get_active()))
+        
+    
+        #list
+        config.add_section('List')
+
+        #grab a comma delimited list of families
+        selection = self.builder.get_object('treeview3').get_selection()
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        families = ''
+        
+        for iter in iters:
+            families = ','.join([families, model.get_value(iter, 0)])          
+        
+        config.set('List', 'families', families[1:])
+        
+        #grab a comma delimited list of vcs
+        selection = self.builder.get_object('treeview4').get_selection()
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        vcs = ''
+        
+        for iter in iters:
+            vcs = ','.join([vcs, model.get_value(iter, 0)])          
+        
+        config.set('List', 'vice-counties', vcs[1:])
+
+        #page setup
+        config.set('List', 'paper_size', self.builder.get_object('combobox11').get_active_text())
+        config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text()[0:1])
+        
+        #write the config file
+        with open(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']), 'wb') as configfile:
+            config.write(configfile)   
+            
+            
+              
 class Dataset(gobject.GObject):
     
     def __init__(self, instance, filename):     
@@ -3319,7 +3452,7 @@ class Atlas(gobject.GObject):
         pdf.set_font('Helvetica','',8)
           
         if pdf.num_page_no() >= 4 and pdf.section != 'Contents':
-            pdf.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-std.', 0, 1, 'L')
+            pdf.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-stda.', 0, 1, 'L')
             pdf.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
               
         #pdf.p_add_page()
