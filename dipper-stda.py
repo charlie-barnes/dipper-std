@@ -737,11 +737,11 @@ class Run():
                 self.builder.get_object('button3').set_sensitive(True)
             else:
                 raise AttributeError()
-        except AttributeError:
+        except AttributeError as e:
             self.builder.get_object('button3').set_sensitive(False) 
             md = gtk.MessageDialog(None, 
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, 
-                gtk.BUTTONS_CLOSE, "Unable to open data file")
+                gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
             md.run()
             md.destroy()
 
@@ -768,11 +768,22 @@ class Run():
             dialog.set_default_response(gtk.RESPONSE_OK)
                         
             if notebook.get_current_page() == 0:
-                dialog.set_current_name(self.dataset.atlas_config['save as'])
+                if self.dataset.atlas_config['save as'] == '':
+                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                    dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_atlas.pdf']))
+                else:
+                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.atlas_config['save as'])))
+                    dialog.set_current_name(self.dataset.atlas_config['save as'])
             elif notebook.get_current_page() == 1: 
-                dialog.set_current_name(self.dataset.list_config['save as'])
+                if self.dataset.list_config['save as'] == '':
+                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                    dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_checklist.pdf']))
+                else:
+                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.list_config['save as'])))
+                    dialog.set_current_name(self.dataset.list_config['save as'])
                 
             response = dialog.run()
+            
             output = dialog.get_filename()
 
             dialog.destroy()
@@ -957,6 +968,13 @@ class Run():
                                 
             vbox.set_sensitive(True)
             self.builder.get_object('dialog1').window.set_cursor(None)
+
+    def create_config(self):
+        config = ConfigParser.SafeConfigParser()
+        config.add_section('Section1')
+        
+        with open(''.join([self.filename, '.cfg']), 'wb') as configfile:
+            config.write(configfile)
             
 class Dataset(gobject.GObject):
     
@@ -1367,18 +1385,15 @@ class Read(gobject.GObject):
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
 
-                    ######## what to do if these headings _dont_ exist?
-                    if sheet.cell(0, col_index).value.lower() in ('taxon'):
-                        ### hack - whats causing this to pick up col 23 as the Taxon as well as 0 ??
-                        ###taxon_position = col_index
-                        taxon_position = 0
+                    if sheet.cell(0, col_index).value.lower() in ('taxon', 'taxon name'):
+                        taxon_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ('family'):
                         family_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ('sort order'):
                         sort_order_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ('nbn key'):
                         nbn_key_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('national status (short)'):
+                    elif sheet.cell(0, col_index).value.lower() in ('national status (short)', 'status'):
                         national_status_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ('description'):
                         description_position = col_index
@@ -1389,7 +1404,6 @@ class Read(gobject.GObject):
                 for row_index in range(1, sheet.nrows):
                                  
                     taxa = sheet.cell(row_index, taxon_position).value
-                    
                     if taxa in temp_taxa_list:
                         try:
                             family = sheet.cell(row_index, family_position).value
