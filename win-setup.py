@@ -45,10 +45,5 @@ setup(
                   }
               },
 
-    data_files=[
-        'gui.glade',
-        'select_dialog.glade',
-        'select_sheet_dialog.glade',
-        'miniscale.png',
-    ]
+    data_files=[]
 )
