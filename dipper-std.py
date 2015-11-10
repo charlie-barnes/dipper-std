@@ -1427,7 +1427,7 @@ class Read(gobject.GObject):
                             family = sheet.cell(row_index, family_position).value
                         except UnboundLocalError:
                             family = None         
-														               
+                                                                       
                         try:
                             sort_order = sheet.cell(row_index, sort_order_position).value
                         except UnboundLocalError:
@@ -1696,7 +1696,6 @@ class PDF(FPDF):
                     self.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0) 
                     self.cell(col_width/4, 5, '', '0', 0, 'C', 0)  
 
-
                 self.ln()
 
                 self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
@@ -1710,23 +1709,18 @@ class PDF(FPDF):
                     self.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
                     self.cell(col_width/4, 5, '', '0', 0, 'C', 0)
 
-                        
                 self.y0 = self.get_y()
+                
+            if self.section == 'Contributors':
+                self.set_y(self.y0 + 20)
 
     def footer(self):        
         self.set_y(-20)
         self.set_font('Helvetica','',8)
-        
-        #if self.section == 'Contents':
-        #    self.cell(0, 10, str(self.toc_page_num), '', 0, 'C')
-        #    self.toc_page_num = self.toc_page_num + 1
-        #    print "doing toc page num", str(self.toc_page_num)
-        #else:
-        #print self.section, self.num_page_no()        
-        if self.num_page_no() >= 4 and self.section != 'Contents':
+              
+        #only show page numbers in the main body
+        if self.num_page_no() >= 4 and self.section != 'Contents' and self.section != 'Index' and self.section != 'Contributors' and self.section != '':
             self.cell(0, 10, str(self.num_page_no()+self.toc_length), '', 0, 'C')
-        #elif self.num_page_no() > 1:
-        #    self.cell(0, 10, str(self.num_page_no()), '', 0, 'C')
         
     
     def setcol(self, col):
@@ -1739,6 +1733,9 @@ class PDF(FPDF):
         
         if self.section == 'Contents':
             self.toc_page_break_count = self.toc_page_break_count + 1
+        
+        if self.section == 'Contributors':
+            self.set_y(self.y0+20)
         
         if self.section == 'Index':
             if self.col < 1:
@@ -3061,19 +3058,19 @@ class Atlas(gobject.GObject):
                 date_band_1 = self.dataset.cursor.fetchall()
                 date_band_1_grids = []
                 
-                #show 2 and 3, don't overlay 2 and 3								                 
+                #show 2 and 3, don't overlay 2 and 3                                                 
                 if self.date_band_2_show and self.date_band_3_show and not self.date_band_2_overlay and not self.date_band_3_overlay:
                     for tup in date_band_1:
                         if tup[0] not in date_band_3_grids and tup[0] not in date_band_2_grids:
                             date_band_1_grids.append(tup[0])
-                            				
-                #show 2 and 3, overlay 2 not 3			                 
+                                            
+                #show 2 and 3, overlay 2 not 3                             
                 elif self.date_band_2_show and self.date_band_3_show and self.date_band_2_overlay and not self.date_band_3_overlay:
                     for tup in date_band_1:
                         if tup[0] not in date_band_3_grids:
                             date_band_1_grids.append(tup[0])
-                            				
-                #show 2 and 3, overlay 3 not 2			                 
+                                            
+                #show 2 and 3, overlay 3 not 2                             
                 elif self.date_band_2_show and self.date_band_3_show and not self.date_band_2_overlay and self.date_band_3_overlay:
                     for tup in date_band_1:
                         if tup[0] not in date_band_2_grids:
@@ -3334,18 +3331,14 @@ class Atlas(gobject.GObject):
         
         pdf.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
+        pdf.section = ''
 
         pdf.set_y(-30)
         pdf.set_font('Helvetica','',8)
-        
-        #if self.section == 'Contents':
-        #    self.cell(0, 10, str(self.toc_page_num), '', 0, 'C')
-        #    self.toc_page_num = self.toc_page_num + 1
-        #    print "doing toc page num", str(self.toc_page_num)
-        #else:
-        #print self.section, self.num_page_no()        
+          
         if pdf.num_page_no() >= 4 and pdf.section != 'Contents':
-            pdf.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), '', 0, 'C')
+            pdf.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-std.', 0, 1, 'L')
+            pdf.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
               
         #pdf.p_add_page()
         pdf.section = ''
