@@ -15,7 +15,7 @@ setup(
 
     windows = [
                   {
-                      'script': 'dipper-std.py',
+                      'script': 'dipper-stda.py',
                   }
               ],
 
