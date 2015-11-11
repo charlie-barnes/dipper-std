@@ -58,9 +58,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# Test datasets
-datasets/
-
 #Compile batch script
 compile.bat
 
