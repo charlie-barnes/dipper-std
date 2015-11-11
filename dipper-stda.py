@@ -790,7 +790,7 @@ class Run():
                     atlas = Atlas(self.dataset)
                     atlas.set_save_in(output)
 
-                    ### conver these to config data
+                    ### convert these to config data
                     atlas.set_author(self.dataset.config.get('Atlas', 'author'))
                     atlas.set_cover_image(self.dataset.config.get('Atlas', 'cover_image'))
                     atlas.set_inside_cover(self.dataset.config.get('Atlas', 'inside_cover'))
@@ -818,7 +818,6 @@ class Run():
                     atlas.set_date_band_3_fill_colour(self.dataset.config.get('Atlas', 'date_band_3_fill'))
                     atlas.set_date_band_3_border_colour(self.dataset.config.get('Atlas', 'date_band_3_outline'))
                     
-                    atlas.set_page_size(self.dataset.config.get('Atlas', 'paper_size'))
                     atlas.set_page_orientation(self.dataset.config.get('Atlas', 'orientation'))
 
                     atlas.set_cut_off(self.dataset.config.get('Atlas', 'date_band_1_from'),
@@ -849,7 +848,6 @@ class Run():
                     listing.set_vcs(self.builder.get_object('treeview4'))
                     listing.set_families(self.builder.get_object('treeview3'))
                     listing.set_page_orientation(self.dataset.config.get('List', 'orientation'))
-                    listing.set_page_size(self.dataset.config.get('List', 'paper_size'))
                     listing.generate()
 
             vbox.set_sensitive(True)
@@ -1683,7 +1681,6 @@ class List(gobject.GObject):
         self.dataset = dataset
         self.cancel = False
         self.start_time = time.time()
-        self.page_size = 'A4'
         self.page_unit = 'mm'
         self.page_orientation = 'P'
         self.author = None
@@ -1698,9 +1695,6 @@ class List(gobject.GObject):
 
     def set_page_orientation(self, page_orientation):
         self.page_orientation = page_orientation
-
-    def set_page_size(self, page_size):
-        self.page_size = page_size
 
     def set_vcs(self, widget):
 
@@ -1805,7 +1799,7 @@ class List(gobject.GObject):
                 taxa_statistics[row[0]]['vc'][str(row[7])]['year'] = str(row[6])
 
         #the pdf
-        pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.page_size)
+        pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.dataset.config.get('List', 'paper_size'))
         pdf.type = 'list'
         pdf.do_header = False
         pdf.vcs = self.vcs
@@ -2046,7 +2040,6 @@ class Atlas(gobject.GObject):
         self.introduction = None
         self.distribution_unit = None
         self.save_in = None
-        self.page_size = 'A4'
         self.page_orientation = 'P'
         self.page_unit = 'mm'
         self.base_map = None
@@ -2538,9 +2531,6 @@ class Atlas(gobject.GObject):
     def set_page_orientation(self, page_orientation):
         self.page_orientation = page_orientation
 
-    def set_page_size(self, page_size):
-        self.page_size = page_size
-
     def generate(self):
         self.emit('progress-pre-begin')
 
@@ -2675,7 +2665,7 @@ class Atlas(gobject.GObject):
                         contrib_data[name.strip()] = ''.join(initials)
 
         #the pdf
-        pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.page_size)
+        pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
         pdf.type = 'atlas'
         pdf.toc_length = toc_length
 
@@ -2758,7 +2748,7 @@ class Atlas(gobject.GObject):
         families = []
         rownum = 0
 
-        if self.page_size == 'A4':
+        if self.dataset.config.get('Atlas', 'paper_size') == 'A4':
             max_region_count = 2
 
         region_count = 3
