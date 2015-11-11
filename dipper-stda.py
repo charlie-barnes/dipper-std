@@ -612,7 +612,7 @@ class Run():
                 
                 #coverage colour
                 self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')))
-                
+
                 #coverage visible
                 self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))                
                                 
@@ -716,7 +716,7 @@ class Run():
                 selection.unselect_all()
                 self.builder.get_object('treeview4').scroll_to_point(0,0)
                 try:
-                    for vc in self.dataset.config.get('List', 'vice-counties'):
+                    for vc in self.dataset.config.get('List', 'vice-counties').split(','):
                         selection.select_path(int(float(vc))-1)
                     self.builder.get_object('treeview4').scroll_to_cell(int(float(self.dataset.config.get('List', 'vice-counties').split(',')[0]))-1)
                 except ValueError:
@@ -789,46 +789,10 @@ class Run():
                     atlas.set_save_in(output)
 
                     ### convert these to config data
-                    atlas.set_author(self.dataset.config.get('Atlas', 'author'))
-                    atlas.set_cover_image(self.dataset.config.get('Atlas', 'cover_image'))
-                    atlas.set_inside_cover(self.dataset.config.get('Atlas', 'inside_cover'))
-                    atlas.set_introduction(self.dataset.config.get('Atlas', 'introduction'))
-                    atlas.set_distribution_unit(self.dataset.config.get('Atlas', 'distribution_unit'))
-                    atlas.set_coverage_show(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
-                    atlas.set_coverage_colour(self.dataset.config.get('Atlas', 'coverage_colour'))
-                    atlas.set_coverage_style(self.dataset.config.get('Atlas', 'coverage_style'))
-                    atlas.set_grid_lines_show(self.dataset.config.getboolean('Atlas', 'grid_lines_visible'))
-                    atlas.set_grid_colour(self.dataset.config.get('Atlas', 'grid_lines_colour'))
-                    atlas.set_grid_lines(self.dataset.config.get('Atlas', 'grid_lines_style'))
-                    atlas.set_boundary_colour(self.dataset.config.get('Atlas', 'vice-counties_colour'))
 
-                    atlas.set_date_band_1_style(self.dataset.config.get('Atlas', 'date_band_1_style'))
-                    atlas.set_date_band_1_fill_colour(self.dataset.config.get('Atlas', 'date_band_1_fill'))
-                    atlas.set_date_band_1_border_colour(self.dataset.config.get('Atlas', 'date_band_1_outline'))
-                    atlas.set_date_band_2_show(self.dataset.config.get('Atlas', 'date_band_2_visible'))
-                    atlas.set_date_band_2_overlay(self.dataset.config.get('Atlas', 'date_band_2_overlay'))
-                    atlas.set_date_band_2_style(self.dataset.config.get('Atlas', 'date_band_2_style'))
-                    atlas.set_date_band_2_fill_colour(self.dataset.config.get('Atlas', 'date_band_2_fill'))
-                    atlas.set_date_band_2_border_colour(self.dataset.config.get('Atlas', 'date_band_2_outline'))
-                    atlas.set_date_band_3_show(self.dataset.config.get('Atlas', 'date_band_3_visible'))
-                    atlas.set_date_band_3_overlay(self.dataset.config.get('Atlas', 'date_band_3_overlay'))
-                    atlas.set_date_band_3_style(self.dataset.config.get('Atlas', 'date_band_3_style'))
-                    atlas.set_date_band_3_fill_colour(self.dataset.config.get('Atlas', 'date_band_3_fill'))
-                    atlas.set_date_band_3_border_colour(self.dataset.config.get('Atlas', 'date_band_3_outline'))
-                    
-                    atlas.set_page_orientation(self.dataset.config.get('Atlas', 'orientation'))
-
-                    atlas.set_cut_off(self.dataset.config.get('Atlas', 'date_band_1_from'),
-                                      self.dataset.config.get('Atlas', 'date_band_1_to'),
-                                      self.dataset.config.get('Atlas', 'date_band_2_from'),
-                                      self.dataset.config.get('Atlas', 'date_band_2_to'),
-                                      self.dataset.config.get('Atlas', 'date_band_3_from'),
-                                      self.dataset.config.get('Atlas', 'date_band_3_to'))
-                    
-                    #convert to config.get
-                    
                     atlas.set_vcs(self.builder.get_object('treeview1'))
                     atlas.set_families(self.builder.get_object('treeview2'))
+                    
                     atlas.generate_base_map()
                     atlas.generate_density_map()
                     atlas.generate()
@@ -837,15 +801,10 @@ class Run():
 
                     listing = List(self.dataset)
 
-                    listing.set_author(self.dataset.config.get('List', 'author'))
-                    listing.set_cover_image(self.dataset.config.get('List', 'cover_image'))
-                    listing.set_inside_cover(self.dataset.config.get('List', 'inside_cover'))
-                    listing.set_introduction(self.dataset.config.get('List', 'introduction'))
-                    listing.set_distribution_unit(self.dataset.config.get('List', 'distribution_unit'))
+                    ### convert these to config data
                     listing.set_save_in(output)
                     listing.set_vcs(self.builder.get_object('treeview4'))
                     listing.set_families(self.builder.get_object('treeview3'))
-                    listing.set_page_orientation(self.dataset.config.get('List', 'orientation'))
                     listing.generate()
 
             vbox.set_sensitive(True)
@@ -952,6 +911,26 @@ class Run():
 
 
         #list
+        self.dataset.config.set('List', 'title', self.builder.get_object('entry4').get_text())
+        self.dataset.config.set('List', 'author', self.builder.get_object('entry1').get_text())
+
+        try:
+            self.dataset.config.set('List', 'cover_image', self.builder.get_object('filechooserbutton5').get_filename())
+        except TypeError:
+            self.dataset.config.set('List', 'cover_image', '')
+
+        buffer = self.builder.get_object('textview4').get_buffer()
+        startiter, enditer = buffer.get_bounds()
+        inside_cover = buffer.get_text(startiter, enditer, True)
+        self.dataset.config.set('List', 'inside_cover', inside_cover)
+
+        buffer = self.builder.get_object('textview6').get_buffer()
+        startiter, enditer = buffer.get_bounds()
+        introduction = buffer.get_text(startiter, enditer, True)
+
+        self.dataset.config.set('List', 'introduction', introduction)
+        self.dataset.config.set('List', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
+
         #grab a comma delimited list of families
         selection = self.builder.get_object('treeview3').get_selection()
         model, selected = selection.get_selected_rows()
@@ -1680,19 +1659,10 @@ class List(gobject.GObject):
         self.cancel = False
         self.start_time = time.time()
         self.page_unit = 'mm'
-        self.page_orientation = 'P'
-        self.author = None
-        self.cover_image = None
-        self.inside_cover = None
-        self.introduction = None
-        self.distribution_unit = None
         self.save_in = None
         self.vcs = []
         self.vcs_sql = ''
         self.families = ''
-
-    def set_page_orientation(self, page_orientation):
-        self.page_orientation = page_orientation
 
     def set_vcs(self, widget):
 
@@ -1728,20 +1698,6 @@ class List(gobject.GObject):
         if len(iters) > 0:
             self.families = ''.join([joiner, ' species_data.family IN (', sql[1:], ') '])
 
-    def set_author(self, author):
-        self.author = author
-
-    def set_cover_image(self, cover_image):
-        self.cover_image = cover_image
-
-    def set_inside_cover(self, inside_cover):
-        self.inside_cover = inside_cover
-
-    def set_introduction(self, introduction):
-        self.introduction = introduction
-
-    def set_distribution_unit(self, distribution_unit):
-        self.distribution_unit = distribution_unit
 
     def set_save_in(self, save_in):
         self.save_in = save_in
@@ -1753,7 +1709,7 @@ class List(gobject.GObject):
         taxon_list = []
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
-                                   COUNT(DISTINCT(grid_' + self.distribution_unit + ')) AS tetrads, \
+                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS tetrads, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    data.vc AS VC \
@@ -1797,7 +1753,7 @@ class List(gobject.GObject):
                 taxa_statistics[row[0]]['vc'][str(row[7])]['year'] = str(row[6])
 
         #the pdf
-        pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.dataset.config.get('List', 'paper_size'))
+        pdf = PDF(orientation=self.dataset.config.get('List', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('List', 'paper_size'))
         pdf.type = 'list'
         pdf.do_header = False
         pdf.vcs = self.vcs
@@ -1805,14 +1761,14 @@ class List(gobject.GObject):
         pdf.col = 0
         pdf.y0 = 0
         pdf.set_title(self.dataset.config.get('List', 'title'))
-        pdf.set_author(self.author)
+        pdf.set_author(self.dataset.config.get('List', 'author'))
         pdf.section = ''
 
         #title page
         pdf.p_add_page()
 
-        if self.cover_image is not None and os.path.isfile(self.cover_image):
-            pdf.image(self.cover_image, 0, 0, pdf.w, pdf.h)
+        if self.dataset.config.get('List', 'cover_image') is not None and os.path.isfile(self.dataset.config.get('List', 'cover_image')):
+            pdf.image(self.dataset.config.get('List', 'cover_image'), 0, 0, pdf.w, pdf.h)
 
         pdf.set_text_color(0)
         pdf.set_fill_color(255, 255, 255)
@@ -1822,12 +1778,12 @@ class List(gobject.GObject):
 
         pdf.ln(20)
         pdf.set_font('Helvetica', '', 18)
-        pdf.multi_cell(0, 10, ''.join([self.author, '\n',datetime.now().strftime('%B %Y')]), 0, 'L', False)
+        pdf.multi_cell(0, 10, ''.join([pdf.author, '\n',datetime.now().strftime('%B %Y')]), 0, 'L', False)
 
         #inside cover
         pdf.p_add_page()
         pdf.set_font('Helvetica', '', 12)
-        pdf.multi_cell(0, 6, self.inside_cover, 0, 'J', False)
+        pdf.multi_cell(0, 6, self.dataset.config.get('List', 'inside_cover'), 0, 'J', False)
 
         #introduction
         pdf.do_header = True
@@ -1838,7 +1794,7 @@ class List(gobject.GObject):
         pdf.cell(0, 20, 'Introduction', 0, 0, 'L', 0)
         pdf.ln()
         pdf.set_font('Helvetica', '', 12)
-        pdf.multi_cell(0, 6, self.introduction, 0, 0, 'L')
+        pdf.multi_cell(0, 6, self.dataset.config.get('List', 'introduction'), 0, 0, 'L')
         pdf.ln()
         pdf.set_font('Helvetica', '', 20)
         pdf.cell(0, 15, 'Checklist', 0, 1, 'L', 0)
@@ -2032,44 +1988,17 @@ class Atlas(gobject.GObject):
         self.dataset = dataset
         self.cancel = False
         self.start_time = time.time()
-        self.author = None
-        self.cover_image = None
-        self.inside_cover = None
-        self.introduction = None
-        self.distribution_unit = None
         self.save_in = None
-        self.page_orientation = 'P'
         self.page_unit = 'mm'
         self.base_map = None
-        self.boundary_colour = None
-        self.coverage_colour = None
-        self.coverage_show = None
-        self.grid_colour = None
-        self.grid_lines_show = None
-        self.grid_lines = None
-        self.date_band_1_show = True
-        self.date_band_2_show = None
-        self.date_band_3_show = None
-        self.date_band_2_overlay = None
-        self.date_band_3_overlay = None
         self.date_band_1_fill_colour = None
         self.date_band_2_fill_colour = None
         self.date_band_3_fill_colour = None
         self.date_band_1_border_colour = None
         self.date_band_2_border_colour = None
         self.date_band_3_border_colour = None
-        self.date_band_1_style = None
-        self.date_band_2_style = None
-        self.date_band_3_style = None
-        self.date_band_1_from = None
-        self.date_band_1_to = None
-        self.date_band_2_from = None
-        self.date_band_2_to = None
-        self.date_band_3_from = None
-        self.date_band_3_to = None
         self.vcs_widget = None
         self.families = None
-        self.coverage_style = None
         self.date_band_1_style_coverage = []
         self.date_band_2_style_coverage = []
         self.date_band_3_style_coverage = []
@@ -2092,88 +2021,7 @@ class Atlas(gobject.GObject):
         if len(iters) > 0:
             self.families = ''.join([' WHERE species_data.family IN (', sql[1:], ') '])
 
-    def set_boundary_colour(self, colour):
-        self.boundary_colour = gtk.gdk.color_parse(colour)
 
-    def set_coverage_colour(self, colour):
-        self.coverage_colour = gtk.gdk.color_parse(colour)
-
-    def set_coverage_style(self, style):
-        self.coverage_style = style
-
-    def set_grid_colour(self, colour):
-        self.grid_colour = gtk.gdk.color_parse(colour)
-
-    def set_coverage_show(self, show):
-        self.coverage_show = show
-
-    def set_grid_lines_show(self, show):
-        self.grid_lines_show = show
-
-
-    def set_date_band_2_show(self, show):
-        self.date_band_2_show = show
-
-
-    def set_date_band_3_show(self, show):
-        self.date_band_3_show = show
-
-
-    def set_date_band_2_overlay(self, overlay):
-        self.date_band_2_overlay = overlay
-
-
-    def set_date_band_3_overlay(self, overlay):
-        self.date_band_3_overlay = overlay
-
-
-    def set_date_band_1_fill_colour(self, colour):
-        self.date_band_1_fill_colour = gtk.gdk.color_parse(colour)
-
-
-    def set_date_band_2_fill_colour(self, colour):
-        self.date_band_2_fill_colour = gtk.gdk.color_parse(colour)
-
-
-    def set_date_band_3_fill_colour(self, colour):
-        self.date_band_3_fill_colour = gtk.gdk.color_parse(colour)
-
-
-    def set_date_band_1_border_colour(self, colour):
-        self.date_band_1_border_colour = gtk.gdk.color_parse(colour)
-
-
-    def set_date_band_2_border_colour(self, colour):
-        self.date_band_2_border_colour = gtk.gdk.color_parse(colour)
-
-
-    def set_date_band_3_border_colour(self, colour):
-        self.date_band_3_border_colour = gtk.gdk.color_parse(colour)
-
-
-    def set_date_band_1_style(self, style):
-        self.date_band_1_style = style
-
-
-    def set_date_band_2_style(self, style):
-        self.date_band_2_style = style
-
-
-    def set_date_band_3_style(self, style):
-        self.date_band_3_style = style
-
-
-    def set_grid_lines(self, grid):
-        self.grid_lines = grid
-
-
-    def set_cut_off(self, date_band_1_from, date_band_1_to, date_band_2_from, date_band_2_to, date_band_3_from, date_band_3_to):
-        self.date_band_1_from = int(float(date_band_1_from))
-        self.date_band_1_to = int(float(date_band_1_to))
-        self.date_band_2_from = int(float(date_band_2_from))
-        self.date_band_2_to = int(float(date_band_2_to))
-        self.date_band_3_from = int(float(date_band_3_from))
-        self.date_band_3_to = int(float(date_band_3_to))
 
     def generate_density_map(self):
 
@@ -2225,9 +2073,9 @@ class Atlas(gobject.GObject):
 
 
         #add the total coverage & calc first and date band 2 grid arrays
-        self.dataset.cursor.execute('SELECT grid_' + self.distribution_unit + ' AS grids, COUNT(DISTINCT taxon) as species \
+        self.dataset.cursor.execute('SELECT grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ' AS grids, COUNT(DISTINCT taxon) as species \
                                      FROM data \
-                                     GROUP BY grid_' + self.distribution_unit)
+                                     GROUP BY grid_' + self.dataset.config.get('Atlas', 'distribution_unit'))
 
         data = self.dataset.cursor.fetchall()
         #print data
@@ -2240,7 +2088,7 @@ class Atlas(gobject.GObject):
             gridsdict[tup[0]] = tup[1]
             #print tup[0]
 
-        r = shapefile.Reader('./markers/' + self.coverage_style + '/' + self.distribution_unit)
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -2287,8 +2135,8 @@ class Atlas(gobject.GObject):
                 base_map_draw.polygon(pixels, fill=gradfill, outline='rgb(0,0,0)')
 
         #add the grid lines
-        if self.grid_lines_show:
-            r = shapefile.Reader('./markers/squares/' + self.grid_lines)
+        if self.dataset.config.getboolean('Atlas', 'grid_lines_visible'):
+            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'grid_lines_style'))
             #loop through each object in the shapefile
             for obj in r.shapes():
                 pixels = []
@@ -2297,7 +2145,7 @@ class Atlas(gobject.GObject):
                     px = (xdist * scalefactor)- (bounds_top_x - x) * scalefactor
                     py = (bounds_top_y - y) * scalefactor
                     pixels.append((px,py))
-                base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.grid_colour.red_float*255)) + ',' + str(int(self.grid_colour.green_float*255)) + ',' + str(int(self.grid_colour.blue_float*255)) + ')')
+                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
 
 
 
@@ -2342,11 +2190,11 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.boundary_colour.red_float*255)) + ',' + str(int(self.boundary_colour.green_float*255)) + ',' + str(int(self.boundary_colour.blue_float*255)) + ')')
+                        base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.boundary_colour.red_float*255)) + ',' + str(int(self.boundary_colour.green_float*255)) + ',' + str(int(self.boundary_colour.blue_float*255)) + ')')
+                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
 
         self.density_map_filename = tempfile.NamedTemporaryFile().name
         base_map.save(self.density_map_filename, format='JPEG')
@@ -2394,7 +2242,7 @@ class Atlas(gobject.GObject):
         self.base_map_draw = ImageDraw.Draw(self.base_map)
 
         #add the total coverage & calc first and date band 2 grid arrays
-        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.distribution_unit + ') AS grids \
+        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                      FROM data')
 
         data = self.dataset.cursor.fetchall()
@@ -2405,7 +2253,7 @@ class Atlas(gobject.GObject):
             grids.append(tup[0])
             #print tup[0]
 
-        r = shapefile.Reader('./markers/' + self.coverage_style + '/' + self.distribution_unit)
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -2417,36 +2265,36 @@ class Atlas(gobject.GObject):
                     px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                     py = (self.bounds_top_y - y) * self.scalefactor
                     pixels.append((px,py))
-                if self.coverage_show:
-                    self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(self.coverage_colour.red_float*255)) + ',' + str(int(self.coverage_colour.green_float*255)) + ',' + str(int(self.coverage_colour.blue_float*255)) + ')')
+                if self.dataset.config.getboolean('Atlas', 'coverage_visible'):
+                    self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).blue_float*255)) + ')')
 
         #create date band 1 grid array
-        if self.date_band_1_show:
-            r = shapefile.Reader('./markers/' + self.date_band_1_style + '/' + self.distribution_unit)
-            #loop through each object in the shapefile
-            for obj in r.shapeRecords():
-                if obj.record[0] in grids:
-                    self.date_band_1_style_coverage.append(obj)
+        #we always show date band 1
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_1_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #loop through each object in the shapefile
+        for obj in r.shapeRecords():
+            if obj.record[0] in grids:
+                self.date_band_1_style_coverage.append(obj)
 
         #create date band 2 grid array
-        if self.date_band_2_show:
-            r = shapefile.Reader('./markers/' + self.date_band_2_style + '/' + self.distribution_unit)
+        if self.dataset.config.get('Atlas', 'date_band_2_visible'):
+            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_2_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
             #loop through each object in the shapefile
             for obj in r.shapeRecords():
                 if obj.record[0] in grids:
                     self.date_band_2_style_coverage.append(obj)
 
         #create date band 3 grid array
-        if self.date_band_3_show:
-            r = shapefile.Reader('./markers/' + self.date_band_3_style + '/' + self.distribution_unit)
+        if self.dataset.config.get('Atlas', 'date_band_3_visible'):
+            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_2_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
             #loop through each object in the shapefile
             for obj in r.shapeRecords():
                 if obj.record[0] in grids:
                     self.date_band_3_style_coverage.append(obj)
 
         #add the grid lines
-        if self.grid_lines_show:
-            r = shapefile.Reader('./markers/squares/' + self.grid_lines)
+        if self.dataset.config.getboolean('Atlas', 'grid_lines_visible'):
+            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'grid_lines_style'))
             #loop through each object in the shapefile
             for obj in r.shapes():
                 pixels = []
@@ -2455,7 +2303,7 @@ class Atlas(gobject.GObject):
                     px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                     py = (self.bounds_top_y - y) * self.scalefactor
                     pixels.append((px,py))
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.grid_colour.red_float*255)) + ',' + str(int(self.grid_colour.green_float*255)) + ',' + str(int(self.grid_colour.blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
 
 
 
@@ -2500,40 +2348,21 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.boundary_colour.red_float*255)) + ',' + str(int(self.boundary_colour.green_float*255)) + ',' + str(int(self.boundary_colour.blue_float*255)) + ')')
+                        self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.boundary_colour.red_float*255)) + ',' + str(int(self.boundary_colour.green_float*255)) + ',' + str(int(self.boundary_colour.blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
 
-
-    def set_author(self, author):
-        self.author = author
-
-    def set_cover_image(self, cover_image):
-        if cover_image != '':
-            self.cover_image = cover_image
-
-    def set_inside_cover(self, inside_cover):
-        self.inside_cover = inside_cover
-
-    def set_introduction(self, introduction):
-        self.introduction = introduction
-
-    def set_distribution_unit(self, distribution_unit):
-        self.distribution_unit = distribution_unit
 
     def set_save_in(self, save_in):
         self.save_in = save_in
 
-    def set_page_orientation(self, page_orientation):
-        self.page_orientation = page_orientation
-
     def generate(self):
         self.emit('progress-pre-begin')
 
-        self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.distribution_unit + ')), \
-                                   COUNT(DISTINCT(grid_' + self.distribution_unit + ')) AS tetrads, \
+        self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
+                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS tetrads, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    species_data.description, \
@@ -2663,21 +2492,21 @@ class Atlas(gobject.GObject):
                         contrib_data[name.strip()] = ''.join(initials)
 
         #the pdf
-        pdf = PDF(orientation=self.page_orientation,unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
+        pdf = PDF(orientation=self.dataset.config.get('Atlas', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
         pdf.type = 'atlas'
         pdf.toc_length = toc_length
 
         pdf.col = 0
         pdf.y0 = 0
         pdf.set_title(self.dataset.config.get('Atlas', 'title'))
-        pdf.set_author(self.author)
+        pdf.set_author(self.dataset.config.get('Atlas', 'author'))
         pdf.section = ''
 
         #title page
         pdf.p_add_page()
 
-        if self.cover_image is not None:
-            pdf.image(self.cover_image, 0, 0, pdf.w, pdf.h)
+        if self.dataset.config.get('Atlas', 'cover_image') is not None and os.path.isfile(self.dataset.config.get('Atlas', 'cover_image')):
+            pdf.image(self.dataset.config.get('Atlas', 'cover_image'), 0, 0, pdf.w, pdf.h)
 
         pdf.set_text_color(0)
         pdf.set_fill_color(255, 255, 255)
@@ -2687,23 +2516,23 @@ class Atlas(gobject.GObject):
 
         pdf.ln(20)
         pdf.set_font('Helvetica', '', 18)
-        pdf.multi_cell(0, 10, ''.join([self.author, '\n',datetime.now().strftime('%B %Y')]), 0, 'L', False)
+        pdf.multi_cell(0, 10, ''.join([pdf.author, '\n',datetime.now().strftime('%B %Y')]), 0, 'L', False)
 
         #inside cover
         pdf.p_add_page()
         pdf.set_font('Helvetica', '', 12)
-        pdf.multi_cell(0, 6, self.inside_cover, 0, 'J', False)
+        pdf.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover'), 0, 'J', False)
 
         pdf.do_header = True
 
         #introduction
-        if len(self.introduction) > 0:
+        if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
             pdf.section = ('Introduction')
             pdf.p_add_page()
             pdf.set_font('Helvetica', '', 20)
             pdf.multi_cell(0, 20, 'Introduction', 0, 'J', False)
             pdf.set_font('Helvetica', '', 12)
-            pdf.multi_cell(0, 6, self.introduction, 0, 'J', False)
+            pdf.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction'), 0, 'J', False)
             pdf.p_add_page()
             pdf.set_font('Helvetica', '', 20)
             pdf.multi_cell(0, 20, 'Species density', 0, 'J', False)
@@ -2712,7 +2541,7 @@ class Atlas(gobject.GObject):
 
             width, height = im.size
 
-            if self.page_orientation[0:1] == 'P':
+            if self.dataset.config.get('Atlas', 'orientation')[0:1] == 'P':
                 scalefactor = (pdf.w-pdf.l_margin-pdf.r_margin)/width
                 target_width = width*scalefactor
                 target_height = height*scalefactor
@@ -2723,7 +2552,7 @@ class Atlas(gobject.GObject):
                 scalefactor = target_height/height
                 target_width = width*scalefactor
 
-            elif self.page_orientation[0:1] == 'L':
+            elif self.dataset.config.get('Atlas', 'orientation')[0:1] == 'L':
                 scalefactor = (pdf.h-40-30)/height
                 target_width = width*scalefactor
                 target_height = height*scalefactor
@@ -2814,7 +2643,7 @@ class Atlas(gobject.GObject):
 
             ####compile list of last e.g. 10 records for use below
 
-            self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.distribution_unit + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
+            self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
                                         FROM data \
                                         WHERE data.taxon = "' + item[0] + '" \
                                         ORDER BY data.year_to || data.month_to || data.day_to desc')
@@ -2895,15 +2724,15 @@ class Atlas(gobject.GObject):
             current_map =  self.base_map.copy()
             current_map_draw = ImageDraw.Draw(current_map)
 
-            if self.date_band_3_show:
+            if self.dataset.config.get('Atlas', 'date_band_3_visible'):
                 #date band 3
-                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.distribution_unit + ') AS grids \
+                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                             FROM data \
                                             WHERE data.taxon = "' + item[0] + '" \
-                                            AND data.year_to >= ' + str(int(self.date_band_3_from)) + '\
-                                            AND data.year_to < ' + str(int(self.date_band_3_to)) + ' \
-                                            AND data.year_from >= ' + str(int(self.date_band_3_from)) + ' \
-                                            AND data.year_from < ' + str(int(self.date_band_3_to)))
+                                            AND data.year_to >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_from')))) + '\
+                                            AND data.year_to < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_to')))) + ' \
+                                            AND data.year_from >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_from')))) + ' \
+                                            AND data.year_from < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_to')))))
 
                 date_band_3 = self.dataset.cursor.fetchall()
 
@@ -2913,22 +2742,22 @@ class Atlas(gobject.GObject):
                     date_band_3_grids.append(tup[0])
 
 
-            if self.date_band_2_show:
+            if self.dataset.config.get('Atlas', 'date_band_2_visible'):
                 #date band 2
-                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.distribution_unit + ') AS grids \
+                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                             FROM data \
                                             WHERE data.taxon = "' + item[0] + '" \
-                                            AND data.year_to >= ' + str(int(self.date_band_2_from)) + '\
-                                            AND data.year_to < ' + str(int(self.date_band_2_to)) + ' \
-                                            AND data.year_from >= ' + str(int(self.date_band_2_from)) + ' \
-                                            AND data.year_from < ' + str(int(self.date_band_2_to)))
+                                            AND data.year_to >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_from')))) + '\
+                                            AND data.year_to < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_to')))) + ' \
+                                            AND data.year_from >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_from')))) + ' \
+                                            AND data.year_from < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_to')))))
 
                 date_band_2 = self.dataset.cursor.fetchall()
 
                 date_band_2_grids = []
 
                 #show 3 and overlay 3
-                if self.date_band_3_show and not self.date_band_3_overlay:
+                if self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
                     for tup in date_band_2:
                         if tup[0] not in date_band_3_grids:
                             date_band_2_grids.append(tup[0])
@@ -2936,71 +2765,70 @@ class Atlas(gobject.GObject):
                     for tup in date_band_2:
                         date_band_2_grids.append(tup[0])
 
-            if self.date_band_1_show:
-                #date band 1
-                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.distribution_unit + ') AS grids \
-                                            FROM data \
-                                            WHERE data.taxon = "' + item[0] + '" \
-                                            AND data.year_to >= ' + str(int(self.date_band_1_from)) + ' \
-                                            AND data.year_to < ' + str(int(self.date_band_1_to)) + ' \
-                                            AND data.year_from >= ' + str(int(self.date_band_1_from)) + ' \
-                                            AND data.year_from < ' + str(int(self.date_band_1_to)))
+            #we always show date band 1
+            #date band 1
+            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                        FROM data \
+                                        WHERE data.taxon = "' + item[0] + '" \
+                                        AND data.year_to >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_from')))) + ' \
+                                        AND data.year_to < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_to')))) + ' \
+                                        AND data.year_from >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_from')))) + ' \
+                                        AND data.year_from < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_to')))))
 
-                date_band_1 = self.dataset.cursor.fetchall()
-                date_band_1_grids = []
+            date_band_1 = self.dataset.cursor.fetchall()
+            date_band_1_grids = []
 
-                #show 2 and 3, don't overlay 2 and 3
-                if self.date_band_2_show and self.date_band_3_show and not self.date_band_2_overlay and not self.date_band_3_overlay:
-                    for tup in date_band_1:
-                        if tup[0] not in date_band_3_grids and tup[0] not in date_band_2_grids:
-                            date_band_1_grids.append(tup[0])
+            #show 2 and 3, don't overlay 2 and 3
+            if self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] not in date_band_3_grids and tup[0] not in date_band_2_grids:
+                        date_band_1_grids.append(tup[0])
 
-                #show 2 and 3, overlay 2 not 3
-                elif self.date_band_2_show and self.date_band_3_show and self.date_band_2_overlay and not self.date_band_3_overlay:
-                    for tup in date_band_1:
-                        if tup[0] not in date_band_3_grids:
-                            date_band_1_grids.append(tup[0])
+            #show 2 and 3, overlay 2 not 3
+            elif self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and self.dataset.config.get('Atlas', 'date_band_2_overlay') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] not in date_band_3_grids:
+                        date_band_1_grids.append(tup[0])
 
-                #show 2 and 3, overlay 3 not 2
-                elif self.date_band_2_show and self.date_band_3_show and not self.date_band_2_overlay and self.date_band_3_overlay:
-                    for tup in date_band_1:
-                        if tup[0] not in date_band_2_grids:
-                            date_band_1_grids.append(tup[0])
+            #show 2 and 3, overlay 3 not 2
+            elif self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay') and self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] not in date_band_2_grids:
+                        date_band_1_grids.append(tup[0])
 
-                #show 2, don't overlay 2
-                elif self.date_band_2_show and not self.date_band_3_show and not self.date_band_2_overlay:
-                    for tup in date_band_1:
-                        if tup[0] and tup[0] not in date_band_2_grids:
-                            date_band_1_grids.append(tup[0])
+            #show 2, don't overlay 2
+            elif self.dataset.config.get('Atlas', 'date_band_2_visible') and not self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay'):
+                for tup in date_band_1:
+                    if tup[0] and tup[0] not in date_band_2_grids:
+                        date_band_1_grids.append(tup[0])
 
-                #show 3, don't overlay 3
-                elif not self.date_band_2_show and self.date_band_3_show and not self.date_band_3_overlay:
-                    for tup in date_band_1:
-                        if tup[0] and tup[0] not in date_band_3_grids:
-                            date_band_1_grids.append(tup[0])
+            #show 3, don't overlay 3
+            elif not self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] and tup[0] not in date_band_3_grids:
+                        date_band_1_grids.append(tup[0])
 
-                #else use all
-                else:
-                    for tup in date_band_1:
-                            date_band_1_grids.append(tup[0])
-
-
-
-            if self.date_band_1_show:
-                #print item[0], 'first', date_band_1_grids, 'second', date_band_2_grids
-                #loop through each object in the date band 1 grids
-                for obj in self.date_band_1_style_coverage:
-                    if obj.record[0] in date_band_1_grids:
-                        pixels = []
-                        #loop through each point in the object
-                        for x,y in obj.shape.points:
-                            px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                            py = (self.bounds_top_y - y) * self.scalefactor
-                            pixels.append((px,py))
-                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_1_fill_colour.red_float*255)) + ',' + str(int(self.date_band_1_fill_colour.green_float*255)) + ',' + str(int(self.date_band_1_fill_colour.blue_float*255)) + ')', outline='rgb(' + str(int(self.date_band_1_border_colour.red_float*255)) + ',' + str(int(self.date_band_1_border_colour.green_float*255)) + ',' + str(int(self.date_band_1_border_colour.blue_float*255)) + ')')
+            #else use all
+            else:
+                for tup in date_band_1:
+                        date_band_1_grids.append(tup[0])
 
 
-            if self.date_band_2_show:
+
+            #we always show date band 1
+            #loop through each object in the date band 1 grids
+            for obj in self.date_band_1_style_coverage:
+                if obj.record[0] in date_band_1_grids:
+                    pixels = []
+                    #loop through each point in the object
+                    for x,y in obj.shape.points:
+                        px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                        py = (self.bounds_top_y - y) * self.scalefactor
+                        pixels.append((px,py))
+                    current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).blue_float*255)) + ')')
+
+
+            if self.dataset.config.get('Atlas', 'date_band_2_visible'):
                 #loop through each object in the date band 2 grids
                 for obj in self.date_band_2_style_coverage:
                     #print item[0], obj.record[0]
@@ -3012,10 +2840,10 @@ class Atlas(gobject.GObject):
                             px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                             py = (self.bounds_top_y - y) * self.scalefactor
                             pixels.append((px,py))
-                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_2_fill_colour.red_float*255)) + ',' + str(int(self.date_band_2_fill_colour.green_float*255)) + ',' + str(int(self.date_band_2_fill_colour.blue_float*255)) + ')', outline='rgb(' + str(int(self.date_band_2_border_colour.red_float*255)) + ',' + str(int(self.date_band_2_border_colour.green_float*255)) + ',' + str(int(self.date_band_2_border_colour.blue_float*255)) + ')')
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).blue_float*255)) + ')')
 
 
-            if self.date_band_1_show:
+            if self.dataset.config.get('Atlas', 'date_band_3_visible'):
                 #loop through each object in the date band 3 grids
                 for obj in self.date_band_3_style_coverage:
                     #print item[0], obj.record[0]
@@ -3027,7 +2855,7 @@ class Atlas(gobject.GObject):
                             px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                             py = (self.bounds_top_y - y) * self.scalefactor
                             pixels.append((px,py))
-                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(self.date_band_3_fill_colour.red_float*255)) + ',' + str(int(self.date_band_3_fill_colour.green_float*255)) + ',' + str(int(self.date_band_3_fill_colour.blue_float*255)) + ')', outline='rgb(' + str(int(self.date_band_3_border_colour.red_float*255)) + ',' + str(int(self.date_band_3_border_colour.green_float*255)) + ',' + str(int(self.date_band_3_border_colour.blue_float*255)) + ')')
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
 
 
 
