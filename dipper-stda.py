@@ -58,6 +58,16 @@ markers = []
 for style in os.listdir('markers/'):
     markers.append(style)
 
+#grid resolution list
+grid_resolution = ['100km', '10km', '5km', '2km', '1km',]
+
+#paper sizes list
+paper_size = ['A4',]
+
+#paper orientation list
+paper_orientation = ['Portrait', 'Landscape',]
+                  
+
 #vice county list - number & filename
 vc_list = [[1, 'West Cornwall'],
          [2, 'East Cornwall'],
@@ -254,8 +264,10 @@ class Run():
 
 
         atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        atlas_orientation_liststore.append(['Portrait'])
-        atlas_orientation_liststore.append(['Landscape'])
+        
+        for i in range(len(paper_orientation)):
+            atlas_orientation_liststore.append([paper_orientation[i]])
+        
         atlas_orientation_combo = self.builder.get_object('combobox8')
         atlas_orientation_combo.set_model(atlas_orientation_liststore)
         cell = gtk.CellRendererText()
@@ -264,8 +276,10 @@ class Run():
 
 
         list_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        list_orientation_liststore.append(['Portrait'])
-        list_orientation_liststore.append(['Landscape'])
+        
+        for i in range(len(paper_orientation)):
+            list_orientation_liststore.append([paper_orientation[i]])
+            
         list_orientation_combo = self.builder.get_object('combobox9')
         list_orientation_combo.set_model(list_orientation_liststore)
         cell = gtk.CellRendererText()
@@ -274,7 +288,10 @@ class Run():
 
 
         atlas_page_size_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        atlas_page_size_liststore.append(['A4'])
+        
+        for i in range(len(paper_size)):
+            atlas_page_size_liststore.append([paper_size[i]])
+            
         atlas_page_size_combo = self.builder.get_object('combobox10')
         atlas_page_size_combo.set_model(atlas_page_size_liststore)
         cell = gtk.CellRendererText()
@@ -283,7 +300,10 @@ class Run():
 
 
         list_page_size_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        list_page_size_liststore.append(['A4'])
+        
+        for i in range(len(paper_size)):
+            list_page_size_liststore.append([paper_size[i]])
+            
         list_page_size_combo = self.builder.get_object('combobox11')
         list_page_size_combo.set_model(list_page_size_liststore)
         cell = gtk.CellRendererText()
@@ -292,11 +312,10 @@ class Run():
 
 
         atlas_mapping_level_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        atlas_mapping_level_liststore.append(['100km'])
-        atlas_mapping_level_liststore.append(['10km'])
-        atlas_mapping_level_liststore.append(['5km'])
-        atlas_mapping_level_liststore.append(['2km']) ## also change if else!!
-        atlas_mapping_level_liststore.append(['1km'])
+        
+        for i in range(len(grid_resolution)):
+            atlas_mapping_level_liststore.append([grid_resolution[i]])
+            
         atlas_mapping_level_combo = self.builder.get_object('combobox3')
         atlas_mapping_level_combo.set_model(atlas_mapping_level_liststore)
         cell = gtk.CellRendererText()
@@ -304,11 +323,10 @@ class Run():
         atlas_mapping_level_combo.add_attribute(cell, 'text',0)
 
         list_mapping_level_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        list_mapping_level_liststore.append(['100km'])
-        list_mapping_level_liststore.append(['10km'])
-        list_mapping_level_liststore.append(['5km'])
-        list_mapping_level_liststore.append(['2km']) ## also change if else!!
-        list_mapping_level_liststore.append(['1km'])
+        
+        for i in range(len(grid_resolution)):
+            list_mapping_level_liststore.append([grid_resolution[i]])
+            
         combo = self.builder.get_object('combobox5')
         combo.set_model(list_mapping_level_liststore)
         cell = gtk.CellRendererText()
@@ -360,11 +378,10 @@ class Run():
         combo.add_attribute(cell, 'text',0)
 
         grid_lines_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        grid_lines_liststore.append(['100km'])
-        grid_lines_liststore.append(['10km'])
-        grid_lines_liststore.append(['5km'])
-        grid_lines_liststore.append(['2km'])
-        grid_lines_liststore.append(['1km'])
+
+        for i in range(len(grid_resolution)):
+            grid_lines_liststore.append([grid_resolution[i]])
+            
         combo = self.builder.get_object('combobox1')
         combo.set_model(grid_lines_liststore)
         cell = gtk.CellRendererText()
@@ -510,129 +527,47 @@ class Run():
         self.dataset = Dataset(self, widget.get_filename())
 
         try:
-            self.builder.get_object('combobox8').set_active(0)
-            self.builder.get_object('combobox9').set_active(0)
-            self.builder.get_object('combobox10').set_active(1)
-            self.builder.get_object('combobox11').set_active(1)
 
-           # try:
             if self.dataset.data_source.read() == True:
+                    
                 self.builder.get_object('notebook1').set_sensitive(True)
+                    
+                #read in a config file if present
+                self.dataset.config.read([''.join([os.path.splitext(self.dataset.filename)[0], '.cfg'])])
 
-                self.builder.get_object('entry3').set_text(self.dataset.atlas_config['title'])
-                self.builder.get_object('entry2').set_text(self.dataset.atlas_config['author'])
+                ##set up the atlas gui based on config settings
+                
+                #title
+                self.builder.get_object('entry3').set_text(self.dataset.config.get('Atlas', 'title'))
+                
+                #author
+                self.builder.get_object('entry2').set_text(self.dataset.config.get('Atlas', 'author'))
 
-                if self.dataset.atlas_config['cover image'] is None:
+                #cover image
+                if self.dataset.config.get('Atlas', 'cover_image') == '':
                     self.unselect_image(self.builder.get_object('filechooserbutton1'))
                 else:
-                    self.builder.get_object('filechooserbutton1').set_filename(self.dataset.atlas_config['cover image'])
-                self.builder.get_object('textview1').get_buffer().set_text(self.dataset.atlas_config['inside cover'])
-                self.builder.get_object('textview3').get_buffer().set_text(self.dataset.atlas_config['introduction'])
+                    self.builder.get_object('filechooserbutton1').set_filename(self.dataset.config.get('Atlas', 'cover_image'))
+            
+                #inside cover
+                self.builder.get_object('textview1').get_buffer().set_text(self.dataset.config.get('Atlas', 'inside_cover'))
+                
+                #introduction
+                self.builder.get_object('textview3').get_buffer().set_text(self.dataset.config.get('Atlas', 'introduction'))
 
-                if self.dataset.atlas_config['resolution'] == '100km':
-                    val = 0
-                elif self.dataset.atlas_config['resolution'] == '10km':
-                    val = 1
-                elif self.dataset.atlas_config['resolution'] == '5km':
-                    val = 2
-                elif self.dataset.atlas_config['resolution'] == '2km':
-                    val = 3
-                elif self.dataset.atlas_config['resolution'] == '1km':
-                    val = 4
-                else:
-                    val = 3
-
-                self.builder.get_object('combobox3').set_active(val)
-
-                #set the coverage style from config - if it fails, deactivate coverage
-                try:
-                    self.builder.get_object('checkbutton1').set_active(True)
-                    self.builder.get_object('combobox6').set_active(markers.index(self.dataset.atlas_config['coverage']))
-                    self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['coverage colour']))
-                except ValueError:
-                    self.builder.get_object('checkbutton1').set_active(False)
-
-                #set the date band 1 style from config - if it fails, deactivate coverage
-                try:
-                    self.builder.get_object('combobox2').set_active(markers.index(self.dataset.atlas_config['date band 1']))
-                    self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 1 colour']))
-                    self.builder.get_object('spinbutton3').set_value(self.dataset.atlas_config['date band 1 from'])
-                    self.builder.get_object('spinbutton4').set_value(self.dataset.atlas_config['date band 1 to'])
-                except ValueError:
-                    pass
-
-                #set the date band 2 style from config - if it fails, deactivate coverage
-                try:
-                    self.builder.get_object('checkbutton4').set_active(True)
-                    self.builder.get_object('combobox4').set_active(markers.index(self.dataset.atlas_config['date band 2']))
-                    self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 2 colour']))
-                    self.builder.get_object('spinbutton1').set_value(self.dataset.atlas_config['date band 2 from'])
-                    self.builder.get_object('spinbutton2').set_value(self.dataset.atlas_config['date band 2 to'])
-                except ValueError:
-                    self.builder.get_object('checkbutton4').set_active(False)
-
-                #set the date band 3 style from config - if it fails, deactivate coverage
-                try:
-                    self.builder.get_object('checkbutton5').set_active(True)
-                    self.builder.get_object('combobox7').set_active(markers.index(self.dataset.atlas_config['date band 3']))
-                    self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['date band 3 colour']))
-                    self.builder.get_object('spinbutton5').set_value(self.dataset.atlas_config['date band 3 from'])
-                    self.builder.get_object('spinbutton6').set_value(self.dataset.atlas_config['date band 3 to'])
-                except ValueError:
-                    self.builder.get_object('checkbutton5').set_active(False)
-
-                #set the vc colour from config
-                self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['vcs colour']))
-
-                #grid lines
-                self.builder.get_object('checkbutton2').set_active(True)
-                if self.dataset.atlas_config['grid lines'] == '100km':
-                    val = 0
-                elif self.dataset.atlas_config['grid lines'] == '10km':
-                    val = 1
-                elif self.dataset.atlas_config['grid lines'] == '5km':
-                    val = 2
-                elif self.dataset.atlas_config['grid lines'] == '2km':
-                    val = 3
-                elif self.dataset.atlas_config['grid lines'] == '1km':
-                    val = 4
-                else:
-                    self.builder.get_object('checkbutton2').set_active(False)
-                    val = 3
-
-                self.builder.get_object('combobox1').set_active(val)
-
-                self.builder.get_object('colorbutton1').set_color(gtk.gdk.color_parse(self.dataset.atlas_config['grid lines colour']))
-
-                #load vc config
-                #atlas
-                selection = self.builder.get_object('treeview1').get_selection()
-
-                selection.unselect_all()
-                self.builder.get_object('treeview1').scroll_to_point(0,0)
-                try:
-                    for vc in self.dataset.atlas_config['vcs'].split(','):
-                        selection.select_path(int(float(vc))-1)
-                    self.builder.get_object('treeview1').scroll_to_cell(int(float(self.dataset.atlas_config['vcs'].split(',')[0]))-1)
-                except ValueError:
-                    pass
-
-                #load vc config
-                #list
-                selection = self.builder.get_object('treeview4').get_selection()
-
-                selection.unselect_all()
-                self.builder.get_object('treeview4').scroll_to_point(0,0)
-
-                try:
-                    for vc in self.dataset.list_config['vcs'].split(','):
-                        selection.select_path(int(float(vc))-1)
-                    self.builder.get_object('treeview4').scroll_to_cell(int(float(self.dataset.list_config['vcs'].split(',')[0]))-1)
-                except ValueError:
-                     pass
-
-                #load family config
-                #atlas
+                #distribution unit                                               
+                self.builder.get_object('combobox3').set_active(grid_resolution.index(self.dataset.config.get('Atlas', 'distribution_unit')))
+                
+                #grid line style
+                self.builder.get_object('combobox1').set_active(grid_resolution.index(self.dataset.config.get('Atlas', 'grid_lines_style')))
+                
+                #grid line colour
+                self.builder.get_object('colorbutton1').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')))
+                
+                #grid line visible
+                self.builder.get_object('checkbutton2').set_active(self.dataset.config.getboolean('Atlas', 'grid_lines_visible'))
+    
+                #families
                 store = gtk.ListStore(str)
                 self.builder.get_object('treeview2').set_model(store)
                 selection = self.builder.get_object('treeview2').get_selection()
@@ -642,7 +577,7 @@ class Run():
                 for family in self.dataset.families:
                     iter = store.append([family])
 
-                    if family.strip().lower() in ''.join(self.dataset.atlas_config['families'].split()).lower().split(','):
+                    if family.strip().lower() in ''.join(self.dataset.config.get('Atlas', 'families').split()).lower().split(','):
                         selection.select_path(store.get_path((iter)))
 
                 model, selected = selection.get_selected_rows()
@@ -650,8 +585,113 @@ class Run():
                     self.builder.get_object('treeview2').scroll_to_cell(selected[0])
                 except IndexError:
                     pass
+                    
+                #vcs
+                selection = self.builder.get_object('treeview1').get_selection()
 
-                #list
+                selection.unselect_all()
+                self.builder.get_object('treeview1').scroll_to_point(0,0)
+                try:
+                    for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
+                        selection.select_path(int(float(vc))-1)
+                    self.builder.get_object('treeview1').scroll_to_cell(int(float(self.dataset.config.get('Atlas', 'vice-counties').split(',')[0]))-1)
+                except ValueError:
+                    pass
+
+                #paper size
+                self.builder.get_object('combobox10').set_active(paper_size.index(self.dataset.config.get('Atlas', 'paper_size')))
+
+                #paper orientation
+                self.builder.get_object('combobox8').set_active(paper_orientation.index(self.dataset.config.get('Atlas', 'orientation')))
+                
+                #vice county colour
+                self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')))
+                
+                #coverage style
+                self.builder.get_object('combobox6').set_active(markers.index(self.dataset.config.get('Atlas', 'coverage_style')))
+                
+                #coverage colour
+                self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')))
+                
+                #coverage visible
+                self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))                
+                                
+                #date band 1 style
+                self.builder.get_object('combobox2').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_1_style')))
+                
+                #date band 1 from
+                self.builder.get_object('spinbutton3').set_value(self.dataset.config.getfloat('Atlas', 'date_band_1_from'))
+                
+                #date band 1 to
+                self.builder.get_object('spinbutton4').set_value(self.dataset.config.getfloat('Atlas', 'date_band_1_to'))       
+                
+                #date band 1 fill
+                self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')))
+                
+                #date band 1 outline
+                self.builder.get_object('colorbutton7').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')))    
+
+                #date band 2 visible
+                self.builder.get_object('checkbutton4').set_active(self.dataset.config.getboolean('Atlas', 'date_band_2_visible'))
+                                
+                #date band 2 style
+                self.builder.get_object('combobox4').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_2_style')))
+                
+                #date band 2 from
+                self.builder.get_object('spinbutton1').set_value(self.dataset.config.getfloat('Atlas', 'date_band_2_from'))
+                
+                #date band 2 to
+                self.builder.get_object('spinbutton2').set_value(self.dataset.config.getfloat('Atlas', 'date_band_2_to'))
+                
+                #date band 2 fill
+                self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')))
+                
+                #date band 2 outline
+                self.builder.get_object('colorbutton8').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')))
+
+                #date band 3 visible
+                self.builder.get_object('checkbutton5').set_active(self.dataset.config.getboolean('Atlas', 'date_band_3_visible'))
+                                
+                #date band 3 style
+                self.builder.get_object('combobox7').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_3_style')))
+                
+                #date band 3 from
+                self.builder.get_object('spinbutton5').set_value(self.dataset.config.getfloat('Atlas', 'date_band_3_from'))
+                
+                #date band 3 to
+                self.builder.get_object('spinbutton6').set_value(self.dataset.config.getfloat('Atlas', 'date_band_3_to'))
+                
+                #date band 3 fill
+                self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')))
+                
+                #date band 3 outline
+                self.builder.get_object('colorbutton9').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')))
+                                
+                
+                ##set up the list gui based on config settings
+                
+                #title
+                self.builder.get_object('entry4').set_text(self.dataset.config.get('List', 'title'))
+                
+                #author
+                self.builder.get_object('entry1').set_text(self.dataset.config.get('List', 'author'))
+
+                #cover image
+                if self.dataset.config.get('Atlas', 'cover_image') == '':
+                    self.unselect_image(self.builder.get_object('filechooserbutton5'))
+                else:
+                    self.builder.get_object('filechooserbutton5').set_filename(self.dataset.config.get('List', 'cover_image'))
+            
+                #inside cover
+                self.builder.get_object('textview4').get_buffer().set_text(self.dataset.config.get('List', 'inside_cover'))
+                
+                #introduction
+                self.builder.get_object('textview6').get_buffer().set_text(self.dataset.config.get('List', 'introduction'))
+
+                #distribution unit                                               
+                self.builder.get_object('combobox5').set_active(grid_resolution.index(self.dataset.config.get('List', 'distribution_unit')))
+
+                #families
                 store = gtk.ListStore(str)
                 self.builder.get_object('treeview3').set_model(store)
                 selection = self.builder.get_object('treeview3').get_selection()
@@ -661,7 +701,7 @@ class Run():
                 for family in self.dataset.families:
                     iter = store.append([family])
 
-                    if family.strip().lower() in ''.join(self.dataset.list_config['families'].split()).lower().split(','):
+                    if family.strip().lower() in ''.join(self.dataset.config.get('List', 'families').split()).lower().split(','):
                         selection.select_path(store.get_path((iter)))
 
                 model, selected = selection.get_selected_rows()
@@ -669,70 +709,24 @@ class Run():
                     self.builder.get_object('treeview3').scroll_to_cell(selected[0])
                 except IndexError:
                     pass
+                    
+                #vcs
+                selection = self.builder.get_object('treeview4').get_selection()
 
+                selection.unselect_all()
+                self.builder.get_object('treeview4').scroll_to_point(0,0)
+                try:
+                    for vc in self.dataset.config.get('List', 'vice-counties'):
+                        selection.select_path(int(float(vc))-1)
+                    self.builder.get_object('treeview4').scroll_to_cell(int(float(self.dataset.config.get('List', 'vice-counties').split(',')[0]))-1)
+                except ValueError:
+                    pass
 
+                #paper size
+                self.builder.get_object('combobox11').set_active(paper_size.index(self.dataset.config.get('List', 'paper_size')))
 
-                if self.dataset.atlas_config['paper size'] == 'A4':
-                    val = 0
-                else:
-                    val = 0
-
-                self.builder.get_object('combobox10').set_active(val)
-
-
-                if self.dataset.atlas_config['orientation'] == 'Portrait':
-                    val = 0
-                elif self.dataset.atlas_config['orientation'] == 'Landscape':
-                    val = 1
-                else:
-                    val = 0
-
-                self.builder.get_object('combobox8').set_active(val)
-
-                #begin list config
-                self.builder.get_object('entry4').set_text(self.dataset.list_config['title'])
-                self.builder.get_object('entry1').set_text(self.dataset.list_config['author'])
-
-                if self.dataset.list_config['cover image'] is None:
-                    self.unselect_image(self.builder.get_object('filechooserbutton5'))
-                else:
-                    self.builder.get_object('filechooserbutton5').set_filename(self.dataset.list_config['cover image'])
-
-                self.builder.get_object('textview4').get_buffer().set_text(self.dataset.list_config['inside cover'])
-                self.builder.get_object('textview6').get_buffer().set_text(self.dataset.list_config['introduction'])
-
-                if self.dataset.list_config['resolution'] == '100km':
-                    val = 0
-                elif self.dataset.list_config['resolution'] == '10km':
-                    val = 1
-                elif self.dataset.list_config['resolution'] == '5km':
-                    val = 2
-                elif self.dataset.list_config['resolution'] == '2km':
-                    val = 3
-                elif self.dataset.list_config['resolution'] == '1km':
-                    val = 4
-                else:
-                    val = 3
-
-                self.builder.get_object('combobox5').set_active(val)
-
-
-                if self.dataset.list_config['paper size'] == 'A4':
-                    val = 0
-                else:
-                    val = 1
-
-                self.builder.get_object('combobox11').set_active(val)
-
-
-                if self.dataset.list_config['orientation'] == 'Portrait':
-                    val = 0
-                elif self.dataset.list_config['orientation'] == 'Landscape':
-                    val = 1
-                else:
-                    val = 0
-
-                self.builder.get_object('combobox9').set_active(val)
+                #paper orientation
+                self.builder.get_object('combobox9').set_active(paper_orientation.index(self.dataset.config.get('List', 'orientation')))
 
                 self.builder.get_object('button3').set_sensitive(True)
             else:
@@ -745,8 +739,6 @@ class Run():
             md.run()
             md.destroy()
 
-       # except AttributeError:
-       #     print "failed"
 
     def quit(self, widget, third=None):
         """Quit."""
@@ -768,19 +760,11 @@ class Run():
             dialog.set_default_response(gtk.RESPONSE_OK)
 
             if notebook.get_current_page() == 0:
-                if self.dataset.atlas_config['save as'] == '':
-                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                    dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_atlas.pdf']))
-                else:
-                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.atlas_config['save as'])))
-                    dialog.set_current_name(self.dataset.atlas_config['save as'])
+                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_atlas.pdf']))
             elif notebook.get_current_page() == 1:
-                if self.dataset.list_config['save as'] == '':
-                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                    dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_checklist.pdf']))
-                else:
-                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.list_config['save as'])))
-                    dialog.set_current_name(self.dataset.list_config['save as'])
+                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_checklist.pdf']))
 
             response = dialog.run()
 
@@ -802,59 +786,9 @@ class Run():
                 #do the atlas
                 if notebook.get_current_page() == 0:
 
-                    coverage_colour = self.builder.get_object('colorbutton4').get_color()
-                    grid_colour = self.builder.get_object('colorbutton1').get_color()
-                    date_band_1_fill_colour = self.builder.get_object('colorbutton2').get_color()
-                    date_band_2_fill_colour = self.builder.get_object('colorbutton3').get_color()
-                    date_band_3_fill_colour = self.builder.get_object('colorbutton6').get_color()
-                    date_band_1_border_colour = self.builder.get_object('colorbutton7').get_color()
-                    date_band_2_border_colour = self.builder.get_object('colorbutton8').get_color()
-                    date_band_3_border_colour = self.builder.get_object('colorbutton9').get_color()
-                    boundary_colour = self.builder.get_object('colorbutton5').get_color()
-
-                    date_band_1_from = self.builder.get_object('spinbutton3').get_value()
-                    date_band_1_to = self.builder.get_object('spinbutton4').get_value()
-                    date_band_2_from = self.builder.get_object('spinbutton1').get_value()
-                    date_band_2_to = self.builder.get_object('spinbutton2').get_value()
-                    date_band_3_from = self.builder.get_object('spinbutton5').get_value()
-                    date_band_3_to = self.builder.get_object('spinbutton6').get_value()
-
-
-                    grid_lines = self.builder.get_object('combobox1').get_active()
-
-                    if grid_lines == 0:
-                        grid_lines = '100km'
-                    elif grid_lines == 1:
-                        grid_lines = '10km'
-                    elif grid_lines == 2:
-                        grid_lines = '5km'
-                    elif grid_lines == 3:
-                        grid_lines = '2km'
-                    elif grid_lines == 4:
-                        grid_lines = '1km'
-
-                    date_band_1_style = self.builder.get_object('combobox2').get_active_text()
-                    date_band_2_style = self.builder.get_object('combobox4').get_active_text()
-                    date_band_3_style = self.builder.get_object('combobox7').get_active_text()
-
-                    coverage_style = self.builder.get_object('combobox6').get_active_text()
-
-                    orientation = self.builder.get_object('combobox8').get_active()
-
-                    if orientation == 0:
-                        orientation = 'P'
-                    elif orientation == 1:
-                        orientation = 'L'
-
-                    size = self.builder.get_object('combobox10').get_active()
-
-                    if size == 0:
-                        size = 'A4'
-
                     atlas = Atlas(self.dataset)
                     atlas.set_save_in(output)
 
-                    atlas.set_title(config.get('Atlas', 'title'))
                     atlas.set_author(config.get('Atlas', 'author'))
                     atlas.set_cover_image(config.get('Atlas', 'cover_image'))
                     atlas.set_inside_cover(config.get('Atlas', 'inside_cover'))
@@ -866,6 +800,7 @@ class Run():
                     atlas.set_grid_lines_show(config.getboolean('Atlas', 'grid_lines_visible'))
                     atlas.set_grid_colour(config.get('Atlas', 'grid_lines_colour'))
                     atlas.set_grid_lines(config.get('Atlas', 'grid_lines_style'))
+                    atlas.set_boundary_colour(config.get('Atlas', 'vice-counties_colour'))
 
                     atlas.set_date_band_1_style(config.get('Atlas', 'date_band_1_style'))
                     atlas.set_date_band_1_fill_colour(config.get('Atlas', 'date_band_1_fill'))
@@ -894,7 +829,6 @@ class Run():
                     #convert to config.get
                     
                     atlas.set_vcs(self.builder.get_object('treeview1'))
-                    atlas.set_boundary_colour(boundary_colour)
                     atlas.set_families(self.builder.get_object('treeview2'))
                     atlas.generate_base_map()
                     atlas.generate_density_map()
@@ -902,57 +836,18 @@ class Run():
 
                 elif notebook.get_current_page() == 1:
 
-                    title = self.builder.get_object('entry4').get_text()
-
-                    author = self.builder.get_object('entry1').get_text()
-                    cover_image = self.builder.get_object('filechooserbutton5').get_filename()
-                    print cover_image
-                    buffer = self.builder.get_object('textview4').get_buffer()
-                    startiter, enditer = buffer.get_bounds()
-                    inside_cover = buffer.get_text(startiter, enditer, True)
-
-                    buffer = self.builder.get_object('textview6').get_buffer()
-                    startiter, enditer = buffer.get_bounds()
-                    introduction = buffer.get_text(startiter, enditer, True)
-
-                    dist_unit = self.builder.get_object('combobox5').get_active()
-
-                    if dist_unit == 0:
-                        dist_unit = '100km'
-                    elif dist_unit == 1:
-                        dist_unit = '10km'
-                    elif dist_unit == 2:
-                        dist_unit = '5km'
-                    elif dist_unit == 3:
-                        dist_unit = '2km'
-                    elif dist_unit == 4:
-                        dist_unit = '1km'
-
-                    orientation = self.builder.get_object('combobox9').get_active()
-
-                    if orientation == 0:
-                        orientation = 'P'
-                    elif orientation == 1:
-                        orientation = 'L'
-
-                    size = self.builder.get_object('combobox11').get_active()
-
-                    if size == 0:
-                        size = 'A4'
-
                     listing = List(self.dataset)
 
-                    listing.set_title(title)
-                    listing.set_author(author)
-                    listing.set_cover_image(cover_image)
-                    listing.set_inside_cover(inside_cover)
-                    listing.set_introduction(introduction)
-                    listing.set_distribution_unit(dist_unit)
+                    listing.set_author(config.get('List', 'author'))
+                    listing.set_cover_image(config.get('List', 'cover_image'))
+                    listing.set_inside_cover(config.get('List', 'inside_cover'))
+                    listing.set_introduction(config.get('List', 'introduction'))
+                    listing.set_distribution_unit(config.get('List', 'distribution_unit'))
                     listing.set_save_in(output)
                     listing.set_vcs(self.builder.get_object('treeview4'))
                     listing.set_families(self.builder.get_object('treeview3'))
-                    listing.set_page_orientation(orientation)
-                    listing.set_page_size(size)
+                    listing.set_page_orientation(config.get('List', 'orientation'))
+                    listing.set_page_size(config.get('List', 'paper_size'))
                     listing.generate()
 
             vbox.set_sensitive(True)
@@ -1007,6 +902,7 @@ class Run():
             vcs = ','.join([vcs, model.get_value(iter, 0)])
 
         config.set('Atlas', 'vice-counties', vcs[1:])
+        config.set('Atlas', 'vice-counties_colour', str(self.builder.get_object('colorbutton5').get_color()))
 
         #date band 1
         config.set('Atlas', 'date_band_1_style', self.builder.get_object('combobox2').get_active_text())
@@ -1045,7 +941,7 @@ class Run():
 
         #page setup
         config.set('Atlas', 'paper_size', self.builder.get_object('combobox10').get_active_text())
-        config.set('Atlas', 'orientation', self.builder.get_object('combobox8').get_active_text()[0:1])
+        config.set('Atlas', 'orientation', self.builder.get_object('combobox8').get_active_text())
 
         #table of contents
         config.set('Atlas', 'toc_show_families', str(self.builder.get_object('checkbutton6').get_active()))
@@ -1089,7 +985,7 @@ class Run():
 
         #page setup
         config.set('List', 'paper_size', self.builder.get_object('combobox11').get_active_text())
-        config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text()[0:1])
+        config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text())
 
         #write the config file
         with open(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']), 'wb') as configfile:
@@ -1178,6 +1074,57 @@ class Dataset(gobject.GObject):
             self.cursor.execute('CREATE INDEX index_sp_taxon \
                                  ON species_data (taxon)')
 
+
+            #initiate config with defaults
+            self.config = ConfigParser.ConfigParser({'title': '',
+                                                             'author': '',
+                                                             'cover_image': '',
+                                                             'inside_cover': '',
+                                                             'introduction': '',
+                                                             'distribution_unit': '2km',
+                                                             'families': '',
+                                                             'vice-counties': '',
+                                                             'vice-counties_colour': '#000',
+                                                             'date_band_1_style': 'squares',
+                                                             'date_band_1_fill': '#000',
+                                                             'date_band_1_outline': '#000',
+                                                             'date_band_1_from': '1600.0',
+                                                             'date_band_1_to': '1980.0',
+                                                             'date_band_2_visible': 'True',
+                                                             'date_band_2_style': 'squares',
+                                                             'date_band_2_overlay': 'False',
+                                                             'date_band_2_fill': '#000',
+                                                             'date_band_2_outline': '#000',
+                                                             'date_band_2_from': '1980.0',
+                                                             'date_band_2_to': '2050.0',
+                                                             'date_band_3_visible': 'False',
+                                                             'date_band_3_style': 'squares',
+                                                             'date_band_3_overlay': 'False',
+                                                             'date_band_3_fill': '#000',
+                                                             'date_band_3_outline': '#000',
+                                                             'date_band_3_from': '0.0',
+                                                             'date_band_3_to': '0.0',
+                                                             'coverage_visible': 'True',
+                                                             'coverage_style': '2km',
+                                                             'coverage_colour': '#d2d2d2',
+                                                             'grid_lines_visible': 'True',
+                                                             'grid_lines_style': '2km',
+                                                             'grid_lines_colour': '#d2d2d2',
+                                                             'paper_size': 'A4',
+                                                             'orientation': 'Portrait',
+                                                             'toc_show_families': 'True',
+                                                             'toc_show_species_names': 'False',
+                                                             'toc_show_common_names': 'False',
+                                                             'species_accounts_show_descriptions': 'True',
+                                                             'species_accounts_show_latest': 'True',
+                                                             'species_accounts_show_statistics': 'True',
+                                                             'species_accounts_show_status': 'True',
+                                                             'species_accounts_show_phenology': 'True',
+                                                            })
+                                                
+            self.config.add_section('Atlas')
+            self.config.add_section('List')
+
         #guess the mimetype of the file
         self.mime = mimetypes.guess_type(self.filename)[0]
 
@@ -1214,50 +1161,8 @@ class Read(gobject.GObject):
 
         self.filename = filename
         self.dataset = dataset
-
         self.cancel_reading = False
 
-        #defaults
-        self.dataset.atlas_config['title'] = ''
-        self.dataset.atlas_config['author'] = ''
-        self.dataset.atlas_config['cover image'] = None
-        self.dataset.atlas_config['inside cover'] = ''
-        self.dataset.atlas_config['introduction'] = ''
-        self.dataset.atlas_config['resolution'] = '2km'
-        self.dataset.atlas_config['coverage'] = ''
-        self.dataset.atlas_config['coverage colour'] = '#8F8F8F'
-        self.dataset.atlas_config['date band 1'] = ''
-        self.dataset.atlas_config['date band 1 colour'] = '#000000'
-        self.dataset.atlas_config['date band 1 from'] = 1650
-        self.dataset.atlas_config['date band 1 to'] = 1980
-        self.dataset.atlas_config['date band 2'] = ''
-        self.dataset.atlas_config['date band 2 colour'] = '#000000'
-        self.dataset.atlas_config['date band 2 from'] = 1980
-        self.dataset.atlas_config['date band 2 to'] = 2050
-        self.dataset.atlas_config['date band 3'] = ''
-        self.dataset.atlas_config['date band 3 colour'] = '#000000'
-        self.dataset.atlas_config['date band 3 from'] = 2050
-        self.dataset.atlas_config['date band 3 to'] = 2050
-        self.dataset.atlas_config['vcs'] = ''
-        self.dataset.atlas_config['vcs colour'] = '#000000'
-        self.dataset.atlas_config['grid lines'] = ''
-        self.dataset.atlas_config['grid lines colour'] = '#8F8F8F'
-        self.dataset.atlas_config['families'] = ''
-        self.dataset.atlas_config['save as'] = ''
-        self.dataset.atlas_config['paper size'] = 'A4'
-        self.dataset.atlas_config['orientation'] = 'Portrait'
-
-        self.dataset.list_config['title'] = ''
-        self.dataset.list_config['author'] = ''
-        self.dataset.list_config['cover image'] = None
-        self.dataset.list_config['inside cover'] = ''
-        self.dataset.list_config['introduction'] = ''
-        self.dataset.list_config['resolution'] = '2km'
-        self.dataset.list_config['vcs'] = ''
-        self.dataset.list_config['families'] = ''
-        self.dataset.list_config['save as'] = ''
-        self.dataset.list_config['paper size'] = 'A4'
-        self.dataset.list_config['orientation'] = 'Portrait'
 
     def read(self):
         '''Read the file and insert the data into the sqlite database.'''
@@ -1411,93 +1316,6 @@ class Read(gobject.GObject):
             ########### we need to run the 'distinct species' SQL first, then loop through species data -
             ########### if species data sheet is only partially filled, any taxa not covered are ignored
             #######################################################################################
-
-            #load the config sheet
-            if has_config:
-                sheet = book.sheet_by_name('--config--')
-
-                try:
-                    if len(sheet.cell(0, 1).value) > 0:
-                        self.dataset.atlas_config['title'] = sheet.cell(0, 1).value
-                    if len(sheet.cell(1, 1).value) > 0:
-                        self.dataset.atlas_config['author'] = sheet.cell(1, 1).value
-                    if len(sheet.cell(2, 1).value) > 0:
-                        self.dataset.atlas_config['cover image'] = sheet.cell(2, 1).value
-                    if len(sheet.cell(3, 1).value) > 0:
-                        self.dataset.atlas_config['inside cover'] = sheet.cell(3, 1).value
-                    if len(sheet.cell(4, 1).value) > 0:
-                        self.dataset.atlas_config['introduction'] = sheet.cell(4, 1).value
-                    if len(sheet.cell(5, 1).value) > 0:
-                        self.dataset.atlas_config['resolution'] = sheet.cell(5, 1).value
-                    if len(sheet.cell(6, 1).value) > 0:
-                        self.dataset.atlas_config['coverage'] = sheet.cell(6, 1).value
-                    if len(sheet.cell(6, 2).value) > 0:
-                        self.dataset.atlas_config['coverage colour'] = sheet.cell(6, 2).value
-                    if len(sheet.cell(7, 1).value) > 0:
-                        self.dataset.atlas_config['date band 1'] = sheet.cell(7, 1).value
-                    if len(sheet.cell(7, 2).value) > 0:
-                        self.dataset.atlas_config['date band 1 colour'] = sheet.cell(7, 2).value
-                    if len(str(sheet.cell(7, 3).value)) > 0:
-                        self.dataset.atlas_config['date band 1 from'] = float(sheet.cell(7, 3).value)
-                    if len(str(sheet.cell(7, 4).value)) > 0:
-                        self.dataset.atlas_config['date band 1 to'] = float(sheet.cell(7, 4).value)
-                    if len(sheet.cell(8, 1).value) > 0:
-                        self.dataset.atlas_config['date band 2'] = sheet.cell(8, 1).value
-                    if len(sheet.cell(8, 2).value) > 0:
-                        self.dataset.atlas_config['date band 2 colour'] = sheet.cell(8, 2).value
-                    if len(str(sheet.cell(8, 3).value)) > 0:
-                        self.dataset.atlas_config['date band 2 from'] = float(sheet.cell(8, 3).value)
-                    if len(str(sheet.cell(8, 4).value)) > 0:
-                        self.dataset.atlas_config['date band 2 to'] = float(sheet.cell(8, 4).value)
-                    if len(sheet.cell(9, 1).value) > 0:
-                        self.dataset.atlas_config['date band 3'] = sheet.cell(9, 1).value
-                    if len(sheet.cell(9, 2).value) > 0:
-                        self.dataset.atlas_config['date band 3 colour'] = sheet.cell(9, 2).value
-                    if len(str(sheet.cell(9, 3).value)) > 0:
-                        self.dataset.atlas_config['date band 3 from'] = float(sheet.cell(9, 3).value)
-                    if len(str(sheet.cell(9, 4).value)) > 0:
-                        self.dataset.atlas_config['date band 3 to'] = float(sheet.cell(9, 4).value)
-                    if len(str(sheet.cell(10, 1).value)) > 0:
-                        self.dataset.atlas_config['vcs'] = str(sheet.cell(10, 1).value)
-                    if len(sheet.cell(10, 2).value) > 0:
-                        self.dataset.atlas_config['vcs colour'] = sheet.cell(10, 2).value
-                    if len(sheet.cell(11, 1).value) > 0:
-                        self.dataset.atlas_config['grid lines'] = sheet.cell(11, 1).value
-                    if len(sheet.cell(11, 2).value) > 0:
-                        self.dataset.atlas_config['grid lines colour'] = sheet.cell(11, 2).value
-                    if len(sheet.cell(12, 1).value) > 0:
-                        self.dataset.atlas_config['families'] = sheet.cell(12, 1).value
-                    if len(sheet.cell(13, 1).value) > 0:
-                        self.dataset.atlas_config['save as'] = sheet.cell(13, 1).value
-                    if len(sheet.cell(14, 1).value) > 0:
-                        self.dataset.atlas_config['paper size'] = sheet.cell(14, 1).value
-                    if len(sheet.cell(15, 1).value) > 0:
-                        self.dataset.atlas_config['orientation'] = sheet.cell(15, 1).value
-
-                    if len(sheet.cell(16, 1).value) > 0:
-                        self.dataset.list_config['title'] = sheet.cell(16, 1).value
-                    if len(sheet.cell(17, 1).value) > 0:
-                        self.dataset.list_config['author'] = sheet.cell(17, 1).value
-                    if len(sheet.cell(18, 1).value) > 0:
-                        self.dataset.list_config['cover image'] = sheet.cell(18, 1).value
-                    if len(sheet.cell(19, 1).value) > 0:
-                        self.dataset.list_config['inside cover'] = sheet.cell(19, 1).value
-                    if len(sheet.cell(20, 1).value) > 0:
-                        self.dataset.list_config['introduction'] = sheet.cell(20, 1).value
-                    if len(sheet.cell(21, 1).value) > 0:
-                        self.dataset.list_config['resolution'] = sheet.cell(21, 1).value
-                    if len(str(sheet.cell(22, 1).value)) > 0:
-                        self.dataset.list_config['vcs'] = str(sheet.cell(22, 1).value)
-                    if len(sheet.cell(23, 1).value) > 0:
-                        self.dataset.list_config['families'] = sheet.cell(23, 1).value
-                    if len(sheet.cell(24, 1).value) > 0:
-                        self.dataset.list_config['save as'] = sheet.cell(24, 1).value
-                    if len(sheet.cell(25, 1).value) > 0:
-                        self.dataset.list_config['paper size'] = sheet.cell(25, 1).value
-                    if len(sheet.cell(26, 1).value) > 0:
-                        self.dataset.list_config['orientation'] = sheet.cell(26, 1).value
-                except IndexError:
-                    pass
 
             #load the data sheet
             if has_data:
@@ -1869,7 +1687,6 @@ class List(gobject.GObject):
         self.dataset = dataset
         self.cancel = False
         self.start_time = time.time()
-        self.title = None
         self.page_size = 'A4'
         self.page_unit = 'mm'
         self.page_orientation = 'P'
@@ -1922,10 +1739,6 @@ class List(gobject.GObject):
 
         if len(iters) > 0:
             self.families = ''.join([joiner, ' species_data.family IN (', sql[1:], ') '])
-
-
-    def set_title(self, title):
-        self.title = title
 
     def set_author(self, author):
         self.author = author
@@ -2003,7 +1816,7 @@ class List(gobject.GObject):
 
         pdf.col = 0
         pdf.y0 = 0
-        pdf.set_title(self.title)
+        pdf.set_title(self.dataset.config.get('List', 'title'))
         pdf.set_author(self.author)
         pdf.section = ''
 
@@ -2234,7 +2047,6 @@ class Atlas(gobject.GObject):
         self.dataset = dataset
         self.cancel = False
         self.start_time = time.time()
-        self.title = None
         self.author = None
         self.cover_image = None
         self.inside_cover = None
@@ -2297,8 +2109,7 @@ class Atlas(gobject.GObject):
             self.families = ''.join([' WHERE species_data.family IN (', sql[1:], ') '])
 
     def set_boundary_colour(self, colour):
-        #self.boundary_colour = gtk.gdk.color_parse(colour)
-        self.boundary_colour = colour
+        self.boundary_colour = gtk.gdk.color_parse(colour)
 
     def set_coverage_colour(self, colour):
         self.coverage_colour = gtk.gdk.color_parse(colour)
@@ -2712,9 +2523,6 @@ class Atlas(gobject.GObject):
                 self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(self.boundary_colour.red_float*255)) + ',' + str(int(self.boundary_colour.green_float*255)) + ',' + str(int(self.boundary_colour.blue_float*255)) + ')')
 
 
-    def set_title(self, title):
-        self.title = title
-
     def set_author(self, author):
         self.author = author
 
@@ -2880,7 +2688,7 @@ class Atlas(gobject.GObject):
 
         pdf.col = 0
         pdf.y0 = 0
-        pdf.set_title(self.title)
+        pdf.set_title(self.dataset.config.get('Atlas', 'title'))
         pdf.set_author(self.author)
         pdf.section = ''
 
@@ -2923,7 +2731,7 @@ class Atlas(gobject.GObject):
 
             width, height = im.size
 
-            if self.page_orientation == 'P':
+            if self.page_orientation[0:1] == 'P':
                 scalefactor = (pdf.w-pdf.l_margin-pdf.r_margin)/width
                 target_width = width*scalefactor
                 target_height = height*scalefactor
@@ -2934,7 +2742,7 @@ class Atlas(gobject.GObject):
                 scalefactor = target_height/height
                 target_width = width*scalefactor
 
-            elif self.page_orientation == 'L':
+            elif self.page_orientation[0:1] == 'L':
                 scalefactor = (pdf.h-40-30)/height
                 target_width = width*scalefactor
                 target_height = height*scalefactor
