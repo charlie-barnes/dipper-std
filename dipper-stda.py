@@ -776,8 +776,9 @@ class Run():
             self.builder.get_object('dialog1').window.set_cursor(watch)
 
             if response == gtk.RESPONSE_OK:
-
-                config = self.create_config()
+                print self.dataset.config.get('Atlas', 'title')
+                config = self.update_config()
+                print self.dataset.config.get('Atlas', 'title')
 
                 #add the extension if it's missing
                 if output[-4:] != '.pdf':
@@ -789,42 +790,43 @@ class Run():
                     atlas = Atlas(self.dataset)
                     atlas.set_save_in(output)
 
-                    atlas.set_author(config.get('Atlas', 'author'))
-                    atlas.set_cover_image(config.get('Atlas', 'cover_image'))
-                    atlas.set_inside_cover(config.get('Atlas', 'inside_cover'))
-                    atlas.set_introduction(config.get('Atlas', 'introduction'))
-                    atlas.set_distribution_unit(config.get('Atlas', 'distribution_unit'))
-                    atlas.set_coverage_show(config.getboolean('Atlas', 'coverage_visible'))
-                    atlas.set_coverage_colour(config.get('Atlas', 'coverage_colour'))
-                    atlas.set_coverage_style(config.get('Atlas', 'coverage_style'))
-                    atlas.set_grid_lines_show(config.getboolean('Atlas', 'grid_lines_visible'))
-                    atlas.set_grid_colour(config.get('Atlas', 'grid_lines_colour'))
-                    atlas.set_grid_lines(config.get('Atlas', 'grid_lines_style'))
-                    atlas.set_boundary_colour(config.get('Atlas', 'vice-counties_colour'))
+                    ### conver these to config data
+                    atlas.set_author(self.dataset.config.get('Atlas', 'author'))
+                    atlas.set_cover_image(self.dataset.config.get('Atlas', 'cover_image'))
+                    atlas.set_inside_cover(self.dataset.config.get('Atlas', 'inside_cover'))
+                    atlas.set_introduction(self.dataset.config.get('Atlas', 'introduction'))
+                    atlas.set_distribution_unit(self.dataset.config.get('Atlas', 'distribution_unit'))
+                    atlas.set_coverage_show(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
+                    atlas.set_coverage_colour(self.dataset.config.get('Atlas', 'coverage_colour'))
+                    atlas.set_coverage_style(self.dataset.config.get('Atlas', 'coverage_style'))
+                    atlas.set_grid_lines_show(self.dataset.config.getboolean('Atlas', 'grid_lines_visible'))
+                    atlas.set_grid_colour(self.dataset.config.get('Atlas', 'grid_lines_colour'))
+                    atlas.set_grid_lines(self.dataset.config.get('Atlas', 'grid_lines_style'))
+                    atlas.set_boundary_colour(self.dataset.config.get('Atlas', 'vice-counties_colour'))
 
-                    atlas.set_date_band_1_style(config.get('Atlas', 'date_band_1_style'))
-                    atlas.set_date_band_1_fill_colour(config.get('Atlas', 'date_band_1_fill'))
-                    atlas.set_date_band_1_border_colour(config.get('Atlas', 'date_band_1_outline'))
-                    atlas.set_date_band_2_show(config.get('Atlas', 'date_band_2_visible'))
-                    atlas.set_date_band_2_overlay(config.get('Atlas', 'date_band_2_overlay'))
-                    atlas.set_date_band_2_style(config.get('Atlas', 'date_band_2_style'))
-                    atlas.set_date_band_2_fill_colour(config.get('Atlas', 'date_band_2_fill'))
-                    atlas.set_date_band_2_border_colour(config.get('Atlas', 'date_band_2_outline'))
-                    atlas.set_date_band_3_show(config.get('Atlas', 'date_band_3_visible'))
-                    atlas.set_date_band_3_overlay(config.get('Atlas', 'date_band_3_overlay'))
-                    atlas.set_date_band_3_style(config.get('Atlas', 'date_band_3_style'))
-                    atlas.set_date_band_3_fill_colour(config.get('Atlas', 'date_band_3_fill'))
-                    atlas.set_date_band_3_border_colour(config.get('Atlas', 'date_band_3_outline'))
+                    atlas.set_date_band_1_style(self.dataset.config.get('Atlas', 'date_band_1_style'))
+                    atlas.set_date_band_1_fill_colour(self.dataset.config.get('Atlas', 'date_band_1_fill'))
+                    atlas.set_date_band_1_border_colour(self.dataset.config.get('Atlas', 'date_band_1_outline'))
+                    atlas.set_date_band_2_show(self.dataset.config.get('Atlas', 'date_band_2_visible'))
+                    atlas.set_date_band_2_overlay(self.dataset.config.get('Atlas', 'date_band_2_overlay'))
+                    atlas.set_date_band_2_style(self.dataset.config.get('Atlas', 'date_band_2_style'))
+                    atlas.set_date_band_2_fill_colour(self.dataset.config.get('Atlas', 'date_band_2_fill'))
+                    atlas.set_date_band_2_border_colour(self.dataset.config.get('Atlas', 'date_band_2_outline'))
+                    atlas.set_date_band_3_show(self.dataset.config.get('Atlas', 'date_band_3_visible'))
+                    atlas.set_date_band_3_overlay(self.dataset.config.get('Atlas', 'date_band_3_overlay'))
+                    atlas.set_date_band_3_style(self.dataset.config.get('Atlas', 'date_band_3_style'))
+                    atlas.set_date_band_3_fill_colour(self.dataset.config.get('Atlas', 'date_band_3_fill'))
+                    atlas.set_date_band_3_border_colour(self.dataset.config.get('Atlas', 'date_band_3_outline'))
                     
-                    atlas.set_page_size(config.get('Atlas', 'paper_size'))
-                    atlas.set_page_orientation(config.get('Atlas', 'orientation'))
+                    atlas.set_page_size(self.dataset.config.get('Atlas', 'paper_size'))
+                    atlas.set_page_orientation(self.dataset.config.get('Atlas', 'orientation'))
 
-                    atlas.set_cut_off(config.get('Atlas', 'date_band_1_from'),
-                                      config.get('Atlas', 'date_band_1_to'),
-                                      config.get('Atlas', 'date_band_2_from'),
-                                      config.get('Atlas', 'date_band_2_to'),
-                                      config.get('Atlas', 'date_band_3_from'),
-                                      config.get('Atlas', 'date_band_3_to'))
+                    atlas.set_cut_off(self.dataset.config.get('Atlas', 'date_band_1_from'),
+                                      self.dataset.config.get('Atlas', 'date_band_1_to'),
+                                      self.dataset.config.get('Atlas', 'date_band_2_from'),
+                                      self.dataset.config.get('Atlas', 'date_band_2_to'),
+                                      self.dataset.config.get('Atlas', 'date_band_3_from'),
+                                      self.dataset.config.get('Atlas', 'date_band_3_to'))
                     
                     #convert to config.get
                     
@@ -838,46 +840,43 @@ class Run():
 
                     listing = List(self.dataset)
 
-                    listing.set_author(config.get('List', 'author'))
-                    listing.set_cover_image(config.get('List', 'cover_image'))
-                    listing.set_inside_cover(config.get('List', 'inside_cover'))
-                    listing.set_introduction(config.get('List', 'introduction'))
-                    listing.set_distribution_unit(config.get('List', 'distribution_unit'))
+                    listing.set_author(self.dataset.config.get('List', 'author'))
+                    listing.set_cover_image(self.dataset.config.get('List', 'cover_image'))
+                    listing.set_inside_cover(self.dataset.config.get('List', 'inside_cover'))
+                    listing.set_introduction(self.dataset.config.get('List', 'introduction'))
+                    listing.set_distribution_unit(self.dataset.config.get('List', 'distribution_unit'))
                     listing.set_save_in(output)
                     listing.set_vcs(self.builder.get_object('treeview4'))
                     listing.set_families(self.builder.get_object('treeview3'))
-                    listing.set_page_orientation(config.get('List', 'orientation'))
-                    listing.set_page_size(config.get('List', 'paper_size'))
+                    listing.set_page_orientation(self.dataset.config.get('List', 'orientation'))
+                    listing.set_page_size(self.dataset.config.get('List', 'paper_size'))
                     listing.generate()
 
             vbox.set_sensitive(True)
             self.builder.get_object('dialog1').window.set_cursor(None)
 
-    def create_config(self, ):
-        config = ConfigParser.SafeConfigParser()
-
+    def update_config(self):
+        
         #atlas
-        config.add_section('Atlas')
-
-        config.set('Atlas', 'title', self.builder.get_object('entry3').get_text())
-        config.set('Atlas', 'author', self.builder.get_object('entry2').get_text())
+        self.dataset.config.set('Atlas', 'title', self.builder.get_object('entry3').get_text())
+        self.dataset.config.set('Atlas', 'author', self.builder.get_object('entry2').get_text())
 
         try:
-            config.set('Atlas', 'cover_image', self.builder.get_object('filechooserbutton1').get_filename())
+            self.dataset.config.set('Atlas', 'cover_image', self.builder.get_object('filechooserbutton1').get_filename())
         except TypeError:
-            config.set('Atlas', 'cover_image', '')
+            self.dataset.config.set('Atlas', 'cover_image', '')
 
         buffer = self.builder.get_object('textview1').get_buffer()
         startiter, enditer = buffer.get_bounds()
         inside_cover = buffer.get_text(startiter, enditer, True)
-        config.set('Atlas', 'inside_cover', inside_cover)
+        self.dataset.config.set('Atlas', 'inside_cover', inside_cover)
 
         buffer = self.builder.get_object('textview3').get_buffer()
         startiter, enditer = buffer.get_bounds()
         introduction = buffer.get_text(startiter, enditer, True)
 
-        config.set('Atlas', 'introduction', introduction)
-        config.set('Atlas', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
+        self.dataset.config.set('Atlas', 'introduction', introduction)
+        self.dataset.config.set('Atlas', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
 
         #grab a comma delimited list of families
         selection = self.builder.get_object('treeview2').get_selection()
@@ -889,7 +888,7 @@ class Run():
         for iter in iters:
             families = ','.join([families, model.get_value(iter, 0)])
 
-        config.set('Atlas', 'families', families[1:])
+        self.dataset.config.set('Atlas', 'families', families[1:])
 
         #grab a comma delimited list of vcs
         selection = self.builder.get_object('treeview1').get_selection()
@@ -901,64 +900,62 @@ class Run():
         for iter in iters:
             vcs = ','.join([vcs, model.get_value(iter, 0)])
 
-        config.set('Atlas', 'vice-counties', vcs[1:])
-        config.set('Atlas', 'vice-counties_colour', str(self.builder.get_object('colorbutton5').get_color()))
+        self.dataset.config.set('Atlas', 'vice-counties', vcs[1:])
+        self.dataset.config.set('Atlas', 'vice-counties_colour', str(self.builder.get_object('colorbutton5').get_color()))
 
         #date band 1
-        config.set('Atlas', 'date_band_1_style', self.builder.get_object('combobox2').get_active_text())
-        config.set('Atlas', 'date_band_1_fill', str(self.builder.get_object('colorbutton2').get_color()))
-        config.set('Atlas', 'date_band_1_outline', str(self.builder.get_object('colorbutton7').get_color()))
-        config.set('Atlas', 'date_band_1_from', str(self.builder.get_object('spinbutton3').get_value()))
-        config.set('Atlas', 'date_band_1_to', str(self.builder.get_object('spinbutton4').get_value()))
+        self.dataset.config.set('Atlas', 'date_band_1_style', self.builder.get_object('combobox2').get_active_text())
+        self.dataset.config.set('Atlas', 'date_band_1_fill', str(self.builder.get_object('colorbutton2').get_color()))
+        self.dataset.config.set('Atlas', 'date_band_1_outline', str(self.builder.get_object('colorbutton7').get_color()))
+        self.dataset.config.set('Atlas', 'date_band_1_from', str(self.builder.get_object('spinbutton3').get_value()))
+        self.dataset.config.set('Atlas', 'date_band_1_to', str(self.builder.get_object('spinbutton4').get_value()))
 
         #date band 2
-        config.set('Atlas', 'date_band_2_visible', str(self.builder.get_object('checkbutton4').get_active()))
-        config.set('Atlas', 'date_band_2_style', self.builder.get_object('combobox4').get_active_text())
-        config.set('Atlas', 'date_band_2_overlay', str(self.builder.get_object('checkbutton7').get_active()))
-        config.set('Atlas', 'date_band_2_fill', str(self.builder.get_object('colorbutton3').get_color()))
-        config.set('Atlas', 'date_band_2_outline', str(self.builder.get_object('colorbutton8').get_color()))
-        config.set('Atlas', 'date_band_2_from', str(self.builder.get_object('spinbutton1').get_value()))
-        config.set('Atlas', 'date_band_2_to', str(self.builder.get_object('spinbutton2').get_value()))
+        self.dataset.config.set('Atlas', 'date_band_2_visible', str(self.builder.get_object('checkbutton4').get_active()))
+        self.dataset.config.set('Atlas', 'date_band_2_style', self.builder.get_object('combobox4').get_active_text())
+        self.dataset.config.set('Atlas', 'date_band_2_overlay', str(self.builder.get_object('checkbutton7').get_active()))
+        self.dataset.config.set('Atlas', 'date_band_2_fill', str(self.builder.get_object('colorbutton3').get_color()))
+        self.dataset.config.set('Atlas', 'date_band_2_outline', str(self.builder.get_object('colorbutton8').get_color()))
+        self.dataset.config.set('Atlas', 'date_band_2_from', str(self.builder.get_object('spinbutton1').get_value()))
+        self.dataset.config.set('Atlas', 'date_band_2_to', str(self.builder.get_object('spinbutton2').get_value()))
 
         #date band 3
-        config.set('Atlas', 'date_band_3_visible', str(self.builder.get_object('checkbutton5').get_active()))
-        config.set('Atlas', 'date_band_3_style', self.builder.get_object('combobox7').get_active_text())
-        config.set('Atlas', 'date_band_3_overlay', str(self.builder.get_object('checkbutton11').get_active()))
-        config.set('Atlas', 'date_band_3_fill', str(self.builder.get_object('colorbutton6').get_color()))
-        config.set('Atlas', 'date_band_3_outline', str(self.builder.get_object('colorbutton9').get_color()))
-        config.set('Atlas', 'date_band_3_from', str(self.builder.get_object('spinbutton5').get_value()))
-        config.set('Atlas', 'date_band_3_to', str(self.builder.get_object('spinbutton6').get_value()))
+        self.dataset.config.set('Atlas', 'date_band_3_visible', str(self.builder.get_object('checkbutton5').get_active()))
+        self.dataset.config.set('Atlas', 'date_band_3_style', self.builder.get_object('combobox7').get_active_text())
+        self.dataset.config.set('Atlas', 'date_band_3_overlay', str(self.builder.get_object('checkbutton11').get_active()))
+        self.dataset.config.set('Atlas', 'date_band_3_fill', str(self.builder.get_object('colorbutton6').get_color()))
+        self.dataset.config.set('Atlas', 'date_band_3_outline', str(self.builder.get_object('colorbutton9').get_color()))
+        self.dataset.config.set('Atlas', 'date_band_3_from', str(self.builder.get_object('spinbutton5').get_value()))
+        self.dataset.config.set('Atlas', 'date_band_3_to', str(self.builder.get_object('spinbutton6').get_value()))
 
         #coverage
-        config.set('Atlas', 'coverage_visible', str(self.builder.get_object('checkbutton1').get_active()))
-        config.set('Atlas', 'coverage_style', self.builder.get_object('combobox6').get_active_text())
-        config.set('Atlas', 'coverage_colour', str(self.builder.get_object('colorbutton4').get_color()))
+        self.dataset.config.set('Atlas', 'coverage_visible', str(self.builder.get_object('checkbutton1').get_active()))
+        self.dataset.config.set('Atlas', 'coverage_style', self.builder.get_object('combobox6').get_active_text())
+        self.dataset.config.set('Atlas', 'coverage_colour', str(self.builder.get_object('colorbutton4').get_color()))
 
         #grid lines
-        config.set('Atlas', 'grid_lines_visible', str(self.builder.get_object('checkbutton2').get_active()))
-        config.set('Atlas', 'grid_lines_style', self.builder.get_object('combobox1').get_active_text())
-        config.set('Atlas', 'grid_lines_colour', str(self.builder.get_object('colorbutton1').get_color()))
+        self.dataset.config.set('Atlas', 'grid_lines_visible', str(self.builder.get_object('checkbutton2').get_active()))
+        self.dataset.config.set('Atlas', 'grid_lines_style', self.builder.get_object('combobox1').get_active_text())
+        self.dataset.config.set('Atlas', 'grid_lines_colour', str(self.builder.get_object('colorbutton1').get_color()))
 
         #page setup
-        config.set('Atlas', 'paper_size', self.builder.get_object('combobox10').get_active_text())
-        config.set('Atlas', 'orientation', self.builder.get_object('combobox8').get_active_text())
+        self.dataset.config.set('Atlas', 'paper_size', self.builder.get_object('combobox10').get_active_text())
+        self.dataset.config.set('Atlas', 'orientation', self.builder.get_object('combobox8').get_active_text())
 
         #table of contents
-        config.set('Atlas', 'toc_show_families', str(self.builder.get_object('checkbutton6').get_active()))
-        config.set('Atlas', 'toc_show_species_names', str(self.builder.get_object('checkbutton9').get_active()))
-        config.set('Atlas', 'toc_show_common_names', str(self.builder.get_object('checkbutton10').get_active()))
+        self.dataset.config.set('Atlas', 'toc_show_families', str(self.builder.get_object('checkbutton6').get_active()))
+        self.dataset.config.set('Atlas', 'toc_show_species_names', str(self.builder.get_object('checkbutton9').get_active()))
+        self.dataset.config.set('Atlas', 'toc_show_common_names', str(self.builder.get_object('checkbutton10').get_active()))
 
         #species accounts
-        config.set('Atlas', 'species_accounts_show_descriptions', str(self.builder.get_object('checkbutton12').get_active()))
-        config.set('Atlas', 'species_accounts_show_latest', str(self.builder.get_object('checkbutton13').get_active()))
-        config.set('Atlas', 'species_accounts_show_statistics', str(self.builder.get_object('checkbutton14').get_active()))
-        config.set('Atlas', 'species_accounts_show_status', str(self.builder.get_object('checkbutton16').get_active()))
-        config.set('Atlas', 'species_accounts_show_phenology', str(self.builder.get_object('checkbutton15').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_show_descriptions', str(self.builder.get_object('checkbutton12').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_show_latest', str(self.builder.get_object('checkbutton13').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_show_statistics', str(self.builder.get_object('checkbutton14').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_show_status', str(self.builder.get_object('checkbutton16').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_show_phenology', str(self.builder.get_object('checkbutton15').get_active()))
 
 
         #list
-        config.add_section('List')
-
         #grab a comma delimited list of families
         selection = self.builder.get_object('treeview3').get_selection()
         model, selected = selection.get_selected_rows()
@@ -969,7 +966,7 @@ class Run():
         for iter in iters:
             families = ','.join([families, model.get_value(iter, 0)])
 
-        config.set('List', 'families', families[1:])
+        self.dataset.config.set('List', 'families', families[1:])
 
         #grab a comma delimited list of vcs
         selection = self.builder.get_object('treeview4').get_selection()
@@ -981,17 +978,16 @@ class Run():
         for iter in iters:
             vcs = ','.join([vcs, model.get_value(iter, 0)])
 
-        config.set('List', 'vice-counties', vcs[1:])
+        self.dataset.config.set('List', 'vice-counties', vcs[1:])
 
         #page setup
-        config.set('List', 'paper_size', self.builder.get_object('combobox11').get_active_text())
-        config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text())
+        self.dataset.config.set('List', 'paper_size', self.builder.get_object('combobox11').get_active_text())
+        self.dataset.config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text())
 
         #write the config file
         with open(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']), 'wb') as configfile:
-            config.write(configfile)
+            self.dataset.config.write(configfile)
 
-        return config
 
 class Dataset(gobject.GObject):
 
@@ -1105,7 +1101,7 @@ class Dataset(gobject.GObject):
                                                              'date_band_3_from': '0.0',
                                                              'date_band_3_to': '0.0',
                                                              'coverage_visible': 'True',
-                                                             'coverage_style': '2km',
+                                                             'coverage_style': 'squares',
                                                              'coverage_colour': '#d2d2d2',
                                                              'grid_lines_visible': 'True',
                                                              'grid_lines_style': '2km',
@@ -1830,7 +1826,7 @@ class List(gobject.GObject):
         pdf.set_fill_color(255, 255, 255)
         pdf.set_font('Helvetica', '', 28)
         pdf.ln(15)
-        pdf.multi_cell(0, 10, self.title, 0, 'L', False)
+        pdf.multi_cell(0, 10, pdf.title, 0, 'L', False)
 
         pdf.ln(20)
         pdf.set_font('Helvetica', '', 18)
@@ -1907,9 +1903,6 @@ class List(gobject.GObject):
             pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
 
         taxon_count = 0
-
-        self.emit('progress-pre-end')
-        self.emit('progress-begin', ''.join(['Generating pages for "<b>', self.title, '"</b>']), None)
 
         record_count = 0
         families = []
@@ -2702,7 +2695,7 @@ class Atlas(gobject.GObject):
         pdf.set_fill_color(255, 255, 255)
         pdf.set_font('Helvetica', '', 28)
         pdf.ln(15)
-        pdf.multi_cell(0, 10, self.title, 0, 'L', False)
+        pdf.multi_cell(0, 10, pdf.title, 0, 'L', False)
 
         pdf.ln(20)
         pdf.set_font('Helvetica', '', 18)
@@ -2761,9 +2754,6 @@ class Atlas(gobject.GObject):
         genus_index = {}
         species_index = {}
         common_name_index = {}
-
-        self.emit('progress-pre-end')
-        self.emit('progress-begin', ''.join(['Generating pages for "<b>', self.title, '</b>"']), None)
 
         families = []
         rownum = 0
