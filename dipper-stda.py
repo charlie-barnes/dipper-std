@@ -793,26 +793,14 @@ class Run():
 
             if response == gtk.RESPONSE_OK:
 
-                self.create_config()
+                config = self.create_config()
 
                 #add the extension if it's missing
                 if output[-4:] != '.pdf':
                     output = ''.join([output, '.pdf'])
 
+                #do the atlas
                 if notebook.get_current_page() == 0:
-
-                    title = self.builder.get_object('entry3').get_text()
-
-                    author = self.builder.get_object('entry2').get_text()
-                    cover_image = self.builder.get_object('filechooserbutton1').get_filename()
-
-                    buffer = self.builder.get_object('textview1').get_buffer()
-                    startiter, enditer = buffer.get_bounds()
-                    inside_cover = buffer.get_text(startiter, enditer, True)
-
-                    buffer = self.builder.get_object('textview3').get_buffer()
-                    startiter, enditer = buffer.get_bounds()
-                    introduction = buffer.get_text(startiter, enditer, True)
 
                     coverage_colour = self.builder.get_object('colorbutton4').get_color()
                     grid_colour = self.builder.get_object('colorbutton1').get_color()
@@ -831,18 +819,6 @@ class Run():
                     date_band_3_from = self.builder.get_object('spinbutton5').get_value()
                     date_band_3_to = self.builder.get_object('spinbutton6').get_value()
 
-                    dist_unit = self.builder.get_object('combobox3').get_active()
-
-                    if dist_unit == 0:
-                        dist_unit = '100km'
-                    elif dist_unit == 1:
-                        dist_unit = '10km'
-                    elif dist_unit == 2:
-                        dist_unit = '5km'
-                    elif dist_unit == 3:
-                        dist_unit = '2km'
-                    elif dist_unit == 4:
-                        dist_unit = '1km'
 
                     grid_lines = self.builder.get_object('combobox1').get_active()
 
@@ -876,39 +852,50 @@ class Run():
                         size = 'A4'
 
                     atlas = Atlas(self.dataset)
-
-                    atlas.set_title(title)
-                    atlas.set_author(author)
-                    atlas.set_cover_image(cover_image)
-                    atlas.set_inside_cover(inside_cover)
-                    atlas.set_introduction(introduction)
-                    atlas.set_distribution_unit(dist_unit)
                     atlas.set_save_in(output)
-                    atlas.set_boundary_colour(boundary_colour)
-                    atlas.set_coverage_show(self.builder.get_object('checkbutton1').get_active())
-                    atlas.set_coverage_colour(coverage_colour)
-                    atlas.set_coverage_style(coverage_style)
-                    atlas.set_grid_colour(grid_colour)
-                    atlas.set_date_band_2_show(self.builder.get_object('checkbutton4').get_active())
-                    atlas.set_date_band_3_show(self.builder.get_object('checkbutton5').get_active())
-                    atlas.set_date_band_2_overlay(self.builder.get_object('checkbutton7').get_active())
-                    atlas.set_date_band_3_overlay(self.builder.get_object('checkbutton11').get_active())
-                    atlas.set_date_band_1_fill_colour(date_band_1_fill_colour)
-                    atlas.set_date_band_2_fill_colour(date_band_2_fill_colour)
-                    atlas.set_date_band_3_fill_colour(date_band_3_fill_colour)
-                    atlas.set_date_band_1_border_colour(date_band_1_border_colour)
-                    atlas.set_date_band_2_border_colour(date_band_2_border_colour)
-                    atlas.set_date_band_3_border_colour(date_band_3_border_colour)
-                    atlas.set_date_band_1_style(date_band_1_style)
-                    atlas.set_date_band_2_style(date_band_2_style)
-                    atlas.set_date_band_3_style(date_band_3_style)
-                    atlas.set_grid_lines_show(self.builder.get_object('checkbutton2').get_active())
-                    atlas.set_grid_lines(grid_lines)
-                    atlas.set_cut_off(date_band_1_from, date_band_1_to, date_band_2_from, date_band_2_to, date_band_3_from, date_band_3_to)
+
+                    atlas.set_title(config.get('Atlas', 'title'))
+                    atlas.set_author(config.get('Atlas', 'author'))
+                    atlas.set_cover_image(config.get('Atlas', 'cover_image'))
+                    atlas.set_inside_cover(config.get('Atlas', 'inside_cover'))
+                    atlas.set_introduction(config.get('Atlas', 'introduction'))
+                    atlas.set_distribution_unit(config.get('Atlas', 'distribution_unit'))
+                    atlas.set_coverage_show(config.getboolean('Atlas', 'coverage_visible'))
+                    atlas.set_coverage_colour(config.get('Atlas', 'coverage_colour'))
+                    atlas.set_coverage_style(config.get('Atlas', 'coverage_style'))
+                    atlas.set_grid_lines_show(config.getboolean('Atlas', 'grid_lines_visible'))
+                    atlas.set_grid_colour(config.get('Atlas', 'grid_lines_colour'))
+                    atlas.set_grid_lines(config.get('Atlas', 'grid_lines_style'))
+
+                    atlas.set_date_band_1_style(config.get('Atlas', 'date_band_1_style'))
+                    atlas.set_date_band_1_fill_colour(config.get('Atlas', 'date_band_1_fill'))
+                    atlas.set_date_band_1_border_colour(config.get('Atlas', 'date_band_1_outline'))
+                    atlas.set_date_band_2_show(config.get('Atlas', 'date_band_2_visible'))
+                    atlas.set_date_band_2_overlay(config.get('Atlas', 'date_band_2_overlay'))
+                    atlas.set_date_band_2_style(config.get('Atlas', 'date_band_2_style'))
+                    atlas.set_date_band_2_fill_colour(config.get('Atlas', 'date_band_2_fill'))
+                    atlas.set_date_band_2_border_colour(config.get('Atlas', 'date_band_2_outline'))
+                    atlas.set_date_band_3_show(config.get('Atlas', 'date_band_3_visible'))
+                    atlas.set_date_band_3_overlay(config.get('Atlas', 'date_band_3_overlay'))
+                    atlas.set_date_band_3_style(config.get('Atlas', 'date_band_3_style'))
+                    atlas.set_date_band_3_fill_colour(config.get('Atlas', 'date_band_3_fill'))
+                    atlas.set_date_band_3_border_colour(config.get('Atlas', 'date_band_3_outline'))
+                    
+                    atlas.set_page_size(config.get('Atlas', 'paper_size'))
+                    atlas.set_page_orientation(config.get('Atlas', 'orientation'))
+
+                    atlas.set_cut_off(config.get('Atlas', 'date_band_1_from'),
+                                      config.get('Atlas', 'date_band_1_to'),
+                                      config.get('Atlas', 'date_band_2_from'),
+                                      config.get('Atlas', 'date_band_2_to'),
+                                      config.get('Atlas', 'date_band_3_from'),
+                                      config.get('Atlas', 'date_band_3_to'))
+                    
+                    #convert to config.get
+                    
                     atlas.set_vcs(self.builder.get_object('treeview1'))
+                    atlas.set_boundary_colour(boundary_colour)
                     atlas.set_families(self.builder.get_object('treeview2'))
-                    atlas.set_page_orientation(orientation)
-                    atlas.set_page_size(size)
                     atlas.generate_base_map()
                     atlas.generate_density_map()
                     atlas.generate()
@@ -1108,7 +1095,7 @@ class Run():
         with open(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']), 'wb') as configfile:
             config.write(configfile)
 
-
+        return config
 
 class Dataset(gobject.GObject):
 
@@ -2310,16 +2297,17 @@ class Atlas(gobject.GObject):
             self.families = ''.join([' WHERE species_data.family IN (', sql[1:], ') '])
 
     def set_boundary_colour(self, colour):
+        #self.boundary_colour = gtk.gdk.color_parse(colour)
         self.boundary_colour = colour
 
     def set_coverage_colour(self, colour):
-        self.coverage_colour = colour
+        self.coverage_colour = gtk.gdk.color_parse(colour)
 
     def set_coverage_style(self, style):
         self.coverage_style = style
 
     def set_grid_colour(self, colour):
-        self.grid_colour = colour
+        self.grid_colour = gtk.gdk.color_parse(colour)
 
     def set_coverage_show(self, show):
         self.coverage_show = show
@@ -2345,27 +2333,27 @@ class Atlas(gobject.GObject):
 
 
     def set_date_band_1_fill_colour(self, colour):
-        self.date_band_1_fill_colour = colour
+        self.date_band_1_fill_colour = gtk.gdk.color_parse(colour)
 
 
     def set_date_band_2_fill_colour(self, colour):
-        self.date_band_2_fill_colour = colour
+        self.date_band_2_fill_colour = gtk.gdk.color_parse(colour)
 
 
     def set_date_band_3_fill_colour(self, colour):
-        self.date_band_3_fill_colour = colour
+        self.date_band_3_fill_colour = gtk.gdk.color_parse(colour)
 
 
     def set_date_band_1_border_colour(self, colour):
-        self.date_band_1_border_colour = colour
+        self.date_band_1_border_colour = gtk.gdk.color_parse(colour)
 
 
     def set_date_band_2_border_colour(self, colour):
-        self.date_band_2_border_colour = colour
+        self.date_band_2_border_colour = gtk.gdk.color_parse(colour)
 
 
     def set_date_band_3_border_colour(self, colour):
-        self.date_band_3_border_colour = colour
+        self.date_band_3_border_colour = gtk.gdk.color_parse(colour)
 
 
     def set_date_band_1_style(self, style):
@@ -2385,12 +2373,12 @@ class Atlas(gobject.GObject):
 
 
     def set_cut_off(self, date_band_1_from, date_band_1_to, date_band_2_from, date_band_2_to, date_band_3_from, date_band_3_to):
-        self.date_band_1_from = date_band_1_from
-        self.date_band_1_to = date_band_1_to
-        self.date_band_2_from = date_band_2_from
-        self.date_band_2_to = date_band_2_to
-        self.date_band_3_from = date_band_3_from
-        self.date_band_3_to = date_band_3_to
+        self.date_band_1_from = int(float(date_band_1_from))
+        self.date_band_1_to = int(float(date_band_1_to))
+        self.date_band_2_from = int(float(date_band_2_from))
+        self.date_band_2_to = int(float(date_band_2_to))
+        self.date_band_3_from = int(float(date_band_3_from))
+        self.date_band_3_to = int(float(date_band_3_to))
 
     def generate_density_map(self):
 
@@ -2731,7 +2719,8 @@ class Atlas(gobject.GObject):
         self.author = author
 
     def set_cover_image(self, cover_image):
-        self.cover_image = cover_image
+        if cover_image != '':
+            self.cover_image = cover_image
 
     def set_inside_cover(self, inside_cover):
         self.inside_cover = inside_cover
