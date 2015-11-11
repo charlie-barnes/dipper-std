@@ -776,9 +776,7 @@ class Run():
             self.builder.get_object('dialog1').window.set_cursor(watch)
 
             if response == gtk.RESPONSE_OK:
-                print self.dataset.config.get('Atlas', 'title')
                 config = self.update_config()
-                print self.dataset.config.get('Atlas', 'title')
 
                 #add the extension if it's missing
                 if output[-4:] != '.pdf':
