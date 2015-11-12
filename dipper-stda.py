@@ -68,7 +68,6 @@ paper_size = ['A4',]
 
 #paper orientation list
 paper_orientation = ['Portrait', 'Landscape',]
-                  
 
 #vice county list - number & filename
 vc_list = [[1, 'West Cornwall'],
@@ -187,9 +186,7 @@ vc_list = [[1, 'West Cornwall'],
 def repeat_to_length(string_to_expand, length):
    return (string_to_expand * ((length/len(string_to_expand))+1))[:length]
 
-
 class Run():
-
 
     def __init__(self, filename=None):
 
@@ -205,31 +202,39 @@ class Run():
                    'show_about':self.show_about,
                   }
         self.builder.connect_signals(signals)
-        self.dataset = None#
+        self.dataset = None
 
-
+        #filter for the data file filechooser
         filter = gtk.FileFilter()
         filter.set_name("Supported data files")
         filter.add_pattern("*.xls")
         filter.add_mime_type("application/vnd.ms-excel")
         self.builder.get_object('filechooserbutton3').add_filter(filter)
         self.builder.get_object('filechooserbutton3').set_filter(filter)
-        filter = gtk.FileFilter()
-        filter.set_name("ssconvert-able data files")
-        filter.add_pattern("*.csv")
-        filter.add_pattern("*.txt")
-        filter.add_pattern("*.xlsx")
-        filter.add_pattern("*.gnumeric")
-        filter.add_pattern("*.ods")
-        filter.add_mime_type("text/csv")
-        filter.add_mime_type("text/plain")
-        filter.add_mime_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        filter.add_mime_type("application/x-gnumeric")
-        filter.add_mime_type("application/vnd.oasis.opendocument.spreadsheet")
-        self.builder.get_object('filechooserbutton3').add_filter(filter)
 
+        #if we can run ssconvert, add ssconvert-able filter to the data file filechooser
+        try:
+            returncode = call(["ssconvert"])
 
+            if returncode == 1:
+                filter = gtk.FileFilter()
+                filter.set_name("ssconvert-able data files")
+                filter.add_pattern("*.csv")
+                filter.add_pattern("*.txt")
+                filter.add_pattern("*.xlsx")
+                filter.add_pattern("*.gnumeric")
+                filter.add_pattern("*.ods")
+                filter.add_mime_type("text/csv")
+                filter.add_mime_type("text/plain")
+                filter.add_mime_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                filter.add_mime_type("application/x-gnumeric")
+                filter.add_mime_type("application/vnd.oasis.opendocument.spreadsheet")
+                self.builder.get_object('filechooserbutton3').add_filter(filter)
+        except OSError:
+            print "ssconvert isn't available - you're limited to reading XLS files. Install Gnumeric to make use of ssconvert."
+            pass
 
+        #filter for the cover image filechooser
         filter = gtk.FileFilter()
         filter.set_name("Supported image files")
         filter.add_pattern("*.png")
@@ -706,7 +711,9 @@ class Run():
                 self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')))
                 
                 #date band 3 outline
-                self.builder.get_object('colorbutton9').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_set up the list gui based on config settings
+                self.builder.get_object('colorbutton9').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')))
+                
+                #set up the list gui based on config settings
                 
                 #title
                 self.builder.get_object('entry4').set_text(self.dataset.config.get('List', 'title'))
