@@ -1340,7 +1340,6 @@
                             <property name="label" translatable="yes">Show families</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1358,7 +1357,6 @@
                             <property name="label" translatable="yes">Show species name</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1377,7 +1375,6 @@
                             <property name="label" translatable="yes">Show common name</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1454,7 +1451,6 @@
                             <property name="label" translatable="yes">Show species description</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1472,7 +1468,6 @@
                             <property name="label" translatable="yes">Show latest records</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1492,7 +1487,6 @@
                             <property name="label" translatable="yes">Show record statistics</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1512,7 +1506,6 @@
                             <property name="label" translatable="yes">Show species status</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
@@ -1532,7 +1525,6 @@
                             <property name="label" translatable="yes">Show phenology chart</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_action_appearance">False</property>
