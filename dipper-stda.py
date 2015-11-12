@@ -771,8 +771,6 @@ class Run():
 
                 self.builder.get_object('notebook1').show()
                 self.builder.get_object('button3').set_sensitive(True)
-            else:
-                raise AttributeError()
         except AttributeError as e:
             self.builder.get_object('button3').set_sensitive(False)
             md = gtk.MessageDialog(None,
@@ -1240,7 +1238,6 @@ class Read(gobject.GObject):
             for sheet in sheets:
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
-                    ######## what to do if these headings _dont_ exist?
                     if sheet.cell(0, col_index).value.lower() in ('taxon name', 'taxon', 'recommended taxon name'):
                         taxon_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ('grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference'):
@@ -1481,7 +1478,12 @@ class Read(gobject.GObject):
             self.emit('progress-end')
 
             return True
-        except UnboundLocalError:
+        except UnboundLocalError as e:
+            md = gtk.MessageDialog(None,
+                gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
+            md.run()
+            md.destroy()
             return False
 
     def cancel_read(self):
