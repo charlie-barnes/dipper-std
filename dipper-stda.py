@@ -2500,8 +2500,21 @@ class Atlas(gobject.GObject):
                 pdf.p_add_page()
 
             if taxa_statistics[item[0]]['family'] not in families:
+
                 families.append(taxa_statistics[item[0]]['family'])
-                pdf.TOC_Entry(''.join(['Family ', taxa_statistics[item[0]]['family']]), 0)
+                
+                if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
+                    pdf.TOC_Entry(''.join(['Family ', taxa_statistics[item[0]]['family']]), level=0)
+
+            if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                print "do both"
+                pdf.TOC_Entry(''.join([item[0], ' - ', taxa_statistics[item[0]]['common_name']]), level=1)
+            elif not self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                print "do common"
+                pdf.TOC_Entry(taxa_statistics[item[0]]['common_name'], level=1)
+            elif self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and not self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                print "do species"
+                pdf.TOC_Entry(item[0], level=1)
 
             designation = taxa_statistics[item[0]]['national_designation']
             if (designation == '') or (designation == 'None'):
