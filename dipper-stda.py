@@ -2183,8 +2183,7 @@ class Atlas(gobject.GObject):
         self.bounds_top_y = 0
 
         # Read in the shapefiles to get the bounding box
-        #need to round to the nearest dis unit so we don't cut off edge square###################
-        #########################################################################################
+        # BUG https://github.com/charlie-barnes/dipper-stda/issues/1
         for shpfile in layers:
             r = shapefile.Reader(shpfile)
 
