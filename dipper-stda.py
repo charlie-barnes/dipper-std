@@ -17,7 +17,7 @@
 ### along with this program; if not, write to the Free Software
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-__version__ = "1.0a4"
+__version__ = "1.0a5"
 
 import gobject
 import gtk
@@ -576,7 +576,7 @@ class Run():
                 self.dataset.config.read([config_file])
                 self.dataset.config.filename = config_file
                 
-                ##set up the atlas gui based on config settings
+                #set up the atlas gui based on config settings
                 
                 #title
                 self.builder.get_object('entry3').set_text(self.dataset.config.get('Atlas', 'title'))
@@ -706,10 +706,7 @@ class Run():
                 self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')))
                 
                 #date band 3 outline
-                self.builder.get_object('colorbutton9').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')))
-                                
-                
-                ##set up the list gui based on config settings
+                self.builder.get_object('colorbutton9').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_set up the list gui based on config settings
                 
                 #title
                 self.builder.get_object('entry4').set_text(self.dataset.config.get('List', 'title'))
@@ -1316,10 +1313,6 @@ class Read(gobject.GObject):
                         self.emit('progress-cancelled')
                         return False
 
-            ########### we need to run the 'distinct species' SQL first, then loop through species data -
-            ########### if species data sheet is only partially filled, any taxa not covered are ignored
-            #######################################################################################
-
             #load the data sheet
             if has_data:
                 sheet = book.sheet_by_name('--data--')
@@ -1816,10 +1809,8 @@ class List(gobject.GObject):
             pdf.cell(strsize, pdf.font_size+2, key, '', 0, 'L', 0)
 
             #dots
-            ####to get dots to the tight length
             w = pdf.w-(4+col_width+col_width+(((col_width*3)+(col_width/4))*len(pdf.vcs))) - strsize
             nb = w/pdf.get_string_width('.')
-            ####
 
             dots = repeat_to_length('.', int(nb))
             pdf.cell(w, pdf.font_size+2, dots, 0, 0, 'R', 0)
@@ -1933,7 +1924,7 @@ class Atlas(gobject.GObject):
 
     def generate_density_map(self, temp_dir):
 
-        ##generate the base map
+        #generate the base map
         scalefactor = 0.01
 
         layers = []
@@ -1946,8 +1937,7 @@ class Atlas(gobject.GObject):
         bounds_top_y = 0
 
         # Read in the shapefiles to get the bounding box
-        #need to round to the nearest dis unit so we don't cut off edge square###################
-        #########################################################################################
+        # BUG https://github.com/charlie-barnes/dipper-stda/issues/1
         for shpfile in layers:
             r = shapefile.Reader(shpfile)
 
@@ -2108,7 +2098,7 @@ class Atlas(gobject.GObject):
 
     def generate_base_map(self, temp_dir):
 
-        ##generate the base map
+        #generate the base map
         self.scalefactor = 0.0035
 
         layers = []
@@ -2488,7 +2478,6 @@ class Atlas(gobject.GObject):
 
         #we should really use the selection & get unique taxa?
         for item in data:
-            #print taxa_statistics[item[0]]
             taxon_blurb = ''
 
             pdf.section = ''.join(['Family ', taxa_statistics[item[0]]['family']])
@@ -2501,9 +2490,6 @@ class Atlas(gobject.GObject):
             if taxa_statistics[item[0]]['family'] not in families:
                 families.append(taxa_statistics[item[0]]['family'])
                 pdf.TOC_Entry(''.join(['Family ', taxa_statistics[item[0]]['family']]), 0)
-
-            # add the toc entry
-            #pdf.TOC_Entry(item[0], 1)
 
             designation = taxa_statistics[item[0]]['national_designation']
             if (designation == '') or (designation == 'None'):
@@ -2547,8 +2533,7 @@ class Atlas(gobject.GObject):
             pdf.set_x(x_padding)
             pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, ''.join([designation]), 1, 'L', True)
 
-            ####compile list of last e.g. 10 records for use below
-
+            #compile list of last e.g. 10 records for use below
             self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
                                         FROM data \
                                         WHERE data.taxon = "' + item[0] + '" \
