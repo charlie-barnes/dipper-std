@@ -565,7 +565,6 @@ class Run():
 
                     if response == 1:
                         config_file = '/'.join([os.path.dirname(self.dataset.filename), combobox.get_active_text()])
-                        print config_file
                     else:
                         dialog.destroy()
                         return -1
@@ -832,7 +831,6 @@ class Run():
 
                     ### convert these to config data
 
-                    atlas.set_vcs(self.builder.get_object('treeview1'))
                     atlas.set_families(self.builder.get_object('treeview2'))
                     
                     temp_dir = tempfile.mkdtemp()
@@ -2040,15 +2038,11 @@ class Atlas(gobject.GObject):
         self.date_band_1_border_colour = None
         self.date_band_2_border_colour = None
         self.date_band_3_border_colour = None
-        self.vcs_widget = None
         self.families = None
         self.date_band_1_style_coverage = []
         self.date_band_2_style_coverage = []
         self.date_band_3_style_coverage = []
         self.density_map_filename = None
-
-    def set_vcs(self, widget):
-        self.vcs_widget = widget
 
     def set_families(self, widget):
 
@@ -2072,11 +2066,8 @@ class Atlas(gobject.GObject):
         scalefactor = 0.01
 
         layers = []
-        selection = self.vcs_widget.get_selection()
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-        for iter in iters:
-            layers.append('./vice-counties/'+vc_list[int(model.get_value(iter, 0))-1][1]+'.shp')
+        for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
+            layers.append(''.join(['./vice-counties/',vc_list[int(vc)][1],'.shp']))
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -2248,11 +2239,8 @@ class Atlas(gobject.GObject):
         self.scalefactor = 0.0035
 
         layers = []
-        selection = self.vcs_widget.get_selection()
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-        for iter in iters:
-            layers.append('./vice-counties/'+vc_list[int(model.get_value(iter, 0))-1][1]+'.shp')
+        for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
+            layers.append(''.join(['./vice-counties/',vc_list[int(vc)][1],'.shp']))
 
         self.bounds_bottom_x = 700000
         self.bounds_bottom_y = 1300000
