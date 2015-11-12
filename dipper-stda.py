@@ -828,7 +828,7 @@ class Run():
                 if notebook.get_current_page() == 0:
 
                     atlas = Atlas(self.dataset)
-                    atlas.set_save_in(output)
+                    atlas.save_in = output
 
                     ### convert these to config data
 
@@ -846,7 +846,7 @@ class Run():
                     listing = List(self.dataset)
 
                     ### convert these to config data
-                    listing.set_save_in(output)
+                    listing.save_in = output
                     listing.set_vcs(self.builder.get_object('treeview4'))
                     listing.set_families(self.builder.get_object('treeview3'))
                     listing.generate()
@@ -1745,9 +1745,6 @@ class List(gobject.GObject):
             self.families = ''.join([joiner, ' species_data.family IN (', sql[1:], ') '])
 
 
-    def set_save_in(self, save_in):
-        self.save_in = save_in
-
     def generate(self):
         self.emit('progress-pre-begin')
 
@@ -2399,10 +2396,6 @@ class Atlas(gobject.GObject):
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
                 self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
-
-
-    def set_save_in(self, save_in):
-        self.save_in = save_in
 
     def generate(self, temp_dir):
         
