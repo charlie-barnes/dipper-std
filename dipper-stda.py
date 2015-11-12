@@ -271,10 +271,10 @@ class Run():
 
 
         atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        
+
         for i in range(len(paper_orientation)):
             atlas_orientation_liststore.append([paper_orientation[i]])
-        
+
         atlas_orientation_combo = self.builder.get_object('combobox8')
         atlas_orientation_combo.set_model(atlas_orientation_liststore)
         cell = gtk.CellRendererText()
@@ -283,10 +283,10 @@ class Run():
 
 
         list_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        
+
         for i in range(len(paper_orientation)):
             list_orientation_liststore.append([paper_orientation[i]])
-            
+
         list_orientation_combo = self.builder.get_object('combobox9')
         list_orientation_combo.set_model(list_orientation_liststore)
         cell = gtk.CellRendererText()
@@ -295,10 +295,10 @@ class Run():
 
 
         atlas_page_size_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        
+
         for i in range(len(paper_size)):
             atlas_page_size_liststore.append([paper_size[i]])
-            
+
         atlas_page_size_combo = self.builder.get_object('combobox10')
         atlas_page_size_combo.set_model(atlas_page_size_liststore)
         cell = gtk.CellRendererText()
@@ -307,10 +307,10 @@ class Run():
 
 
         list_page_size_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        
+
         for i in range(len(paper_size)):
             list_page_size_liststore.append([paper_size[i]])
-            
+
         list_page_size_combo = self.builder.get_object('combobox11')
         list_page_size_combo.set_model(list_page_size_liststore)
         cell = gtk.CellRendererText()
@@ -319,10 +319,10 @@ class Run():
 
 
         atlas_mapping_level_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        
+
         for i in range(len(grid_resolution)):
             atlas_mapping_level_liststore.append([grid_resolution[i]])
-            
+
         atlas_mapping_level_combo = self.builder.get_object('combobox3')
         atlas_mapping_level_combo.set_model(atlas_mapping_level_liststore)
         cell = gtk.CellRendererText()
@@ -330,10 +330,10 @@ class Run():
         atlas_mapping_level_combo.add_attribute(cell, 'text',0)
 
         list_mapping_level_liststore = gtk.ListStore(gobject.TYPE_STRING)
-        
+
         for i in range(len(grid_resolution)):
             list_mapping_level_liststore.append([grid_resolution[i]])
-            
+
         combo = self.builder.get_object('combobox5')
         combo.set_model(list_mapping_level_liststore)
         cell = gtk.CellRendererText()
@@ -388,7 +388,7 @@ class Run():
 
         for i in range(len(grid_resolution)):
             grid_lines_liststore.append([grid_resolution[i]])
-            
+
         combo = self.builder.get_object('combobox1')
         combo.set_model(grid_lines_liststore)
         cell = gtk.CellRendererText()
@@ -538,16 +538,16 @@ class Run():
             if self.dataset.data_source.read() == True:
 
                 self.builder.get_object('notebook1').set_sensitive(True)
-                
+
                 config_files = []
-                
+
                 #add the default config file to the list
                 config_files.append(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']))
-                
+
                 #search the path for additional config files
                 for filename in glob.glob(''.join([os.path.splitext(self.dataset.filename)[0], '-*.cfg'])):
                     config_files.append(filename)
-                
+
                 #if we have more than one config file
                 if len(config_files) > 1:
                     builder = gtk.Builder()
@@ -576,16 +576,16 @@ class Run():
 
                     dialog.destroy()
                 else:
-                    config_file = ''.join([os.path.splitext(self.dataset.filename)[0], '.cfg'])          
+                    config_file = ''.join([os.path.splitext(self.dataset.filename)[0], '.cfg'])
 
                 self.dataset.config.read([config_file])
                 self.dataset.config.filename = config_file
-                
+
                 #set up the atlas gui based on config settings
-                
+
                 #title
                 self.builder.get_object('entry3').set_text(self.dataset.config.get('Atlas', 'title'))
-                
+
                 #author
                 self.builder.get_object('entry2').set_text(self.dataset.config.get('Atlas', 'author'))
 
@@ -594,25 +594,25 @@ class Run():
                     self.unselect_image(self.builder.get_object('filechooserbutton1'))
                 else:
                     self.builder.get_object('filechooserbutton1').set_filename(self.dataset.config.get('Atlas', 'cover_image'))
-            
+
                 #inside cover
                 self.builder.get_object('textview1').get_buffer().set_text(self.dataset.config.get('Atlas', 'inside_cover'))
-                
+
                 #introduction
                 self.builder.get_object('textview3').get_buffer().set_text(self.dataset.config.get('Atlas', 'introduction'))
 
-                #distribution unit                                               
+                #distribution unit
                 self.builder.get_object('combobox3').set_active(grid_resolution.index(self.dataset.config.get('Atlas', 'distribution_unit')))
-                
+
                 #grid line style
                 self.builder.get_object('combobox1').set_active(grid_resolution.index(self.dataset.config.get('Atlas', 'grid_lines_style')))
-                
+
                 #grid line colour
                 self.builder.get_object('colorbutton1').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')))
-                
+
                 #grid line visible
                 self.builder.get_object('checkbutton2').set_active(self.dataset.config.getboolean('Atlas', 'grid_lines_visible'))
-    
+
                 #families
                 store = gtk.ListStore(str)
                 self.builder.get_object('treeview2').set_model(store)
@@ -631,7 +631,7 @@ class Run():
                     self.builder.get_object('treeview2').scroll_to_cell(selected[0])
                 except IndexError:
                     pass
-                    
+
                 #vcs
                 selection = self.builder.get_object('treeview1').get_selection()
 
@@ -649,78 +649,78 @@ class Run():
 
                 #paper orientation
                 self.builder.get_object('combobox8').set_active(paper_orientation.index(self.dataset.config.get('Atlas', 'orientation')))
-                
+
                 #vice county outline
                 self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')))
-                
+
                 #vice county fill
                 self.builder.get_object('colorbutton10').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')))
-                
+
                 #coverage style
                 self.builder.get_object('combobox6').set_active(markers.index(self.dataset.config.get('Atlas', 'coverage_style')))
-                
+
                 #coverage colour
                 self.builder.get_object('colorbutton4').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')))
 
                 #coverage visible
-                self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))                
-                                
+                self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
+
                 #date band 1 style
                 self.builder.get_object('combobox2').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_1_style')))
-                
+
                 #date band 1 from
                 self.builder.get_object('spinbutton3').set_value(self.dataset.config.getfloat('Atlas', 'date_band_1_from'))
-                
+
                 #date band 1 to
-                self.builder.get_object('spinbutton4').set_value(self.dataset.config.getfloat('Atlas', 'date_band_1_to'))       
-                
+                self.builder.get_object('spinbutton4').set_value(self.dataset.config.getfloat('Atlas', 'date_band_1_to'))
+
                 #date band 1 fill
                 self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')))
-                
+
                 #date band 1 outline
-                self.builder.get_object('colorbutton7').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')))    
+                self.builder.get_object('colorbutton7').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')))
 
                 #date band 2 visible
                 self.builder.get_object('checkbutton4').set_active(self.dataset.config.getboolean('Atlas', 'date_band_2_visible'))
-                                
+
                 #date band 2 style
                 self.builder.get_object('combobox4').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_2_style')))
-                
+
                 #date band 2 from
                 self.builder.get_object('spinbutton1').set_value(self.dataset.config.getfloat('Atlas', 'date_band_2_from'))
-                
+
                 #date band 2 to
                 self.builder.get_object('spinbutton2').set_value(self.dataset.config.getfloat('Atlas', 'date_band_2_to'))
-                
+
                 #date band 2 fill
                 self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')))
-                
+
                 #date band 2 outline
                 self.builder.get_object('colorbutton8').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')))
 
                 #date band 3 visible
                 self.builder.get_object('checkbutton5').set_active(self.dataset.config.getboolean('Atlas', 'date_band_3_visible'))
-                                
+
                 #date band 3 style
                 self.builder.get_object('combobox7').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_3_style')))
-                
+
                 #date band 3 from
                 self.builder.get_object('spinbutton5').set_value(self.dataset.config.getfloat('Atlas', 'date_band_3_from'))
-                
+
                 #date band 3 to
                 self.builder.get_object('spinbutton6').set_value(self.dataset.config.getfloat('Atlas', 'date_band_3_to'))
-                
+
                 #date band 3 fill
                 self.builder.get_object('colorbutton6').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')))
-                
+
                 #date band 3 outline
                 self.builder.get_object('colorbutton9').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')))
-                
+
                 #set up the list gui based on config settings
-                
+
                 #title
                 self.builder.get_object('entry4').set_text(self.dataset.config.get('List', 'title'))
-                
+
                 #author
                 self.builder.get_object('entry1').set_text(self.dataset.config.get('List', 'author'))
 
@@ -729,14 +729,14 @@ class Run():
                     self.unselect_image(self.builder.get_object('filechooserbutton5'))
                 else:
                     self.builder.get_object('filechooserbutton5').set_filename(self.dataset.config.get('List', 'cover_image'))
-            
+
                 #inside cover
                 self.builder.get_object('textview4').get_buffer().set_text(self.dataset.config.get('List', 'inside_cover'))
-                
+
                 #introduction
                 self.builder.get_object('textview6').get_buffer().set_text(self.dataset.config.get('List', 'introduction'))
 
-                #distribution unit                                               
+                #distribution unit
                 self.builder.get_object('combobox5').set_active(grid_resolution.index(self.dataset.config.get('List', 'distribution_unit')))
 
                 #families
@@ -757,7 +757,7 @@ class Run():
                     self.builder.get_object('treeview3').scroll_to_cell(selected[0])
                 except IndexError:
                     pass
-                    
+
                 #vcs
                 selection = self.builder.get_object('treeview4').get_selection()
 
@@ -832,7 +832,7 @@ class Run():
                 #do the atlas
                 if notebook.get_current_page() == 0:
                     temp_dir = tempfile.mkdtemp()
-                    
+
                     atlas = Atlas(self.dataset)
                     atlas.save_in = output
 
@@ -849,7 +849,7 @@ class Run():
             self.builder.get_object('dialog1').window.set_cursor(None)
 
     def update_config(self):
-        
+
         #atlas
         self.dataset.config.set('Atlas', 'title', self.builder.get_object('entry3').get_text())
         self.dataset.config.set('Atlas', 'author', self.builder.get_object('entry2').get_text())
@@ -1132,7 +1132,7 @@ class Dataset(gobject.GObject):
                                                              'species_accounts_show_status': 'True',
                                                              'species_accounts_show_phenology': 'True',
                                                             })
-                                                
+
             self.config.add_section('Atlas')
             self.config.add_section('List')
 
@@ -2263,7 +2263,7 @@ class Atlas(gobject.GObject):
                 self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
     def generate(self, temp_dir):
-        
+
         self.emit('progress-pre-begin')
 
         vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
@@ -2490,7 +2490,7 @@ class Atlas(gobject.GObject):
 
         #we should really use the selection & get unique taxa?
         for item in data:
-            taxon_blurb = ''
+            taxon_recent_records = ''
 
             pdf.section = ''.join(['Family ', taxa_statistics[item[0]]['family']])
 
@@ -2502,18 +2502,15 @@ class Atlas(gobject.GObject):
             if taxa_statistics[item[0]]['family'] not in families:
 
                 families.append(taxa_statistics[item[0]]['family'])
-                
+
                 if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
                     pdf.TOC_Entry(''.join(['Family ', taxa_statistics[item[0]]['family']]), level=0)
 
             if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                print "do both"
                 pdf.TOC_Entry(''.join([item[0], ' - ', taxa_statistics[item[0]]['common_name']]), level=1)
             elif not self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                print "do common"
                 pdf.TOC_Entry(taxa_statistics[item[0]]['common_name'], level=1)
             elif self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and not self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                print "do species"
                 pdf.TOC_Entry(item[0], level=1)
 
             designation = taxa_statistics[item[0]]['national_designation']
@@ -2556,7 +2553,12 @@ class Atlas(gobject.GObject):
             pdf.set_font('Helvetica', 'B', 12)
             pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
             pdf.set_x(x_padding)
-            pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, ''.join([designation]), 1, 'L', True)
+            
+            status_text = ''
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
+                status_text = ''.join([designation])     
+                
+            pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, status_text, 1, 'L', True)
 
             #compile list of last e.g. 10 records for use below
             self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
@@ -2565,12 +2567,17 @@ class Atlas(gobject.GObject):
                                         ORDER BY data.year_to || data.month_to || data.day_to desc')
 
             indiv_taxon_data = self.dataset.cursor.fetchall()
-            max_blurb_length = 900 - len(taxa_statistics[item[0]]['description'])
+
+            max_blurb_length = 900
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                max_blurb_length = max_blurb_length - len(taxa_statistics[item[0]]['description'])
+
             left_count = 0
 
             #there has to be a better way?
             for indiv_record in indiv_taxon_data:
-                if len(taxon_blurb) < max_blurb_length:
+                if len(taxon_recent_records) < max_blurb_length:
                     if indiv_record[8] != indiv_record[9]:
 
                         detees = indiv_record[9].split(',')
@@ -2604,7 +2611,7 @@ class Atlas(gobject.GObject):
                     else:
                         grid = indiv_record[2]
 
-                    taxon_blurb = ''.join([taxon_blurb, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
+                    taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
                 else:
                     left_count = left_count + 1
 
@@ -2621,19 +2628,21 @@ class Atlas(gobject.GObject):
             pdf.set_fill_color(255, 255, 255)
             pdf.set_line_width(0.1)
 
-            if len(taxa_statistics[item[0]]['description']) > 0:
+            if len(taxa_statistics[item[0]]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                 pdf.set_font('Helvetica', 'B', 10)
                 pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join([taxa_statistics[item[0]]['description'], '\n\n']), 0, 'L', False)
                 pdf.set_x(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5))
 
-            pdf.set_font('Helvetica', '', 10)
-            pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_blurb[:-2], '.', left_blurb]), 0, 'L', False)
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                pdf.set_font('Helvetica', '', 10)
+                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', left_blurb]), 0, 'L', False)
 
             #chart
-            chart = Chart(self.dataset, item[0], temp_dir=temp_dir)
-            if chart.temp_filename != None:
-                pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
-            pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
+                chart = Chart(self.dataset, item[0], temp_dir=temp_dir)
+                if chart.temp_filename != None:
+                    pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
+                pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
 
             #do the map
 
@@ -2729,8 +2738,6 @@ class Atlas(gobject.GObject):
                 for tup in date_band_1:
                         date_band_1_grids.append(tup[0])
 
-
-
             #we always show date band 1
             #loop through each object in the date band 1 grids
             for obj in self.date_band_1_style_coverage:
@@ -2742,7 +2749,6 @@ class Atlas(gobject.GObject):
                         py = (self.bounds_top_y - y) * self.scalefactor
                         pixels.append((px,py))
                     current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).blue_float*255)) + ')')
-
 
             if self.dataset.config.get('Atlas', 'date_band_2_visible'):
                 #loop through each object in the date band 2 grids
@@ -2758,7 +2764,6 @@ class Atlas(gobject.GObject):
                             pixels.append((px,py))
                         current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).blue_float*255)) + ')')
 
-
             if self.dataset.config.get('Atlas', 'date_band_3_visible'):
                 #loop through each object in the date band 3 grids
                 for obj in self.date_band_3_style_coverage:
@@ -2772,9 +2777,6 @@ class Atlas(gobject.GObject):
                             py = (self.bounds_top_y - y) * self.scalefactor
                             pixels.append((px,py))
                         current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
-
-
-
 
             temp_map_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
             current_map.save(temp_map_file, format='PNG')
@@ -2794,9 +2796,6 @@ class Atlas(gobject.GObject):
             img_x_cent = ((max_width-pdfim_width)/2)+2
             img_y_cent = ((max_height-pdfim_height)/2)+12
 
-            #print height,width
-            #print pdfim_height,pdfim_width
-
             pdf.image(temp_map_file, x_padding+img_x_cent, y_padding+img_y_cent, int(pdfim_width), int(pdfim_height), 'PNG')
 
 
@@ -2806,51 +2805,53 @@ class Atlas(gobject.GObject):
             pdf.set_line_width(0.1)
             pdf.rect(x_padding, 10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)
 
-            #from
-            pdf.set_y(11+y_padding)
-            pdf.set_x(1+x_padding)
-            pdf.set_font('Helvetica', '', 12)
-            pdf.set_text_color(0)
-            pdf.set_fill_color(255, 255, 255)
-            pdf.set_line_width(0.1)
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
 
-            if str(taxa_statistics[item[0]]['earliest']) == 'Unknown':
-                val = '?'
-            else:
-                val = str(taxa_statistics[item[0]]['earliest'])
-            pdf.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
+                #from
+                pdf.set_y(11+y_padding)
+                pdf.set_x(1+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
 
-            #to
-            pdf.set_y(11+y_padding)
-            pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
-            pdf.set_font('Helvetica', '', 12)
-            pdf.set_text_color(0)
-            pdf.set_fill_color(255, 255, 255)
-            pdf.set_line_width(0.1)
+                if str(taxa_statistics[item[0]]['earliest']) == 'Unknown':
+                    val = '?'
+                else:
+                    val = str(taxa_statistics[item[0]]['earliest'])
+                pdf.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
 
-            if str(taxa_statistics[item[0]]['latest']) == 'Unknown':
-                val = '?'
-            else:
-                val = str(taxa_statistics[item[0]]['latest'])
-            pdf.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
+                #to
+                pdf.set_y(11+y_padding)
+                pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
 
-            #records
-            pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
-            pdf.set_x(1+x_padding)
-            pdf.set_font('Helvetica', '', 12)
-            pdf.set_text_color(0)
-            pdf.set_fill_color(255, 255, 255)
-            pdf.set_line_width(0.1)
-            pdf.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
+                if str(taxa_statistics[item[0]]['latest']) == 'Unknown':
+                    val = '?'
+                else:
+                    val = str(taxa_statistics[item[0]]['latest'])
+                pdf.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
 
-            #tetrads
-            pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
-            pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
-            pdf.set_font('Helvetica', '', 12)
-            pdf.set_text_color(0)
-            pdf.set_fill_color(255, 255, 255)
-            pdf.set_line_width(0.1)
-            pdf.multi_cell(18, 5, ''.join(['T ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
+                #records
+                pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
+                pdf.set_x(1+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
+                pdf.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
+
+                #tetrads
+                pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
+                pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
+                pdf.multi_cell(18, 5, ''.join(['T ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
 
             taxon_parts = item[0].split(' ')
 
