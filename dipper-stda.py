@@ -769,6 +769,7 @@ class Run():
                 #paper orientation
                 self.builder.get_object('combobox9').set_active(paper_orientation.index(self.dataset.config.get('List', 'orientation')))
 
+                self.builder.get_object('notebook1').show()
                 self.builder.get_object('button3').set_sensitive(True)
             else:
                 raise AttributeError()
@@ -825,28 +826,18 @@ class Run():
 
                 #do the atlas
                 if notebook.get_current_page() == 0:
-
+                    temp_dir = tempfile.mkdtemp()
+                    
                     atlas = Atlas(self.dataset)
                     atlas.save_in = output
 
-                    ### convert these to config data
-
-                    atlas.set_families(self.builder.get_object('treeview2'))
-                    
-                    temp_dir = tempfile.mkdtemp()
-        
                     atlas.generate_base_map(temp_dir)
                     atlas.generate_density_map(temp_dir)
                     atlas.generate(temp_dir)
 
                 elif notebook.get_current_page() == 1:
-
                     listing = List(self.dataset)
-
-                    ### convert these to config data
                     listing.save_in = output
-                    listing.set_vcs(self.builder.get_object('treeview4'))
-                    listing.set_families(self.builder.get_object('treeview3'))
                     listing.generate()
 
             vbox.set_sensitive(True)
@@ -1509,7 +1500,7 @@ class PDF(FPDF):
         self.type = None
         self.toc_length = 0
         self.doing_the_list = False
-        self.vcs = []
+        self.p_vcs = []
         self.toc_page_num = 2
 
     def p_add_page(self):
@@ -1625,20 +1616,20 @@ class PDF(FPDF):
                 self.set_line_width(0.0)
                 self.set_y(20)
 
-                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
+                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.p_vcs))))
 
                 self.cell(col_width, 5, '', '0', 0, 'C', 0)
-                for vc in sorted(self.vcs):
+                for vc in sorted(self.p_vcs):
                     self.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
                     self.cell(col_width/4, 5, '', '0', 0, 'C', 0)
 
                 self.ln()
 
-                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
+                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.p_vcs))))
                 self.set_font('Helvetica', '', 8)
                 self.cell(col_width, 5, '', '0', 0, 'C', 0)
 
-                for vc in sorted(self.vcs):
+                for vc in sorted(self.p_vcs):
                     #colum headings
                     self.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
                     self.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
@@ -1704,50 +1695,15 @@ class List(gobject.GObject):
         self.start_time = time.time()
         self.page_unit = 'mm'
         self.save_in = None
-        self.vcs = []
-        self.vcs_sql = ''
-        self.families = ''
-
-    def set_vcs(self, widget):
-
-        selection = widget.get_selection()
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-
-        sql = ''
-
-        for iter in iters:
-            sql = ','.join([sql, ''.join(["'", model.get_value(iter, 0), "'"])     ])
-            self.vcs.append(model.get_value(iter, 0))
-
-        if len(iters) > 0:
-            self.vcs_sql = ''.join([' WHERE data.vc IN (', sql[1:], ') '])
-
-    def set_families(self, widget):
-
-        selection = widget.get_selection()
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-
-        sql = ''
-
-        for iter in iters:
-            sql = ','.join([sql, ''.join(["'", model.get_value(iter, 0), "'"])     ])
-
-        if self.vcs is not None:
-            joiner = 'AND'
-        else:
-            joiner = 'WHERE'
-
-        if len(iters) > 0:
-            self.families = ''.join([joiner, ' species_data.family IN (', sql[1:], ') '])
-
 
     def generate(self):
         self.emit('progress-pre-begin')
 
         taxa_statistics = {}
         taxon_list = []
+
+        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('List', 'vice-counties'), ')'])
+        families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('List', 'families').split(',')), '")'])
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS tetrads, \
@@ -1756,8 +1712,7 @@ class List(gobject.GObject):
                                    data.vc AS VC \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   ' + self.families + ' \
-                                   ' + self.vcs_sql + ' \
+                                   WHERE ' + vcs_sql + ' AND ' + families_sql + ' \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, data.vc \
                                    ORDER BY species_data.sort_order')
 
@@ -1797,7 +1752,7 @@ class List(gobject.GObject):
         pdf = PDF(orientation=self.dataset.config.get('List', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('List', 'paper_size'))
         pdf.type = 'list'
         pdf.do_header = False
-        pdf.vcs = self.vcs
+        pdf.vcs = self.dataset.config.get('List', 'vice-counties').split(',')
 
         pdf.col = 0
         pdf.y0 = 0
@@ -1849,17 +1804,17 @@ class List(gobject.GObject):
         pdf.set_font('Helvetica', '', 10)
         pdf.set_line_width(0.0)
 
-        pdf.set_x(pdf.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
+        pdf.set_x(pdf.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('List', 'vice-counties').split(',')))))
 
         pdf.cell(col_width, 5, '', '0', 0, 'C', 0)
-        for vc in sorted(self.vcs):
+        for vc in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
             pdf.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
             pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)
 
 
         pdf.ln()
 
-        pdf.set_x(pdf.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
+        pdf.set_x(pdf.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('List', 'vice-counties').split(',')))))
         pdf.set_font('Helvetica', '', 8)
         pdf.cell(col_width, 5, '', '0', 0, 'C', 0)
 
@@ -1881,10 +1836,10 @@ class List(gobject.GObject):
         pdf.set_font('Helvetica', '', 8)
 
 
-        for vckey in sorted(self.vcs):
+        for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
             #print vckey
 
-            col = self.vcs.index(vckey)+1
+            col = self.dataset.config.get('List', 'vice-counties').split(',').index(vckey)+1
 
             pdf.cell(col_width/col, 5, '', '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
@@ -1935,7 +1890,7 @@ class List(gobject.GObject):
             pdf.cell(col_width, pdf.font_size+3, taxa_statistics[key]['national_designation'], '', 0, 'L', 0)
             pdf.set_font('Helvetica', '', 10)
 
-            for vckey in sorted(self.vcs):
+            for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
                 #print vckey
 
                 pdf.set_fill_color(230, 230, 230)
@@ -2032,32 +1987,10 @@ class Atlas(gobject.GObject):
         self.save_in = None
         self.page_unit = 'mm'
         self.base_map = None
-        self.date_band_1_fill_colour = None
-        self.date_band_2_fill_colour = None
-        self.date_band_3_fill_colour = None
-        self.date_band_1_border_colour = None
-        self.date_band_2_border_colour = None
-        self.date_band_3_border_colour = None
-        self.families = None
+        self.density_map_filename = None
         self.date_band_1_style_coverage = []
         self.date_band_2_style_coverage = []
         self.date_band_3_style_coverage = []
-        self.density_map_filename = None
-
-    def set_families(self, widget):
-
-        selection = widget.get_selection()
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-
-        sql = ''
-
-        for iter in iters:
-            sql = ','.join([sql, ''.join(["'", model.get_value(iter, 0), "'"])     ])
-
-        if len(iters) > 0:
-            self.families = ''.join([' WHERE species_data.family IN (', sql[1:], ') '])
-
 
 
     def generate_density_map(self, temp_dir):
@@ -2105,10 +2038,12 @@ class Atlas(gobject.GObject):
 
         base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)) )
 
+        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ' AS grids, COUNT(DISTINCT taxon) as species \
                                      FROM data \
+                                     WHERE ' + vcs_sql + ' \
                                      GROUP BY grid_' + self.dataset.config.get('Atlas', 'distribution_unit'))
 
         data = self.dataset.cursor.fetchall()
@@ -2272,9 +2207,12 @@ class Atlas(gobject.GObject):
         self.base_map = Image.new('RGB', (int(self.xdist*self.scalefactor)+1, int(self.ydist*self.scalefactor)+1), 'white')
         self.base_map_draw = ImageDraw.Draw(self.base_map)
 
+        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                     FROM data')
+                                     FROM data \
+                                     WHERE ' + vcs_sql)
 
         data = self.dataset.cursor.fetchall()
 
@@ -2389,6 +2327,9 @@ class Atlas(gobject.GObject):
         
         self.emit('progress-pre-begin')
 
+        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Atlas', 'families').split(',')), '")'])
+
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS tetrads, \
                                    COUNT(data.taxon) AS records, \
@@ -2397,7 +2338,7 @@ class Atlas(gobject.GObject):
                                    species_data.common_name \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   ' + self.families + ' \
+                                   WHERE ' + vcs_sql + ' AND ' + families_sql + ' \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, species_data.description, species_data.common_name \
                                    ORDER BY species_data.sort_order')
 
