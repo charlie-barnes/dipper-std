@@ -32,6 +32,7 @@ import sys
 import os
 import shutil
 import time
+import glob
 import pango
 import xlrd
 import copy
@@ -530,12 +531,52 @@ class Run():
         try:
 
             if self.dataset.data_source.read() == True:
-                    
-                self.builder.get_object('notebook1').set_sensitive(True)
-                    
-                #read in a config file if present
-                self.dataset.config.read([''.join([os.path.splitext(self.dataset.filename)[0], '.cfg'])])
 
+                self.builder.get_object('notebook1').set_sensitive(True)
+                
+                config_files = []
+                
+                #add the default config file to the list
+                config_files.append(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']))
+                
+                #search the path for additional config files
+                for filename in glob.glob(''.join([os.path.splitext(self.dataset.filename)[0], '-*.cfg'])):
+                    config_files.append(filename)
+                
+                #if we have more than one config file
+                if len(config_files) > 1:
+                    builder = gtk.Builder()
+                    builder.add_from_file('./gui/select_dialog.glade')
+                    builder.get_object('label68').set_text('Configuration file:')
+                    builder.get_object('dialog').set_title('Select configuration file')
+                    builder.get_object('button1').hide()
+                    dialog = builder.get_object('dialog')
+
+                    combobox = gtk.combo_box_new_text()
+
+                    for filename in config_files:
+                        combobox.append_text(os.path.basename(filename))
+
+                    combobox.set_active(0)
+                    combobox.show()
+                    builder.get_object('hbox5').add(combobox)
+
+                    response = dialog.run()
+
+                    if response == 1:
+                        config_file = '/'.join([os.path.dirname(self.dataset.filename), combobox.get_active_text()])
+                        print config_file
+                    else:
+                        dialog.destroy()
+                        return -1
+
+                    dialog.destroy()
+                else:
+                    config_file = ''.join([os.path.splitext(self.dataset.filename)[0], '.cfg'])          
+
+                self.dataset.config.read([config_file])
+                self.dataset.config.filename = config_file
+                
                 ##set up the atlas gui based on config settings
                 
                 #title
@@ -762,10 +803,10 @@ class Run():
 
             if notebook.get_current_page() == 0:
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_atlas.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(self.dataset.config.filename)[0], '_atlas.pdf']))
             elif notebook.get_current_page() == 1:
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                dialog.set_current_name(''.join([os.path.splitext(self.dataset.filename)[0], '_checklist.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(self.dataset.config.filename)[0], '_checklist.pdf']))
 
             response = dialog.run()
 
@@ -963,7 +1004,7 @@ class Run():
         self.dataset.config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text())
 
         #write the config file
-        with open(''.join([os.path.splitext(self.dataset.filename)[0], '.cfg']), 'wb') as configfile:
+        with open(self.dataset.config.filename, 'wb') as configfile:
             self.dataset.config.write(configfile)
 
 
@@ -1164,7 +1205,9 @@ class Read(gobject.GObject):
 
         if (book.nsheets)-ignore_sheets > 1:
             builder = gtk.Builder()
-            builder.add_from_file('./gui/select_sheet_dialog.glade')
+            builder.add_from_file('./gui/select_dialog.glade')
+            builder.get_object('label68').set_text('Sheet:')
+            builder.get_object('dialog').set_title('Select sheet')
             dialog = builder.get_object('dialog')
 
             combobox = gtk.combo_box_new_text()
