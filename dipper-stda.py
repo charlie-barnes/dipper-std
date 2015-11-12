@@ -650,8 +650,11 @@ class Run():
                 #paper orientation
                 self.builder.get_object('combobox8').set_active(paper_orientation.index(self.dataset.config.get('Atlas', 'orientation')))
                 
-                #vice county colour
-                self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')))
+                #vice county outline
+                self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')))
+                
+                #vice county fill
+                self.builder.get_object('colorbutton10').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')))
                 
                 #coverage style
                 self.builder.get_object('combobox6').set_active(markers.index(self.dataset.config.get('Atlas', 'coverage_style')))
@@ -891,7 +894,8 @@ class Run():
             vcs = ','.join([vcs, model.get_value(iter, 0)])
 
         self.dataset.config.set('Atlas', 'vice-counties', vcs[1:])
-        self.dataset.config.set('Atlas', 'vice-counties_colour', str(self.builder.get_object('colorbutton5').get_color()))
+        self.dataset.config.set('Atlas', 'vice-counties_fill', str(self.builder.get_object('colorbutton10').get_color()))
+        self.dataset.config.set('Atlas', 'vice-counties_outline', str(self.builder.get_object('colorbutton5').get_color()))
 
         #date band 1
         self.dataset.config.set('Atlas', 'date_band_1_style', self.builder.get_object('combobox2').get_active_text())
@@ -1090,7 +1094,8 @@ class Dataset(gobject.GObject):
                                                              'distribution_unit': '2km',
                                                              'families': '',
                                                              'vice-counties': '',
-                                                             'vice-counties_colour': '#000',
+                                                             'vice-counties_fill': '#fff',
+                                                             'vice-counties_outline': '#000',
                                                              'date_band_1_style': 'squares',
                                                              'date_band_1_fill': '#000',
                                                              'date_band_1_outline': '#000',
@@ -1936,7 +1941,7 @@ class Atlas(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',vc_list[int(vc)][1],'.shp']))
+            layers.append(''.join(['./vice-counties/',vc_list[int(vc)-1][1],'.shp']))
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -2094,11 +2099,11 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
+                        base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
+                base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
         self.density_map_filename = tempfile.NamedTemporaryFile(dir=temp_dir).name
         base_map.save(self.density_map_filename, format='JPEG')
@@ -2110,7 +2115,7 @@ class Atlas(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',vc_list[int(vc)][1],'.shp']))
+            layers.append(''.join(['./vice-counties/',vc_list[int(vc)-1][1],'.shp']))
 
         self.bounds_bottom_x = 700000
         self.bounds_bottom_y = 1300000
@@ -2251,11 +2256,11 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
+                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
     def generate(self, temp_dir):
         
