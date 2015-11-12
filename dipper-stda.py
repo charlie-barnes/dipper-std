@@ -30,6 +30,7 @@ import sqlite3
 import mimetypes
 import sys
 import os
+import shutil
 import time
 import pango
 import xlrd
@@ -793,9 +794,11 @@ class Run():
                     atlas.set_vcs(self.builder.get_object('treeview1'))
                     atlas.set_families(self.builder.get_object('treeview2'))
                     
-                    atlas.generate_base_map()
-                    atlas.generate_density_map()
-                    atlas.generate()
+                    temp_dir = tempfile.mkdtemp()
+        
+                    atlas.generate_base_map(temp_dir)
+                    atlas.generate_density_map(temp_dir)
+                    atlas.generate(temp_dir)
 
                 elif notebook.get_current_page() == 1:
 
@@ -2023,7 +2026,7 @@ class Atlas(gobject.GObject):
 
 
 
-    def generate_density_map(self):
+    def generate_density_map(self, temp_dir):
 
         ##generate the base map
         scalefactor = 0.01
@@ -2196,10 +2199,10 @@ class Atlas(gobject.GObject):
                 #draw the final polygon (or the only, if we have just the one)
                 base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_colour')).blue_float*255)) + ')')
 
-        self.density_map_filename = tempfile.NamedTemporaryFile().name
+        self.density_map_filename = tempfile.NamedTemporaryFile(dir=temp_dir).name
         base_map.save(self.density_map_filename, format='JPEG')
 
-    def generate_base_map(self):
+    def generate_base_map(self, temp_dir):
 
         ##generate the base map
         self.scalefactor = 0.0035
@@ -2358,7 +2361,8 @@ class Atlas(gobject.GObject):
     def set_save_in(self, save_in):
         self.save_in = save_in
 
-    def generate(self):
+    def generate(self, temp_dir):
+        
         self.emit('progress-pre-begin')
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
@@ -2714,7 +2718,7 @@ class Atlas(gobject.GObject):
             pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_blurb[:-2], '.', left_blurb]), 0, 'L', False)
 
             #chart
-            chart = Chart(self.dataset, item[0])
+            chart = Chart(self.dataset, item[0], temp_dir=temp_dir)
             if chart.temp_filename != None:
                 pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
             pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
@@ -2860,7 +2864,7 @@ class Atlas(gobject.GObject):
 
 
 
-            temp_map_file = tempfile.NamedTemporaryFile().name
+            temp_map_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
             current_map.save(temp_map_file, format='PNG')
 
             (width, height) =  current_map.size
@@ -3067,13 +3071,13 @@ class Atlas(gobject.GObject):
 
         #output
         pdf.output(self.save_in,'F')
-
+        shutil.rmtree(temp_dir)
         self.emit('progress-end')
 
 
 class Chart(gtk.Window):
 
-    def __init__(self, dataset, item):
+    def __init__(self, dataset, item, temp_dir):
         gtk.Window.__init__(self)
 
         vbox = gtk.VBox()
@@ -3099,6 +3103,7 @@ class Chart(gtk.Window):
         self.chart = None
 
         self.temp_filename = None
+        self.temp_dir = temp_dir
 
         self.visible = False
 
@@ -3168,7 +3173,7 @@ class Chart(gtk.Window):
             self.chart.set_enable_mouseover(False)
             self.get_children()[0].pack_start(self.chart, True, True, 0)
             self.chart.show()
-            self.temp_filename = tempfile.NamedTemporaryFile().name
+            self.temp_filename = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
             self.chart.export_png(self.temp_filename, size=(760,240))
         except ZeroDivisionError:
             self.chart = None
