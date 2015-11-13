@@ -2670,7 +2670,7 @@ class Atlas(gobject.GObject):
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
                 pdf.set_font('Helvetica', '', 10)
-                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-1], '.', remaining_records_text]), 0, 'L', False)
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
