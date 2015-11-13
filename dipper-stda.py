@@ -1045,8 +1045,9 @@ class Run():
                                        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                         gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
-        dialog.set_filename(self.dataset.config.filename)
-        
+        dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.config.filename)))
+        dialog.set_current_name(os.path.basename(self.dataset.config.filename))
+
         response = dialog.run()
 
         output = dialog.get_filename()
