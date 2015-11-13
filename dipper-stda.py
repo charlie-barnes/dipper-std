@@ -31,7 +31,6 @@ import mimetypes
 import sys
 import os
 import shutil
-import time
 import glob
 import pango
 import xlrd
@@ -550,7 +549,7 @@ class Run():
             shutil.rmtree(self.dataset.temp_dir)
             
         self.dataset = Dataset(self, widget.get_filename())
-
+      
         try:
 
             if self.dataset.data_source.read() == True:
@@ -829,7 +828,8 @@ class Run():
 
     def quit(self, widget, third=None):
         """Quit."""        
-        shutil.rmtree(self.dataset.temp_dir)
+        if not self.dataset == None:
+            shutil.rmtree(self.dataset.temp_dir)
         gtk.main_quit()
         sys.exit()
 
@@ -1096,8 +1096,6 @@ class Dataset(gobject.GObject):
 
         self.atlas_config = {}
         self.list_config = {}
-
-        self.cancel_reading = False
         
         self.temp_dir = tempfile.mkdtemp()
 
@@ -1233,30 +1231,19 @@ class Dataset(gobject.GObject):
         self.cursor = None
 
 class Read(gobject.GObject):
-    __gsignals__ = {
-      'progress-pre-begin': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-pre-end': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-begin': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (str, str,)),
-      'progress-end': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-cancelled': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-update': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (float,)),
-    }
 
     def __init__(self, filename, dataset):
         gobject.GObject.__init__(self)
 
         self.filename = filename
         self.dataset = dataset
-        self.cancel_reading = False
 
 
     def read(self):
         '''Read the file and insert the data into the sqlite database.'''
 
-        self.emit('progress-pre-begin')
         book = xlrd.open_workbook(self.filename)
-        self.emit('progress-pre-end')
-
+ 
         #if more than one sheet is in the workbook, display sheet selection
         #dialog
         has_data = False
@@ -1310,7 +1297,6 @@ class Read(gobject.GObject):
             sheets = (book.sheet_by_index(0),)
 
         text = ''.join(['Opening <b>', os.path.basename(self.filename) ,'</b>', ' from ', '<b>', os.path.dirname(os.path.abspath(self.filename)), '</b>'])
-        self.emit('progress-begin', text, 'open')
 
         vc_position = False
 
@@ -1388,17 +1374,7 @@ class Read(gobject.GObject):
                                                      determiner,
                                                      vc])
 
-                    #emit a progress update every 100 rows
-                    if rownum%100 == 0:
-                        self.emit('progress-update', float(rownum)/sheet.nrows)
-
                     rownum = rownum + 1
-
-                    #escape hatch
-                    if self.cancel_reading is True:
-                        self.cancel_reading = False
-                        self.emit('progress-cancelled')
-                        return False
 
             #load the data sheet
             if has_data:
@@ -1491,7 +1467,6 @@ class Read(gobject.GObject):
                                                 None,
                                                 None])
 
-            self.emit('progress-end')
 
             return True
         except UnboundLocalError as e:
@@ -1502,8 +1477,6 @@ class Read(gobject.GObject):
             md.destroy()
             return False
 
-    def cancel_read(self):
-        self.cancel_reading = True
 
 class PDF(FPDF):
     def __init__(self, orientation,unit,format):
@@ -1697,25 +1670,14 @@ class PDF(FPDF):
 
 
 class List(gobject.GObject):
-    __gsignals__ = {
-      'progress-pre-begin': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-pre-end': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-begin': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (str, str,)),
-      'progress-end': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-cancelled': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-update': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (float,)),
-    }
 
     def __init__(self, dataset):
         gobject.GObject.__init__(self)
         self.dataset = dataset
-        self.cancel = False
-        self.start_time = time.time()
         self.page_unit = 'mm'
         self.save_in = None
 
     def generate(self):
-        self.emit('progress-pre-begin')
 
         taxa_statistics = {}
         taxon_list = []
@@ -1944,13 +1906,6 @@ class List(gobject.GObject):
 
             taxon_count = taxon_count + 1
 
-            if self.cancel is True:
-                self.cancel = False
-                self.emit('progress-cancelled')
-                return False
-
-            self.emit('progress-update', float(taxon_count)/len(taxa_statistics))
-
 
         pdf.section = ''
         pdf.doing_the_list = False
@@ -1981,25 +1936,12 @@ class List(gobject.GObject):
         #output
         pdf.output(self.save_in,'F')
 
-        self.emit('progress-end')
-
-
 
 class Atlas(gobject.GObject):
-    __gsignals__ = {
-      'progress-pre-begin': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-pre-end': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-begin': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (str, str,)),
-      'progress-end': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-cancelled': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ()),
-      'progress-update': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (float,)),
-    }
 
     def __init__(self, dataset):
         gobject.GObject.__init__(self)
         self.dataset = dataset
-        self.cancel = False
-        self.start_time = time.time()
         self.save_in = None
         self.page_unit = 'mm'
         self.base_map = None
@@ -2339,8 +2281,6 @@ class Atlas(gobject.GObject):
                 self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
     def generate(self):
-
-        self.emit('progress-pre-begin')
 
         vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
         families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Atlas', 'families').split(',')), '")'])
@@ -2983,16 +2923,8 @@ class Atlas(gobject.GObject):
 
             taxon_count = taxon_count + 1
 
-            if self.cancel is True:
-                self.cancel = False
-                self.emit('progress-cancelled')
-                return False
 
             rownum = rownum + 1
-            #self.emit('progress-update', float(rownum)/len(paths))
-            #except KeyError:
-            #    print item[0]
-            #    pass
 
             region_count = region_count + 1
 
@@ -3097,7 +3029,7 @@ class Atlas(gobject.GObject):
         #output
         pdf.output(self.save_in,'F')
         shutil.rmtree(self.dataset.temp_dir)
-        self.emit('progress-end')
+
 
 
 class Chart(gtk.Window):
