@@ -678,6 +678,9 @@ class Run():
 
                 #coverage visible
                 self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
+                
+                #species density visible
+                self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
 
                 #date band 1 style
                 self.builder.get_object('combobox2').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_1_style')))
@@ -854,7 +857,7 @@ class Run():
             self.builder.get_object('dialog1').window.set_cursor(watch)
 
             if response == gtk.RESPONSE_OK:
-                config = self.update_config()
+                self.update_config()
 
                 #add the extension if it's missing
                 if output[-4:] != '.pdf':
@@ -958,6 +961,9 @@ class Run():
         self.dataset.config.set('Atlas', 'coverage_visible', str(self.builder.get_object('checkbutton1').get_active()))
         self.dataset.config.set('Atlas', 'coverage_style', self.builder.get_object('combobox6').get_active_text())
         self.dataset.config.set('Atlas', 'coverage_colour', str(self.builder.get_object('colorbutton4').get_color()))
+
+        #species density map
+        self.dataset.config.set('Atlas', 'species_density_map_visible', str(self.builder.get_object('checkbutton19').get_active()))
 
         #grid lines
         self.dataset.config.set('Atlas', 'grid_lines_visible', str(self.builder.get_object('checkbutton2').get_active()))
@@ -1177,6 +1183,7 @@ class Dataset(gobject.GObject):
                                                              'coverage_visible': 'True',
                                                              'coverage_style': 'squares',
                                                              'coverage_colour': '#d2d2d2',
+                                                             'species_density_map_visible': 'True',
                                                              'grid_lines_visible': 'True',
                                                              'grid_lines_style': '2km',
                                                              'grid_lines_colour': '#d2d2d2',
@@ -1203,13 +1210,13 @@ class Dataset(gobject.GObject):
         if self.mime == 'application/vnd.ms-excel':
             self.data_source = Read(self.filename, self)
         else:
-            tempfile = 'dipper-stand-convert.xls'
+            temp_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
 
             try:
-                returncode = call(["ssconvert", self.filename, tempfile])
+                returncode = call(["ssconvert", self.filename, temp_file])
 
                 if returncode == 0:
-                    self.data_source = Read(tempfile, self)
+                    self.data_source = Read(temp_file, self)
             except OSError:
                 pass
 
@@ -2033,9 +2040,10 @@ class Atlas(gobject.GObject):
         base_map = Image.new('RGB', (int(xdist*scalefactor)+1, int(ydist*scalefactor)+1), 'white')
         base_map_draw = ImageDraw.Draw(base_map)
 
+        temp_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
         miniscale = Image.open('./backgrounds/miniscale.png', 'r')
         region = miniscale.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, (1300000/100)-int(bounds_bottom_y/100)))
-        region.save('crop', format='PNG')
+        region.save(temp_file, format='PNG')
 
         base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)) )
 
@@ -2160,14 +2168,14 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                        base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
         self.density_map_filename = tempfile.NamedTemporaryFile(dir=temp_dir).name
-        base_map.save(self.density_map_filename, format='JPEG')
+        base_map.save(self.density_map_filename, format='PNG')
 
     def generate_base_map(self, temp_dir):
 
@@ -2502,6 +2510,10 @@ class Atlas(gobject.GObject):
             pdf.multi_cell(0, 20, 'Introduction', 0, 'J', False)
             pdf.set_font('Helvetica', '', 12)
             pdf.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction'), 0, 'J', False)
+
+        #species density map
+        if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):  
+            pdf.section = ('Introduction')          
             pdf.p_add_page()
             pdf.set_font('Helvetica', '', 20)
             pdf.multi_cell(0, 20, 'Species density', 0, 'J', False)
@@ -2534,7 +2546,7 @@ class Atlas(gobject.GObject):
 
             centerer = ((pdf.w-pdf.l_margin-pdf.r_margin)-target_width)/2
 
-            pdf.image(self.density_map_filename, pdf.l_margin+centerer, 40, w=target_width, h=target_height, type='JPG')
+            pdf.image(self.density_map_filename, pdf.l_margin+centerer, 40, w=target_width, h=target_height, type='PNG')
 
         taxon_count = 0
         genus_index = {}
