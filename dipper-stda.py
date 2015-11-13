@@ -543,6 +543,12 @@ class Run():
     def open_dataset(self, widget):
         """Open a data file."""
         self.builder.get_object('notebook1').set_sensitive(False)
+        
+        #if this isn't the first dataset we've opened this session,
+        #delete the preceeding temp directory
+        if not self.dataset == None:
+            shutil.rmtree(self.dataset.temp_dir)
+            
         self.dataset = Dataset(self, widget.get_filename())
 
         try:
@@ -822,7 +828,8 @@ class Run():
 
 
     def quit(self, widget, third=None):
-        """Quit."""
+        """Quit."""        
+        shutil.rmtree(self.dataset.temp_dir)
         gtk.main_quit()
         sys.exit()
 
@@ -865,14 +872,12 @@ class Run():
 
                 #do the atlas
                 if notebook.get_current_page() == 0:
-                    temp_dir = tempfile.mkdtemp()
-
                     atlas = Atlas(self.dataset)
                     atlas.save_in = output
 
-                    atlas.generate_base_map(temp_dir)
-                    atlas.generate_density_map(temp_dir)
-                    atlas.generate(temp_dir)
+                    atlas.generate_base_map()
+                    atlas.generate_density_map()
+                    atlas.generate()
 
                 elif notebook.get_current_page() == 1:
                     listing = List(self.dataset)
@@ -1093,6 +1098,8 @@ class Dataset(gobject.GObject):
         self.list_config = {}
 
         self.cancel_reading = False
+        
+        self.temp_dir = tempfile.mkdtemp()
 
         if self.connection is None:
             self.connection = sqlite3.connect(':memory:')
@@ -1210,13 +1217,13 @@ class Dataset(gobject.GObject):
         if self.mime == 'application/vnd.ms-excel':
             self.data_source = Read(self.filename, self)
         else:
-            temp_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
+            temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
 
             try:
-                returncode = call(["ssconvert", self.filename, temp_file])
+                returncode = call(["ssconvert", self.filename, ''.join([temp_file, '.xls'])])
 
                 if returncode == 0:
-                    self.data_source = Read(temp_file, self)
+                    self.data_source = Read(''.join([temp_file, '.xls']), self)
             except OSError:
                 pass
 
@@ -2002,7 +2009,7 @@ class Atlas(gobject.GObject):
         self.date_band_3_style_coverage = []
 
 
-    def generate_density_map(self, temp_dir):
+    def generate_density_map(self):
 
         #generate the base map
         scalefactor = 0.01
@@ -2040,7 +2047,7 @@ class Atlas(gobject.GObject):
         base_map = Image.new('RGB', (int(xdist*scalefactor)+1, int(ydist*scalefactor)+1), 'white')
         base_map_draw = ImageDraw.Draw(base_map)
 
-        temp_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
+        temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
         miniscale = Image.open('./backgrounds/miniscale.png', 'r')
         region = miniscale.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, (1300000/100)-int(bounds_bottom_y/100)))
         region.save(temp_file, format='PNG')
@@ -2174,10 +2181,10 @@ class Atlas(gobject.GObject):
                 #draw the final polygon (or the only, if we have just the one)
                 base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
-        self.density_map_filename = tempfile.NamedTemporaryFile(dir=temp_dir).name
+        self.density_map_filename = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
         base_map.save(self.density_map_filename, format='PNG')
 
-    def generate_base_map(self, temp_dir):
+    def generate_base_map(self):
 
         #generate the base map
         self.scalefactor = 0.0035
@@ -2331,7 +2338,7 @@ class Atlas(gobject.GObject):
                 #draw the final polygon (or the only, if we have just the one)
                 self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
 
-    def generate(self, temp_dir):
+    def generate(self):
 
         self.emit('progress-pre-begin')
 
@@ -2744,7 +2751,7 @@ class Atlas(gobject.GObject):
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-                chart = Chart(self.dataset, item[0], temp_dir=temp_dir)
+                chart = Chart(self.dataset, item[0])
                 if chart.temp_filename != None:
                     pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
                 pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
@@ -2883,7 +2890,7 @@ class Atlas(gobject.GObject):
                             pixels.append((px,py))
                         current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
 
-            temp_map_file = tempfile.NamedTemporaryFile(dir=temp_dir).name
+            temp_map_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
             current_map.save(temp_map_file, format='PNG')
 
             (width, height) =  current_map.size
@@ -3089,13 +3096,13 @@ class Atlas(gobject.GObject):
 
         #output
         pdf.output(self.save_in,'F')
-        shutil.rmtree(temp_dir)
+        shutil.rmtree(self.dataset.temp_dir)
         self.emit('progress-end')
 
 
 class Chart(gtk.Window):
 
-    def __init__(self, dataset, item, temp_dir):
+    def __init__(self, dataset, item):
         gtk.Window.__init__(self)
 
         vbox = gtk.VBox()
@@ -3121,7 +3128,6 @@ class Chart(gtk.Window):
         self.chart = None
 
         self.temp_filename = None
-        self.temp_dir = temp_dir
 
         self.visible = False
 
@@ -3191,7 +3197,7 @@ class Chart(gtk.Window):
             self.chart.set_enable_mouseover(False)
             self.get_children()[0].pack_start(self.chart, True, True, 0)
             self.chart.show()
-            self.temp_filename = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
+            self.temp_filename = tempfile.NamedTemporaryFile(dir=self.self.dataset.temp_dir).name
             self.chart.export_png(self.temp_filename, size=(760,240))
         except ZeroDivisionError:
             self.chart = None
