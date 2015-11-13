@@ -3129,7 +3129,7 @@ class Chart(gtk.Window):
             self.chart.set_enable_mouseover(False)
             self.get_children()[0].pack_start(self.chart, True, True, 0)
             self.chart.show()
-            self.temp_filename = tempfile.NamedTemporaryFile(dir=self.self.dataset.temp_dir).name
+            self.temp_filename = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
             self.chart.export_png(self.temp_filename, size=(760,240))
         except ZeroDivisionError:
             self.chart = None
