@@ -1143,7 +1143,7 @@ class Dataset(gobject.GObject):
                                                              'toc_show_common_names': 'False',
                                                              'species_accounts_show_descriptions': 'True',
                                                              'species_accounts_show_latest': 'True',
-                                                             'species_accounts_latest_format': '%l (%v) %g %d (%r %d)',
+                                                             'species_accounts_latest_format': '%l (VC%v) %g %d (%r %i)',
                                                              'species_accounts_show_statistics': 'True',
                                                              'species_accounts_show_status': 'True',
                                                              'species_accounts_show_phenology': 'True',
@@ -2585,16 +2585,19 @@ class Atlas(gobject.GObject):
 
             indiv_taxon_data = self.dataset.cursor.fetchall()
 
-            max_blurb_length = 900
+            max_species_records_length = 900
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                max_blurb_length = max_blurb_length - len(taxa_statistics[item[0]]['description'])
+                max_species_records_length = max_species_records_length - len(taxa_statistics[item[0]]['description'])
 
-            left_count = 0
+            remaining_records = 0
 
             #there has to be a better way?
             for indiv_record in indiv_taxon_data:
-                if len(taxon_recent_records) < max_blurb_length:
+                if len(taxon_recent_records) < max_species_records_length:
+                
+                    #if the determiner is different to the recorder, set the
+                    #determinater
                     if indiv_record[8] != indiv_record[9]:
 
                         detees = indiv_record[9].split(',')
@@ -2614,6 +2617,7 @@ class Atlas(gobject.GObject):
                     else:
                         date = indiv_record[4]
 
+                    
                     if indiv_record[8] == 'Unknown':
                         rec = ' anon.'
                     else:
@@ -2623,19 +2627,33 @@ class Atlas(gobject.GObject):
                         for recorder_name in sorted(recs):
                             rec = ','.join([rec, contrib_data[recorder_name.strip()]])
 
+                    #limit grid reference to 100m
                     if len(indiv_record[2]) > 8:
                         grid = indiv_record[11]
                     else:
                         grid = indiv_record[2]
 
-                    taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
-                else:
-                    left_count = left_count + 1
+                    #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
 
-            if left_count > 0:
-                left_blurb = ''.join([' [+ ', str(left_count), ' more]'])
+                    #substitute parameters for record values
+                    current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
+                    current_rec = current_rec.replace('%l', indiv_record[1])
+                    current_rec = current_rec.replace('%v', str(indiv_record[10]))
+                    current_rec = current_rec.replace('%g', grid)
+                    current_rec = current_rec.replace('%d', date.replace('/', '.'))
+                    current_rec = current_rec.replace('%r', rec[1:])
+                    current_rec = current_rec.replace('%i', det)
+                    
+                    #append current record to the output
+                    taxon_recent_records = ''.join([taxon_recent_records, current_rec, ';'])
+                else:
+                    remaining_records = remaining_records + 1
+
+            #if any records remain, add a note to the output
+            if remaining_records > 0:
+                remaining_records_text = ''.join([' [+ ', str(remaining_records), ' more]'])
             else:
-                left_blurb = ''
+                remaining_records_text = ''
 
             #taxon blurb
             pdf.set_y(y_padding+12)
@@ -2652,7 +2670,7 @@ class Atlas(gobject.GObject):
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
                 pdf.set_font('Helvetica', '', 10)
-                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', left_blurb]), 0, 'L', False)
+                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
