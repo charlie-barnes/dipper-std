@@ -834,7 +834,7 @@ class Run():
                                            None,
                                            gtk.FILE_CHOOSER_ACTION_SAVE,
                                            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                            gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+                                            gtk.STOCK_SAVE, gtk.RESPONSE_OK))
             dialog.set_default_response(gtk.RESPONSE_OK)
 
             if notebook.get_current_page() == 0:
@@ -1043,7 +1043,7 @@ class Run():
                                        None,
                                        gtk.FILE_CHOOSER_ACTION_SAVE,
                                        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+                                        gtk.STOCK_SAVE, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
         dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.config.filename)))
         dialog.set_current_name(os.path.basename(self.dataset.config.filename))
