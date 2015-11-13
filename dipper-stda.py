@@ -727,7 +727,8 @@ class Run():
                 self.builder.get_object('checkbutton14').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'))
                 self.builder.get_object('checkbutton16').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'))
                 self.builder.get_object('checkbutton15').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'))
-
+                self.builder.get_object('colorbutton11').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
+                self.builder.get_object('entry5').set_text(self.dataset.config.get('Atlas', 'species_accounts_latest_format'))
 
                 #set up the list gui based on config settings
                 #title
@@ -959,6 +960,8 @@ class Run():
         self.dataset.config.set('Atlas', 'species_accounts_show_statistics', str(self.builder.get_object('checkbutton14').get_active()))
         self.dataset.config.set('Atlas', 'species_accounts_show_status', str(self.builder.get_object('checkbutton16').get_active()))
         self.dataset.config.set('Atlas', 'species_accounts_show_phenology', str(self.builder.get_object('checkbutton15').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_phenology_colour', str(self.builder.get_object('colorbutton11').get_color()))
+        self.dataset.config.set('Atlas', 'species_accounts_latest_format', self.builder.get_object('entry5').get_text())
 
 
         #list
@@ -1140,9 +1143,11 @@ class Dataset(gobject.GObject):
                                                              'toc_show_common_names': 'False',
                                                              'species_accounts_show_descriptions': 'True',
                                                              'species_accounts_show_latest': 'True',
+                                                             'species_accounts_latest_format': '%l (%v) %g %d (%r %d)',
                                                              'species_accounts_show_statistics': 'True',
                                                              'species_accounts_show_status': 'True',
                                                              'species_accounts_show_phenology': 'True',
+                                                             'species_accounts_phenology_colour': '#d2d2d2',
                                                             })
 
             self.config.add_section('Atlas')
@@ -3085,13 +3090,13 @@ class Chart(gtk.Window):
 
             for bar_info in data:
                 bar = bar_chart.Bar(*bar_info)
-                bar.set_color(gtk.gdk.color_parse('darkgrey'))
+                bar.set_color('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
                 bar._label_object.set_property('size', 16)
                 bar._value_label_object.set_property('size', 16)
                 bar._label_object.set_property('weight', pango.WEIGHT_BOLD)
                 bar._value_label_object.set_property('weight', pango.WEIGHT_BOLD)
-                bar._label_object.set_property('color', gtk.gdk.color_parse('black'))
-                bar._value_label_object.set_property('color', gtk.gdk.color_parse('black'))
+                bar._label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
+                bar._value_label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
                 barchart.add_bar(bar)
 
             self.chart = barchart
