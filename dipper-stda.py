@@ -839,10 +839,10 @@ class Run():
 
             if notebook.get_current_page() == 0:
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                dialog.set_current_name(''.join([os.path.splitext(self.dataset.config.filename)[0], '_atlas.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_atlas.pdf']))
             elif notebook.get_current_page() == 1:
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                dialog.set_current_name(''.join([os.path.splitext(self.dataset.config.filename)[0], '_checklist.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_checklist.pdf']))
 
             response = dialog.run()
 
@@ -1606,7 +1606,7 @@ class PDF(FPDF):
 
             if self.page_no()%2 == 0:
                 self.cell(0, 5, self.section, 'B', 0, 'L', 0) # even page header
-                self.cell(0, 5, self.title, 'B', 1, 'R', 0) # even page header
+                self.cell(0, 5, self.title.replace('\n', ' - '), 'B', 1, 'R', 0) # even page header
 
             else:
                 self.cell(0, 5, self.section, 'B', 1, 'R', 0) #odd page header
