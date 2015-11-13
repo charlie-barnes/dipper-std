@@ -2636,16 +2636,30 @@ class Atlas(gobject.GObject):
                     #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
 
                     #substitute parameters for record values
+                    #det and loc values can be empty - to remove empty spaces
+                    #we check for preceeeding and trailing spaces first with
+                    #these if they are empty strings
                     current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
-                    current_rec = current_rec.replace('%l', indiv_record[1])
+                    
+                    if indiv_record[1] == '':
+                        current_rec = current_rec.replace(' %l', indiv_record[1])
+                        current_rec = current_rec.replace('%l ', indiv_record[1])
+                    else:
+                        current_rec = current_rec.replace('%l', indiv_record[1])
+                    
+                    if det == '':
+                        current_rec = current_rec.replace(' %i', det)
+                        current_rec = current_rec.replace('%i ', det)
+                    else:
+                        current_rec = current_rec.replace('%i', det)
+                                                
                     current_rec = current_rec.replace('%v', str(indiv_record[10]))
                     current_rec = current_rec.replace('%g', grid)
                     current_rec = current_rec.replace('%d', date.replace('/', '.'))
                     current_rec = current_rec.replace('%r', rec[1:])
-                    current_rec = current_rec.replace('%i', det)
                     
                     #append current record to the output
-                    taxon_recent_records = ''.join([taxon_recent_records, current_rec, ';'])
+                    taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
                 else:
                     remaining_records = remaining_records + 1
 
@@ -2670,7 +2684,7 @@ class Atlas(gobject.GObject):
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
                 pdf.set_font('Helvetica', '', 10)
-                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-1], '.', remaining_records_text]), 0, 'L', False)
+                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
