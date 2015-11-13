@@ -200,6 +200,8 @@ class Run():
                    'unselect_image':self.unselect_image,
                    'update_title':self.update_title,
                    'show_about':self.show_about,
+                   'save_config':self.save_config,
+                   'switch_update_title':self.switch_update_title,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -492,32 +494,42 @@ class Run():
         - if just 1, append it.
 
         """
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
 
-        orig_title = self.builder.get_object('entry3').get_text().split("\n")[0]
+        if self.builder.get_object('notebook1').get_current_page() == 0 and self.dataset.config.getboolean('Atlas', 'families_update_title'):
+            entry = self.builder.get_object('entry3')
+        elif self.builder.get_object('notebook1').get_current_page() == 1 and self.dataset.config.getboolean('List', 'families_update_title'):
+            entry = self.builder.get_object('entry4')
+        
+        try:
+            model, selected = selection.get_selected_rows()
+            iters = [model.get_iter(path) for path in selected]
 
-        if len(iters) > 2:
-            self.builder.get_object('entry3').set_text(''.join([orig_title,
-                                                                "\n",
-                                                                model.get_value(iters[0], 0),
-                                                                ' to ',
-                                                                model.get_value(iters[len(iters)-1], 0)
-                                                              ]))
+            orig_title = entry.get_text().split("\n")[0]
 
-        elif len(iters) == 2:
-            self.builder.get_object('entry3').set_text(''.join([orig_title,
-                                                                "\n",
-                                                                model.get_value(iters[0], 0),
-                                                                ' and ',
-                                                                model.get_value(iters[1], 0),
-                                                              ]))
+            if len(iters) > 2:
+                entry.set_text(''.join([orig_title,
+                                        "\n",
+                                        model.get_value(iters[0], 0),
+                                        ' to ',
+                                        model.get_value(iters[len(iters)-1], 0)
+                                        ]))
 
-        elif len(iters) == 1:
-            self.builder.get_object('entry3').set_text(''.join([orig_title,
-                                                                "\n",
-                                                                model.get_value(iters[0], 0),
-                                                              ]))
+            elif len(iters) == 2:
+                entry.set_text(''.join([orig_title,
+                                        "\n",
+                                        model.get_value(iters[0], 0),
+                                        ' and ',
+                                        model.get_value(iters[1], 0),
+                                        ]))
+
+            elif len(iters) == 1:
+                entry.set_text(''.join([orig_title,
+                                        "\n",
+                                        model.get_value(iters[0], 0),
+                                        ]))
+        except UnboundLocalError:
+            pass                                                                  
+                                                                 
 
 
     def select_all_families(widget, treeview):
@@ -631,6 +643,8 @@ class Run():
                     self.builder.get_object('treeview2').scroll_to_cell(selected[0])
                 except IndexError:
                     pass
+                    
+                self.builder.get_object('checkbutton18').set_active(self.dataset.config.getboolean('Atlas', 'families_update_title'))
 
                 #vcs
                 selection = self.builder.get_object('treeview1').get_selection()
@@ -770,6 +784,8 @@ class Run():
                     self.builder.get_object('treeview3').scroll_to_cell(selected[0])
                 except IndexError:
                     pass
+                    
+                self.dataset.config.set('List', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
 
                 #vcs
                 selection = self.builder.get_object('treeview4').get_selection()
@@ -791,8 +807,10 @@ class Run():
 
                 self.builder.get_object('notebook1').show()
                 self.builder.get_object('button3').set_sensitive(True)
+                self.builder.get_object('button8').set_sensitive(True)
         except AttributeError as e:
             self.builder.get_object('button3').set_sensitive(False)
+            self.builder.get_object('button8').set_sensitive(True)
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                 gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
@@ -895,6 +913,7 @@ class Run():
             families = ','.join([families, model.get_value(iter, 0)])
 
         self.dataset.config.set('Atlas', 'families', families[1:])
+        self.dataset.config.set('Atlas', 'families_update_title', str(self.builder.get_object('checkbutton18').get_active()))
 
         #grab a comma delimited list of vcs
         selection = self.builder.get_object('treeview1').get_selection()
@@ -1013,6 +1032,12 @@ class Run():
         self.dataset.config.set('List', 'paper_size', self.builder.get_object('combobox11').get_active_text())
         self.dataset.config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text())
 
+    def switch_update_title(self, widget):
+        self.dataset.config.set('Atlas', 'families_update_title', str(self.builder.get_object('checkbutton18').get_active()))
+        self.dataset.config.set('List', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
+
+    def save_config(self, widget):
+        
         #write the config file
         with open(self.dataset.config.filename, 'wb') as configfile:
             self.dataset.config.write(configfile)
@@ -1108,6 +1133,7 @@ class Dataset(gobject.GObject):
                                                              'introduction': '',
                                                              'distribution_unit': '2km',
                                                              'families': '',
+                                                             'families_update_title': 'True',
                                                              'vice-counties': '',
                                                              'vice-counties_fill': '#fff',
                                                              'vice-counties_outline': '#000',
@@ -2900,7 +2926,7 @@ class Atlas(gobject.GObject):
                 pdf.set_text_color(0)
                 pdf.set_fill_color(255, 255, 255)
                 pdf.set_line_width(0.1)
-                pdf.multi_cell(18, 5, ''.join(['T ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
+                pdf.multi_cell(18, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
 
             taxon_parts = item[0].split(' ')
 
