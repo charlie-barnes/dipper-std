@@ -642,6 +642,7 @@ class Run():
                                            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                             gtk.STOCK_SAVE, gtk.RESPONSE_OK))
             dialog.set_default_response(gtk.RESPONSE_OK)
+            dialog.set_do_overwrite_confirmation(True)
 
             if notebook.get_current_page() == 0:
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
@@ -1099,6 +1100,7 @@ class Run():
         dialog.set_default_response(gtk.RESPONSE_OK)
         dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.config.filename)))
         dialog.set_current_name(os.path.basename(self.dataset.config.filename))
+        dialog.set_do_overwrite_confirmation(True)
 
         filter = gtk.FileFilter()
         filter.set_name("Config files")
@@ -2648,7 +2650,7 @@ class Atlas(gobject.GObject):
                 if len(taxon_recent_records) < max_species_records_length:
                 
                     #if the determiner is different to the recorder, set the
-                    #determinater
+                    #determinater (!)
                     if indiv_record[8] != indiv_record[9]:
 
                         detees = indiv_record[9].split(',')
@@ -2658,7 +2660,9 @@ class Atlas(gobject.GObject):
                             if deter_name != '':
                                 deter = ','.join([deter, contrib_data[deter_name.strip()]])
 
-                        if deter != '':
+                        if deter == 'Unknown' or deter == '':
+                            det = ' anon.'
+                        else:
                             det = ''.join([' det. ', deter[1:]])
                     else:
                         det = ''
