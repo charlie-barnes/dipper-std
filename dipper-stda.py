@@ -2041,10 +2041,20 @@ class Atlas(gobject.GObject):
 
         temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
         miniscale = Image.open('./backgrounds/miniscale.png', 'r')
-        region = miniscale.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, (1300000/100)-int(bounds_bottom_y/100)))
+        
+        region = miniscale.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, ((1300000/100)-int(bounds_bottom_y/100))))
         region.save(temp_file, format='PNG')
 
-        base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)) )
+        ###HACK: for some reason the crop of the miniscale isn't always the right
+        #size. height seems to be off by 1 pixel in some cases.
+        (region_width, region_height) = region.size
+        
+        if region_height == (int(ydist*scalefactor)+1)-1:
+            hack_diff = 1
+        else:
+            hack_diff = 0
+        
+        base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)-hack_diff  ))
 
         vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
 
