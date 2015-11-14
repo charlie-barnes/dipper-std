@@ -546,7 +546,10 @@ class Run():
         #if this isn't the first dataset we've opened this session,
         #delete the preceeding temp directory
         if not self.dataset == None:
-            shutil.rmtree(self.dataset.temp_dir)
+            try:
+                shutil.rmtree(self.dataset.temp_dir)
+            except OSError:
+                pass
             
         self.dataset = Dataset(self, widget.get_filename())
       
@@ -1099,8 +1102,10 @@ class Dataset(gobject.GObject):
         
         self.temp_dir = tempfile.mkdtemp()
 
+        temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
+            
         if self.connection is None:
-            self.connection = sqlite3.connect(':memory:')
+            self.connection = sqlite3.connect(temp_file)
             self.cursor = self.connection.cursor()
 
             #create the table to store the records
@@ -1166,7 +1171,7 @@ class Dataset(gobject.GObject):
                                                              'vice-counties': '',
                                                              'vice-counties_fill': '#fff',
                                                              'vice-counties_outline': '#000',
-                                                             'date_band_1_style': 'squares',
+                                                             'date_band_1_style': 'circles',
                                                              'date_band_1_fill': '#000',
                                                              'date_band_1_outline': '#000',
                                                              'date_band_1_from': '1600.0',
@@ -1203,7 +1208,7 @@ class Dataset(gobject.GObject):
                                                              'species_accounts_show_statistics': 'True',
                                                              'species_accounts_show_status': 'True',
                                                              'species_accounts_show_phenology': 'True',
-                                                             'species_accounts_phenology_colour': '#d2d2d2',
+                                                             'species_accounts_phenology_colour': '#000',
                                                             })
 
             self.config.add_section('Atlas')
@@ -1383,19 +1388,19 @@ class Read(gobject.GObject):
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
 
-                    if sheet.cell(0, col_index).value.lower() in ('taxon', 'taxon name'):
+                    if sheet.cell(0, col_index).value.lower() in ['taxon', 'taxon name']:
                         taxon_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('family'):
+                    elif sheet.cell(0, col_index).value.lower() in ['family']:
                         family_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('sort order'):
+                    elif sheet.cell(0, col_index).value.lower() in ['sort order']:
                         sort_order_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('nbn key'):
+                    elif sheet.cell(0, col_index).value.lower() in ['nbn key']:
                         nbn_key_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('national status (short)', 'status'):
+                    elif sheet.cell(0, col_index).value.lower() in ['national status (short)', 'status']:
                         national_status_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('description'):
+                    elif sheet.cell(0, col_index).value.lower() in ['description']:
                         description_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('common name'):
+                    elif sheet.cell(0, col_index).value.lower() in ['common name']:
                         common_name_position = col_index
 
                 #loop through each row, skipping the header (first) row
@@ -2184,7 +2189,7 @@ class Atlas(gobject.GObject):
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
             if obj.record[0] in grids:
-                #add the grid to to our holding layer so we can access it later without having to loop through all of them each time
+                #add the grid to our holding layer so we can access it later without having to loop through all of them each time
                 pixels = []
                 #loop through each point in the object
                 for x,y in obj.shape.points:
@@ -2195,7 +2200,7 @@ class Atlas(gobject.GObject):
                     self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).blue_float*255)) + ')')
 
         #create date band 1 grid array
-        #we always show date band 1
+        #we always show date band 1                                                                                                                                                                                                                                                                         
         r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_1_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
@@ -2621,7 +2626,7 @@ class Atlas(gobject.GObject):
                         date = indiv_record[4]
 
                     
-                    if indiv_record[8] == 'Unknown':
+                    if indiv_record[8] == 'Unknown' or indiv_record[8] == '':
                         rec = ' anon.'
                     else:
                         recs = indiv_record[8].split(',')
