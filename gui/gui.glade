@@ -91,6 +91,24 @@
                 <property name="expand">False</property>
                 <property name="fill">False</property>
                 <property name="position">1</property>
+                <property name="secondary">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="button9">
+                <property name="label" translatable="yes">Load config</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_action_appearance">False</property>
+                <signal name="clicked" handler="load_config" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
               </packing>
             </child>
             <child>
@@ -98,6 +116,7 @@
                 <property name="label" translatable="yes">Save config</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
@@ -106,7 +125,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">2</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -123,7 +142,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">3</property>
+                <property name="position">4</property>
               </packing>
             </child>
           </object>
@@ -2191,6 +2210,7 @@
     <action-widgets>
       <action-widget response="0">button4</action-widget>
       <action-widget response="-1">button2</action-widget>
+      <action-widget response="0">button9</action-widget>
       <action-widget response="2">button8</action-widget>
       <action-widget response="1">button3</action-widget>
     </action-widgets>
