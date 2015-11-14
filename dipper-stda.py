@@ -1679,7 +1679,7 @@ class PDF(FPDF):
 
                 self.y0 = self.get_y()
 
-            if self.section == 'Contributors':
+            if self.section == 'Contributors' or self.section == 'Contents':
                 self.set_y(self.y0 + 20)
 
     def footer(self):
