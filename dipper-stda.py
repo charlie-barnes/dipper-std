@@ -32,6 +32,7 @@ import sys
 import os
 import shutil
 import glob
+import random
 import pango
 import xlrd
 import copy
@@ -499,7 +500,7 @@ class Run():
             entry = self.builder.get_object('entry3')
         elif self.builder.get_object('notebook1').get_current_page() == 1 and self.dataset.config.getboolean('List', 'families_update_title'):
             entry = self.builder.get_object('entry4')
-        
+
         try:
             model, selected = selection.get_selected_rows()
             iters = [model.get_iter(path) for path in selected]
@@ -528,8 +529,8 @@ class Run():
                                         model.get_value(iters[0], 0),
                                         ]))
         except UnboundLocalError:
-            pass                                                                  
-                                                                 
+            pass
+
 
 
     def select_all_families(widget, treeview):
@@ -543,7 +544,7 @@ class Run():
     def open_dataset(self, widget):
         """Open a data file."""
         self.builder.get_object('notebook1').set_sensitive(False)
-        
+
         #if this isn't the first dataset we've opened this session,
         #delete the preceeding temp directory
         if not self.dataset == None:
@@ -551,9 +552,9 @@ class Run():
                 shutil.rmtree(self.dataset.temp_dir)
             except OSError:
                 pass
-            
+
         self.dataset = Dataset(self, widget.get_filename())
-      
+
         try:
 
             if self.dataset.data_source.read() == True:
@@ -620,7 +621,7 @@ class Run():
 
 
     def quit(self, widget, third=None):
-        """Quit."""        
+        """Quit."""
         if not self.dataset == None:
             try:
                 shutil.rmtree(self.dataset.temp_dir)
@@ -673,7 +674,10 @@ class Run():
                     atlas.save_in = output
 
                     atlas.generate_base_map()
-                    atlas.generate_density_map()
+
+                    if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
+                        atlas.generate_density_map()
+
                     atlas.generate()
 
                 elif notebook.get_current_page() == 1:
@@ -736,7 +740,7 @@ class Run():
             self.builder.get_object('treeview2').scroll_to_cell(selected[0])
         except IndexError:
             pass
-            
+
         self.builder.get_object('checkbutton18').set_active(self.dataset.config.getboolean('Atlas', 'families_update_title'))
 
         #vcs
@@ -771,9 +775,12 @@ class Run():
 
         #coverage visible
         self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
-        
+
         #species density visible
         self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
+        
+        #explanation visible
+        self.builder.get_object('checkbutton20').set_active(self.dataset.config.getboolean('Atlas', 'explanation_map_visible'))
 
         #date band 1 style
         self.builder.get_object('combobox2').set_active(markers.index(self.dataset.config.get('Atlas', 'date_band_1_style')))
@@ -880,7 +887,7 @@ class Run():
             self.builder.get_object('treeview3').scroll_to_cell(selected[0])
         except IndexError:
             pass
-            
+
         self.dataset.config.set('List', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
 
         #vcs
@@ -900,7 +907,7 @@ class Run():
 
         #paper orientation
         self.builder.get_object('combobox9').set_active(paper_orientation.index(self.dataset.config.get('List', 'orientation')))
-    
+
 
     def update_config(self):
 
@@ -984,6 +991,9 @@ class Run():
 
         #species density map
         self.dataset.config.set('Atlas', 'species_density_map_visible', str(self.builder.get_object('checkbutton19').get_active()))
+
+        #explanation map visible
+        self.dataset.config.set('Atlas', 'explanation_map_visible', str(self.builder.get_object('checkbutton20').get_active()))
 
         #grid lines
         self.dataset.config.set('Atlas', 'grid_lines_visible', str(self.builder.get_object('checkbutton2').get_active()))
@@ -1083,12 +1093,12 @@ class Run():
         config_file = dialog.get_filename()
 
         dialog.destroy()
-                
+
         self.dataset.config.read([config_file])
         self.dataset.config.filename = config_file
-    
+
         self.update_widgets()
-    
+
     def save_config(self, widget):
         '''Save a configuration file based on the current settings'''
 
@@ -1106,15 +1116,15 @@ class Run():
         filter.set_name("Config files")
         filter.add_pattern("*.cfg")
         dialog.add_filter(filter)
-        
+
         response = dialog.run()
 
         output = dialog.get_filename()
 
         dialog.destroy()
-        
+
         self.update_config()
-        
+
         #write the config file
         with open(output, 'wb') as configfile:
             self.dataset.config.write(configfile)
@@ -1144,11 +1154,11 @@ class Dataset(gobject.GObject):
 
         self.atlas_config = {}
         self.list_config = {}
-        
+
         self.temp_dir = tempfile.mkdtemp()
 
         temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
-            
+
         if self.connection is None:
             self.connection = sqlite3.connect(temp_file)
             self.cursor = self.connection.cursor()
@@ -1239,6 +1249,7 @@ class Dataset(gobject.GObject):
                                                              'coverage_style': 'squares',
                                                              'coverage_colour': '#d2d2d2',
                                                              'species_density_map_visible': 'True',
+                                                             'explanation_map_visible': 'True',
                                                              'grid_lines_visible': 'True',
                                                              'grid_lines_style': '2km',
                                                              'grid_lines_colour': '#d2d2d2',
@@ -1293,7 +1304,7 @@ class Read(gobject.GObject):
         '''Read the file and insert the data into the sqlite database.'''
 
         book = xlrd.open_workbook(self.filename)
- 
+
         #if more than one sheet is in the workbook, display sheet selection
         #dialog
         has_data = False
@@ -2041,19 +2052,19 @@ class Atlas(gobject.GObject):
 
         temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
         miniscale = Image.open('./backgrounds/miniscale.png', 'r')
-        
+
         region = miniscale.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, ((1300000/100)-int(bounds_bottom_y/100))))
         region.save(temp_file, format='PNG')
 
         ###HACK: for some reason the crop of the miniscale isn't always the right
         #size. height seems to be off by 1 pixel in some cases.
         (region_width, region_height) = region.size
-        
+
         if region_height == (int(ydist*scalefactor)+1)-1:
             hack_diff = 1
         else:
             hack_diff = 0
-        
+
         base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)-hack_diff  ))
 
         vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
@@ -2255,7 +2266,7 @@ class Atlas(gobject.GObject):
                     self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).blue_float*255)) + ')')
 
         #create date band 1 grid array
-        #we always show date band 1                                                                                                                                                                                                                                                                         
+        #we always show date band 1
         r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_1_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
@@ -2519,8 +2530,8 @@ class Atlas(gobject.GObject):
             pdf.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction'), 0, 'J', False)
 
         #species density map
-        if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):  
-            pdf.section = ('Introduction')          
+        if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
+            pdf.section = ('Introduction')
             pdf.p_add_page()
             pdf.set_font('Helvetica', '', 20)
             pdf.multi_cell(0, 20, 'Species density', 0, 'J', False)
@@ -2554,6 +2565,385 @@ class Atlas(gobject.GObject):
             centerer = ((pdf.w-pdf.l_margin-pdf.r_margin)-target_width)/2
 
             pdf.image(self.density_map_filename, pdf.l_margin+centerer, 40, w=target_width, h=target_height, type='PNG')
+
+        #HACK - this really needs converting a function to create the 'species
+        #package' and then choose one at randomn for the explanation, then
+        #loop through for the rest. The only difference is the extra Y padding?
+        #the explanation map#######################
+        if self.dataset.config.getboolean('Atlas', 'explanation_map_visible'):
+           
+            random_species = random.choice(list(taxa_statistics.keys()))
+
+            designation = taxa_statistics[random_species]['national_designation']
+            if (designation == '') or (designation == 'None'):
+                designation = ' '
+
+            if (taxa_statistics[random_species]['common_name'] == '') or (taxa_statistics[random_species]['common_name'] == 'None'):
+                common_name = ''
+            else:
+                common_name = taxa_statistics[random_species]['common_name']
+            
+            pdf.section = ('Introduction')
+            pdf.p_add_page()
+            pdf.set_font('Helvetica', '', 20)
+            pdf.multi_cell(0, 20, 'Species account explanation', 0, 'J', False)
+
+            y_padding = 39#######extra Y padding to centralize
+            y_padding = (5 + (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding) + ((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75))/2
+            x_padding = pdf.l_margin
+
+            #### the explanation
+            pdf.set_draw_color(0,0,0)
+            pdf.line(10, 10, x_padding, y_padding)
+            #### end the explanation
+            
+            #taxon heading
+            pdf.set_y(y_padding)
+            pdf.set_x(x_padding)
+            pdf.set_text_color(255)
+            pdf.set_fill_color(59, 59, 59)
+            pdf.set_line_width(0.1)
+            pdf.set_font('Helvetica', 'BI', 12)
+            pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, random_species, 'TLB', 0, 'L', True)
+            pdf.set_font('Helvetica', 'B', 12)
+            pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
+            pdf.set_x(x_padding)
+        
+            status_text = ''
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
+                status_text = ''.join([designation])
+
+            pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, status_text, 1, 'L', True)
+
+            #compile list of last e.g. 10 records for use below
+            self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
+                                        FROM data \
+                                        WHERE data.taxon = "' + random_species + '" \
+                                        ORDER BY data.year_to || data.month_to || data.day_to desc')
+
+            indiv_taxon_data = self.dataset.cursor.fetchall()
+
+            max_species_records_length = 900
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                max_species_records_length = max_species_records_length - len(taxa_statistics[random_species]['description'])
+
+            remaining_records = 0
+
+            #there has to be a better way?
+            taxon_recent_records = ''
+            for indiv_record in indiv_taxon_data:
+                if len(taxon_recent_records) < max_species_records_length:
+
+                    #if the determiner is different to the recorder, set the
+                    #determinater (!)
+                    if indiv_record[8] != indiv_record[9]:
+
+                        detees = indiv_record[9].split(',')
+                        deter = ''
+
+                        for deter_name in sorted(detees):
+                            if deter_name != '':
+                                deter = ','.join([deter, contrib_data[deter_name.strip()]])
+
+                        if deter == 'Unknown' or deter == '':
+                            det = ' anon.'
+                        else:
+                            det = ''.join([' det. ', deter[1:]])
+                    else:
+                        det = ''
+
+                    if indiv_record[4] == 'Unknown':
+                        date = '[date unknown]'
+                    else:
+                        date = indiv_record[4]
+
+
+                    if indiv_record[8] == 'Unknown' or indiv_record[8] == '':
+                        rec = ' anon.'
+                    else:
+                        recs = indiv_record[8].split(',')
+                        rec = ''
+
+                        for recorder_name in sorted(recs):
+                            rec = ','.join([rec, contrib_data[recorder_name.strip()]])
+
+                    #limit grid reference to 100m
+                    if len(indiv_record[2]) > 8:
+                        grid = indiv_record[11]
+                    else:
+                        grid = indiv_record[2]
+
+                    #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
+
+                    #substitute parameters for record values
+                    #det and loc values can be empty - to remove empty spaces
+                    #we check for preceeeding and trailing spaces first with
+                    #these if they are empty strings
+                    current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
+
+                    if indiv_record[1] == '':
+                        current_rec = current_rec.replace(' %l', indiv_record[1])
+                        current_rec = current_rec.replace('%l ', indiv_record[1])
+                    else:
+                        current_rec = current_rec.replace('%l', indiv_record[1])
+
+                    if det == '':
+                        current_rec = current_rec.replace(' %i', det)
+                        current_rec = current_rec.replace('%i ', det)
+                    else:
+                        current_rec = current_rec.replace('%i', det)
+
+                    current_rec = current_rec.replace('%v', str(indiv_record[10]))
+                    current_rec = current_rec.replace('%g', grid)
+                    current_rec = current_rec.replace('%d', date.replace('/', '.'))
+                    current_rec = current_rec.replace('%r', rec[1:])
+
+                    #append current record to the output
+                    taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
+                else:
+                    remaining_records = remaining_records + 1
+
+            #if any records remain, add a note to the output
+            if remaining_records > 0:
+                remaining_records_text = ''.join([' [+ ', str(remaining_records), ' more]'])
+            else:
+                remaining_records_text = ''
+
+            #taxon blurb
+            pdf.set_y(y_padding+12)
+            pdf.set_x(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5))
+            pdf.set_font('Helvetica', '', 10)
+            pdf.set_text_color(0)
+            pdf.set_fill_color(255, 255, 255)
+            pdf.set_line_width(0.1)
+            
+            if len(taxa_statistics[random_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                pdf.set_font('Helvetica', 'B', 10)
+                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join([taxa_statistics[random_species]['description'], '\n\n']), 0, 'L', False)
+                pdf.set_x(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5))
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                pdf.set_font('Helvetica', '', 10)
+                pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+
+            #chart
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
+                chart = Chart(self.dataset, random_species)
+                if chart.temp_filename != None:
+                    pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
+                pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
+
+
+            current_map =  self.base_map.copy()
+            current_map_draw = ImageDraw.Draw(current_map)
+
+            if self.dataset.config.get('Atlas', 'date_band_3_visible'):
+                #date band 3
+                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                            FROM data \
+                                            WHERE data.taxon = "' + random_species + '" \
+                                            AND data.year_to >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_from')))) + '\
+                                            AND data.year_to < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_to')))) + ' \
+                                            AND data.year_from >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_from')))) + ' \
+                                            AND data.year_from < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_3_to')))))
+
+                date_band_3 = self.dataset.cursor.fetchall()
+
+                date_band_3_grids = []
+
+                for tup in date_band_3:
+                    date_band_3_grids.append(tup[0])
+
+
+            if self.dataset.config.get('Atlas', 'date_band_2_visible'):
+                #date band 2
+                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                            FROM data \
+                                            WHERE data.taxon = "' + random_species + '" \
+                                            AND data.year_to >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_from')))) + '\
+                                            AND data.year_to < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_to')))) + ' \
+                                            AND data.year_from >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_from')))) + ' \
+                                            AND data.year_from < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_2_to')))))
+
+                date_band_2 = self.dataset.cursor.fetchall()
+
+                date_band_2_grids = []
+
+                #show 3 and overlay 3
+                if self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                    for tup in date_band_2:
+                        if tup[0] not in date_band_3_grids:
+                            date_band_2_grids.append(tup[0])
+                else:
+                    for tup in date_band_2:
+                        date_band_2_grids.append(tup[0])
+
+            #we always show date band 1
+            #date band 1
+            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                        FROM data \
+                                        WHERE data.taxon = "' + random_species + '" \
+                                        AND data.year_to >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_from')))) + ' \
+                                        AND data.year_to < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_to')))) + ' \
+                                        AND data.year_from >= ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_from')))) + ' \
+                                        AND data.year_from < ' + str(int(float(self.dataset.config.get('Atlas', 'date_band_1_to')))))
+
+            date_band_1 = self.dataset.cursor.fetchall()
+            date_band_1_grids = []
+
+            #show 2 and 3, don't overlay 2 and 3
+            if self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] not in date_band_3_grids and tup[0] not in date_band_2_grids:
+                        date_band_1_grids.append(tup[0])
+
+            #show 2 and 3, overlay 2 not 3
+            elif self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and self.dataset.config.get('Atlas', 'date_band_2_overlay') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] not in date_band_3_grids:
+                        date_band_1_grids.append(tup[0])
+
+            #show 2 and 3, overlay 3 not 2
+            elif self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay') and self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] not in date_band_2_grids:
+                        date_band_1_grids.append(tup[0])
+
+            #show 2, don't overlay 2
+            elif self.dataset.config.get('Atlas', 'date_band_2_visible') and not self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay'):
+                for tup in date_band_1:
+                    if tup[0] and tup[0] not in date_band_2_grids:
+                        date_band_1_grids.append(tup[0])
+
+            #show 3, don't overlay 3
+            elif not self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
+                for tup in date_band_1:
+                    if tup[0] and tup[0] not in date_band_3_grids:
+                        date_band_1_grids.append(tup[0])
+
+            #else use all
+            else:
+                for tup in date_band_1:
+                        date_band_1_grids.append(tup[0])
+
+            #we always show date band 1
+            #loop through each object in the date band 1 grids
+            for obj in self.date_band_1_style_coverage:
+                if obj.record[0] in date_band_1_grids:
+                    pixels = []
+                    #loop through each point in the object
+                    for x,y in obj.shape.points:
+                        px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                        py = (self.bounds_top_y - y) * self.scalefactor
+                        pixels.append((px,py))
+                    current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).blue_float*255)) + ')')
+
+            if self.dataset.config.get('Atlas', 'date_band_2_visible'):
+                #loop through each object in the date band 2 grids
+                for obj in self.date_band_2_style_coverage:
+                    #print random_species, obj.record[0]
+                    if obj.record[0] in date_band_2_grids:
+                        #print "yes"
+                        pixels = []
+                        #loop through each point in the object
+                        for x,y in obj.shape.points:
+                            px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                            py = (self.bounds_top_y - y) * self.scalefactor
+                            pixels.append((px,py))
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).blue_float*255)) + ')')
+
+            if self.dataset.config.get('Atlas', 'date_band_3_visible'):
+                #loop through each object in the date band 3 grids
+                for obj in self.date_band_3_style_coverage:
+                    #print random_species, obj.record[0]
+                    if obj.record[0] in date_band_3_grids:
+                        #print "yes"
+                        pixels = []
+                        #loop through each point in the object
+                        for x,y in obj.shape.points:
+                            px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                            py = (self.bounds_top_y - y) * self.scalefactor
+                            pixels.append((px,py))
+                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
+
+            temp_map_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+            current_map.save(temp_map_file, format='PNG')
+
+            (width, height) =  current_map.size
+
+            max_width = (pdf.w / 2)-pdf.l_margin-pdf.r_margin
+            max_height = (pdf.w / 2)-pdf.l_margin-pdf.r_margin
+
+            if height > width:
+                pdfim_height = max_width
+                pdfim_width = (float(width)/float(height))*max_width
+            else:
+                pdfim_height = (float(height)/float(width))*max_width
+                pdfim_width = max_width
+
+            img_x_cent = ((max_width-pdfim_width)/2)+2
+            img_y_cent = ((max_height-pdfim_height)/2)+12
+
+            pdf.image(temp_map_file, x_padding+img_x_cent, y_padding+img_y_cent, int(pdfim_width), int(pdfim_height), 'PNG')
+
+
+            #map container
+            pdf.set_text_color(0)
+            pdf.set_fill_color(255, 255, 255)
+            pdf.set_line_width(0.1)
+            pdf.rect(x_padding, 10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
+
+                #from
+                pdf.set_y(11+y_padding)
+                pdf.set_x(1+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
+
+                if str(taxa_statistics[random_species]['earliest']) == 'Unknown':
+                    val = '?'
+                else:
+                    val = str(taxa_statistics[random_species]['earliest'])
+                pdf.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
+
+                #to
+                pdf.set_y(11+y_padding)
+                pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
+
+                if str(taxa_statistics[random_species]['latest']) == 'Unknown':
+                    val = '?'
+                else:
+                    val = str(taxa_statistics[random_species]['latest'])
+                pdf.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
+
+                #records
+                pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
+                pdf.set_x(1+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
+                pdf.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[random_species]['count'])]), 0, 'L', False)
+
+                #tetrads
+                pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
+                pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
+                pdf.set_font('Helvetica', '', 12)
+                pdf.set_text_color(0)
+                pdf.set_fill_color(255, 255, 255)
+                pdf.set_line_width(0.1)
+                pdf.multi_cell(18, 5, ''.join(['S ', str(taxa_statistics[random_species]['dist_count'])]), 0, 'R', False)
+
+            
+        #end of explanation map code###############################
 
         taxon_count = 0
         genus_index = {}
@@ -2615,10 +3005,10 @@ class Atlas(gobject.GObject):
                 gtk.main_iteration()
 
             # calc the positining for the various elements
-            if region_count == 1: # top left taxon map
+            if region_count == 1: # top taxon map
                 y_padding = 19
                 x_padding = pdf.l_margin
-            elif region_count == 2: # bottom left taxon map
+            elif region_count == 2: # bottom taxon map
                 y_padding = 5 + (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding) + ((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
                 x_padding = pdf.l_margin
 
@@ -2629,15 +3019,15 @@ class Atlas(gobject.GObject):
             pdf.set_fill_color(59, 59, 59)
             pdf.set_line_width(0.1)
             pdf.set_font('Helvetica', 'BI', 12)
-            pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, ''.join([item[0]]), 'TLB', 0, 'L', True)
+            pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, item[0], 'TLB', 0, 'L', True)
             pdf.set_font('Helvetica', 'B', 12)
             pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
             pdf.set_x(x_padding)
-            
+
             status_text = ''
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
-                status_text = ''.join([designation])     
-                
+                status_text = ''.join([designation])
+
             pdf.multi_cell(((pdf.w)-pdf.l_margin-pdf.r_margin), 5, status_text, 1, 'L', True)
 
             #compile list of last e.g. 10 records for use below
@@ -2658,7 +3048,7 @@ class Atlas(gobject.GObject):
             #there has to be a better way?
             for indiv_record in indiv_taxon_data:
                 if len(taxon_recent_records) < max_species_records_length:
-                
+
                     #if the determiner is different to the recorder, set the
                     #determinater (!)
                     if indiv_record[8] != indiv_record[9]:
@@ -2682,7 +3072,7 @@ class Atlas(gobject.GObject):
                     else:
                         date = indiv_record[4]
 
-                    
+
                     if indiv_record[8] == 'Unknown' or indiv_record[8] == '':
                         rec = ' anon.'
                     else:
@@ -2705,24 +3095,24 @@ class Atlas(gobject.GObject):
                     #we check for preceeeding and trailing spaces first with
                     #these if they are empty strings
                     current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
-                    
+
                     if indiv_record[1] == '':
                         current_rec = current_rec.replace(' %l', indiv_record[1])
                         current_rec = current_rec.replace('%l ', indiv_record[1])
                     else:
                         current_rec = current_rec.replace('%l', indiv_record[1])
-                    
+
                     if det == '':
                         current_rec = current_rec.replace(' %i', det)
                         current_rec = current_rec.replace('%i ', det)
                     else:
                         current_rec = current_rec.replace('%i', det)
-                                                
+
                     current_rec = current_rec.replace('%v', str(indiv_record[10]))
                     current_rec = current_rec.replace('%g', grid)
                     current_rec = current_rec.replace('%d', date.replace('/', '.'))
                     current_rec = current_rec.replace('%r', rec[1:])
-                    
+
                     #append current record to the output
                     taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
                 else:
