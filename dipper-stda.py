@@ -461,6 +461,9 @@ class Run():
         dialog = self.builder.get_object('dialog1')
         dialog.show()
 
+        if filename != None:
+            self.open_dataset(None, filename)
+
 
     def update_preview_cb(self, file_chooser, preview):
         filename = file_chooser.get_preview_filename()
@@ -541,7 +544,7 @@ class Run():
         """Clear the cover image file selection."""
         filechoooserbutton.unselect_all()
 
-    def open_dataset(self, widget):
+    def open_dataset(self, widget, filename=None):
         """Open a data file."""
         self.builder.get_object('notebook1').set_sensitive(False)
 
@@ -553,7 +556,11 @@ class Run():
             except OSError:
                 pass
 
-        self.dataset = Dataset(self, widget.get_filename())
+        try:
+            self.dataset = Dataset(widget.get_filename())
+        except AttributeError:
+            self.dataset = Dataset(filename)
+            self.builder.get_object('filechooserbutton3').set_filename(filename)
 
         try:
 
@@ -658,8 +665,14 @@ class Run():
 
             dialog.destroy()
 
+            while gtk.events_pending():
+                gtk.main_iteration()            
+
             watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
             self.builder.get_object('dialog1').window.set_cursor(watch)
+
+            while gtk.events_pending():
+                gtk.main_iteration()     
 
             if response == gtk.RESPONSE_OK:
                 self.update_config()
@@ -778,7 +791,7 @@ class Run():
 
         #species density visible
         self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
-        
+
         #explanation visible
         self.builder.get_object('checkbutton20').set_active(self.dataset.config.getboolean('Atlas', 'explanation_map_visible'))
 
@@ -1132,10 +1145,9 @@ class Run():
 
 class Dataset(gobject.GObject):
 
-    def __init__(self, instance, filename):
+    def __init__(self, filename):
         gobject.GObject.__init__(self)
 
-        self.instance = instance
         self.filename = filename
         self.mime = None
 
@@ -2571,7 +2583,7 @@ class Atlas(gobject.GObject):
         #loop through for the rest. The only difference is the extra Y padding?
         #the explanation map#######################
         if self.dataset.config.getboolean('Atlas', 'explanation_map_visible'):
-           
+
             random_species = random.choice(list(taxa_statistics.keys()))
 
             designation = taxa_statistics[random_species]['national_designation']
@@ -2582,7 +2594,7 @@ class Atlas(gobject.GObject):
                 common_name = ''
             else:
                 common_name = taxa_statistics[random_species]['common_name']
-            
+
             pdf.section = ('Introduction')
             pdf.p_add_page()
             pdf.set_font('Helvetica', '', 20)
@@ -2592,14 +2604,6 @@ class Atlas(gobject.GObject):
             y_padding = (5 + (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding) + ((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75))/2
             x_padding = pdf.l_margin
 
-            #### the explanation
-            pdf.set_draw_color(0,0,0)
-            pdf.line(30, 50, x_padding+10, y_padding)#species name
-            pdf.line(pdf.w-pdf.l_margin-30, 50, pdf.w-pdf.l_margin-x_padding-10, y_padding)#common name
-            pdf.line(60, 200, 60, 200)#phenology chart
-            pdf.line(20, 190, 20, 250)#number of records          
-            #### end the explanation
-            
             #taxon heading
             pdf.set_y(y_padding)
             pdf.set_x(x_padding)
@@ -2611,7 +2615,7 @@ class Atlas(gobject.GObject):
             pdf.set_font('Helvetica', 'B', 12)
             pdf.cell(((pdf.w)-pdf.l_margin-pdf.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
             pdf.set_x(x_padding)
-        
+
             status_text = ''
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
                 status_text = ''.join([designation])
@@ -2720,7 +2724,7 @@ class Atlas(gobject.GObject):
             pdf.set_text_color(0)
             pdf.set_fill_color(255, 255, 255)
             pdf.set_line_width(0.1)
-            
+
             if len(taxa_statistics[random_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                 pdf.set_font('Helvetica', 'B', 10)
                 pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join([taxa_statistics[random_species]['description'], '\n\n']), 0, 'L', False)
@@ -2729,6 +2733,8 @@ class Atlas(gobject.GObject):
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
                 pdf.set_font('Helvetica', '', 10)
                 pdf.multi_cell((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+
+            y_for_explanation = pdf.get_y()
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
@@ -2936,7 +2942,7 @@ class Atlas(gobject.GObject):
                 pdf.set_line_width(0.1)
                 pdf.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[random_species]['count'])]), 0, 'L', False)
 
-                #tetrads
+                #squares
                 pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
                 pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
                 pdf.set_font('Helvetica', '', 12)
@@ -2945,7 +2951,80 @@ class Atlas(gobject.GObject):
                 pdf.set_line_width(0.1)
                 pdf.multi_cell(18, 5, ''.join(['S ', str(taxa_statistics[random_species]['dist_count'])]), 0, 'R', False)
 
+
+
+            #### the explanations
+            pdf.set_draw_color(0,0,0)
             
+            #species name
+            pdf.line(20,
+                     50,
+                     x_padding+7,
+                     y_padding)
+            
+            #common name
+            pdf.line(pdf.w-pdf.l_margin-30,
+                     50,
+                     pdf.w-pdf.l_margin-x_padding-10,
+                     y_padding)
+
+            pdf.set_y(y_padding+12)
+            pdf.set_x(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5))
+            
+            #taxon blurb
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') or self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                pdf.line(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5)   +50, #x1
+                         y_for_explanation,                                             #y1
+                         160,                                                           #x2
+                         250)                                                           #y2
+            
+            #phenology chart
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
+                pdf.line((   ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3     )       / 2, #x1
+                         ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding    +20, #y1
+                         70,                                                            #x2
+                         260)                                                           #y2
+            
+            pdf.set_x(140)
+            pdf.set_y(270)
+            pdf.cell(10, 0, 'Phenology chart', 1, 0, 'L', True)
+
+            #status
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
+                #earliest
+                pdf.line(1+x_padding                                               +10, #x1
+                         11+y_padding                                              -5,  #y1
+                         1+x_padding                                               +40, #x2
+                         11+y_padding                                              -37) #y2
+            
+            #statistics
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
+                #earliest
+                pdf.line(1+x_padding                                               +15, #x1
+                         11+y_padding                                              +2,  #y1
+                         1+x_padding                                               +50, #x2
+                         11+y_padding                                              -20) #y2
+                         
+                #latest
+                pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +10, #x1
+                         11+y_padding,                                                  #y1
+                         (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +40, #x2
+                         11+y_padding -40)                                              #y2
+                         
+                #number of records
+                pdf.line(1+x_padding                                               +5,  #x1
+                         (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     +5,  #y1
+                         20,                                                            #x2
+                         250)                                                           #y2
+
+                #number of squares                         
+                pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +15, #x1
+                         (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     +5,  #y1
+                         (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +30, #x2
+                         250                                                       -20) #y2
+                         
+            #### end the explanations
+
         #end of explanation map code###############################
 
         taxon_count = 0
