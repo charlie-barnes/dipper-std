@@ -2596,8 +2596,8 @@ class Atlas(gobject.GObject):
             pdf.set_draw_color(0,0,0)
             pdf.line(30, 50, x_padding+10, y_padding)#species name
             pdf.line(pdf.w-pdf.l_margin-30, 50, pdf.w-pdf.l_margin-x_padding-10, y_padding)#common name
-            pdf.line(60, 200, 60, 250)#phenology chart
-            pdf.line(10, 170, 20, 250)#number of records          
+            pdf.line(60, 200, 60, 200)#phenology chart
+            pdf.line(20, 190, 20, 250)#number of records          
             #### end the explanation
             
             #taxon heading
