@@ -666,13 +666,13 @@ class Run():
             dialog.destroy()
 
             while gtk.events_pending():
-                gtk.main_iteration()            
+                gtk.main_iteration()
 
             watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
             self.builder.get_object('dialog1').window.set_cursor(watch)
 
             while gtk.events_pending():
-                gtk.main_iteration()     
+                gtk.main_iteration()
 
             if response == gtk.RESPONSE_OK:
                 self.update_config()
@@ -2956,18 +2956,18 @@ class Atlas(gobject.GObject):
             #### the explanations
             pdf.set_font('Helvetica', '', 9)
             pdf.set_draw_color(0,0,0)
-            
+
             #species name
             pdf.line(20,
                      50,
                      x_padding+7,
                      y_padding)
-            
+
             pdf.set_x(1+x_padding +15)
             pdf.set_y(11+y_padding -50)
             pdf.cell(1)
-            pdf.cell(10, 5, 'Species name', 0, 0, 'L', True)  
-            
+            pdf.cell(10, 5, 'Species name', 0, 0, 'L', True)
+
             #common name
             pdf.line(pdf.w-pdf.l_margin-30,
                      50,
@@ -2977,40 +2977,40 @@ class Atlas(gobject.GObject):
             pdf.set_x(1+x_padding +15)
             pdf.set_y(11+y_padding -48)
             pdf.cell(150)
-            pdf.cell(10, 5, 'Common name', 0, 0, 'L', True)  
-                         
-            
+            pdf.cell(10, 5, 'Common name', 0, 0, 'L', True)
+
+
             pdf.set_y(y_padding+12)
             pdf.set_x(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5))
-            
+
             #taxon blurb
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') or self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                 pdf.line(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5)   +50, #x1
                          y_for_explanation,                                             #y1
-                         160,                                                           #x2
-                         250)                                                           #y2
-                         
+                         170,                                                           #x2
+                         240)                                                           #y2
+
                 pdf.set_x(10)
-                pdf.set_y(250)
-                pdf.cell(120)
-                
+                pdf.set_y(240)
+                pdf.cell(130)
+
                 if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                     pdf.cell(10, 5, 'Species description and most recent records', 0, 0, 'L', True)
                 elif self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and not self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                     pdf.cell(10, 5, 'Most recent records', 0, 0, 'L', True)
                 elif not self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                     pdf.cell(10, 5, 'Species description', 0, 0, 'L', True)
-            
+
             #phenology chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
                 pdf.line((   ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3     )       / 2, #x1
                          ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding    +22, #y1
-                         70,                                                            #x2
+                         40,                                                            #x2
                          260)                                                           #y2
-            
+
                 pdf.set_x(10)
                 pdf.set_y(260)
-                pdf.cell(45)
+                pdf.cell(15)
                 pdf.cell(10, 5, 'Monthly phenology chart', 0, 0, 'L', True)
 
             #status
@@ -3023,7 +3023,7 @@ class Atlas(gobject.GObject):
                 pdf.set_x(10)
                 pdf.set_y(11+y_padding -43)
                 pdf.cell(30)
-                pdf.cell(10, 5, 'Species status', 0, 0, 'L', True)                           
+                pdf.cell(10, 5, 'Species status', 0, 0, 'L', True)
 
             #statistics
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
@@ -3031,46 +3031,149 @@ class Atlas(gobject.GObject):
                 pdf.line(1+x_padding                                               +15, #x1
                          11+y_padding                                              +2,  #y1
                          1+x_padding                                               +50, #x2
-                         11+y_padding                                              -20) #y2      
+                         11+y_padding                                              -20) #y2
 
                 pdf.set_x(10)
                 pdf.set_y(11+y_padding -25)
                 pdf.cell(45)
-                pdf.cell(10, 5, 'Earliest record', 0, 0, 'L', True)                         
-                        
+                pdf.cell(10, 5, 'Earliest record', 0, 0, 'L', True)
+
                 #latest
                 pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +10, #x1
                          11+y_padding,                                                  #y1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +40, #x2
                          11+y_padding -40)                                              #y2
-                         
+
                 pdf.set_x(10)
-                pdf.set_y(11+y_padding -40)
+                pdf.set_y(11+y_padding -45)
                 pdf.cell(100)
-                pdf.cell(10, 5, 'Latest record', 0, 0, 'L', True) 
-                         
+                pdf.cell(10, 5, 'Latest record', 0, 0, 'L', True)
+
                 #number of records
                 pdf.line(1+x_padding                                               +5,  #x1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     +5,  #y1
                          20,                                                            #x2
-                         250)                                                           #y2
+                         220)                                                           #y2
 
                 pdf.set_x(10)
-                pdf.set_y(250)
+                pdf.set_y(220)
                 pdf.cell(1)
-                pdf.cell(10, 5, 'Number of records', 0, 0, 'L', True)                         
-                         
-                #number of squares                         
+                pdf.cell(10, 5, 'Number of records', 0, 0, 'L', True)
+
+                #number of squares
                 pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +15, #x1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     +5,  #y1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +30, #x2
-                         250                                                       -20) #y2
-                         
+                         240                                                       -20) #y2
+
                 pdf.set_x(10)
-                pdf.set_y(230)
+                pdf.set_y(220)
                 pdf.cell(70)
-                pdf.cell(10, 5, ' '.join(['Number of', self.dataset.config.get('Atlas', 'distribution_unit'), 'squares the species occurs in']), 0, 0, 'L', True)                         
-                         
+                pdf.cell(10, 5, ' '.join(['Number of', self.dataset.config.get('Atlas', 'distribution_unit'), 'squares the species occurs in']), 0, 0, 'L', True)
+
+
+            # the date classes
+
+            pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    -30, #x1
+                     (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     -50, #y1
+                     70, #x2
+                     240                                                          ) #y2            
+            
+            pdf.set_font('Helvetica', '', 9)
+            pdf.set_x(70)
+            pdf.set_y(240)
+            pdf.cell(50)
+            pdf.cell(10, 5, 'Date classes:', 0, 0, 'L', True)
+
+            #scale down the marker to a sensible size
+            if self.dataset.config.get('Atlas', 'distribution_unit') == '100km':
+                scalefactor = 0.00025
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '10km':
+                scalefactor = 0.0025
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '5km':
+                scalefactor = 0.005
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '2km':
+                scalefactor = 0.0125
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '1km':
+                scalefactor = 0.025
+
+            #draw each band marker in turn and save out
+            #we always show date band 1
+            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_1_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+            shapes = r.shapes()
+            pixels = []
+
+            #grab the first marker we come to - no need to be fussy
+            for x, y in shapes[0].points:
+                px = int(float(x-shapes[0].bbox[0]) * scalefactor)
+                py = int(float(shapes[0].bbox[3]-y) * scalefactor)
+                pixels.append((px,py))
+
+            date_band_1 = Image.new('RGB',
+                                 (  int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                    int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                 'white')
+            date_band_1_draw = ImageDraw.Draw(date_band_1)
+            date_band_1_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).blue_float*255)) + ')')
+
+            date_band_1_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+            date_band_1.save(date_band_1_temp_file, format='PNG')
+
+            pdf.set_x(150)
+            pdf.set_y(245)
+            pdf.image(date_band_1_temp_file, h=5, type='PNG')
+                
+
+            #date band 2
+            if self.dataset.config.get('Atlas', 'date_band_2_visible'):
+                r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_2_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+                shapes = r.shapes()
+                pixels = []
+
+                #grab the first marker we come to - no need to be fussy
+                for x, y in shapes[0].points:
+                    px = int(float(x-shapes[0].bbox[0]) * scalefactor)
+                    py = int(float(shapes[0].bbox[3]-y) * scalefactor)
+                    pixels.append((px,py))
+
+                date_band_2 = Image.new('RGB',
+                                     (  int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                        int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                     'white')
+                date_band_2_draw = ImageDraw.Draw(date_band_2)
+                date_band_2_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).blue_float*255)) + ')')
+
+                date_band_2_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                date_band_2.save(date_band_2_temp_file, format='PNG')
+                pdf.set_x(70)
+                pdf.set_y(252)
+                pdf.image(date_band_2_temp_file, h=5, type='PNG')
+
+            #date band 3
+            if self.dataset.config.get('Atlas', 'date_band_3_visible'):
+                r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_3_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+                shapes = r.shapes()
+                pixels = []
+
+                #grab the first marker we come to - no need to be fussy
+                for x, y in shapes[0].points:
+                    px = int(float(x-shapes[0].bbox[0]) * scalefactor)
+                    py = int(float(shapes[0].bbox[3]-y) * scalefactor)
+                    pixels.append((px,py))
+
+                date_band_3 = Image.new('RGB',
+                                     (  int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                        int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                     'white')
+                date_band_3_draw = ImageDraw.Draw(date_band_3)
+                date_band_3_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
+
+                date_band_3_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                date_band_3.save(date_band_3_temp_file, format='PNG')
+                pdf.set_x(70)
+                pdf.set_y(260)
+                pdf.image(date_band_3_temp_file, h=5, type='PNG')
+
             #### end the explanations
 
         #end of explanation map code###############################
