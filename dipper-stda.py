@@ -3075,14 +3075,14 @@ class Atlas(gobject.GObject):
             # the date classes
 
             pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    -30, #x1
-                     (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     -50, #y1
-                     70, #x2
+                     (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     -30, #y1
+                     80, #x2
                      240                                                          ) #y2            
             
             pdf.set_font('Helvetica', '', 9)
             pdf.set_x(70)
             pdf.set_y(240)
-            pdf.cell(50)
+            pdf.cell(60)
             pdf.cell(10, 5, 'Date classes:', 0, 0, 'L', True)
 
             #scale down the marker to a sensible size
@@ -3119,9 +3119,8 @@ class Atlas(gobject.GObject):
             date_band_1_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
             date_band_1.save(date_band_1_temp_file, format='PNG')
 
-            pdf.set_x(150)
-            pdf.set_y(245)
-            pdf.image(date_band_1_temp_file, h=5, type='PNG')
+
+            pdf.image(date_band_1_temp_file, 80, 245, h=5, type='PNG')
                 
 
             #date band 2
@@ -3145,9 +3144,8 @@ class Atlas(gobject.GObject):
 
                 date_band_2_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
                 date_band_2.save(date_band_2_temp_file, format='PNG')
-                pdf.set_x(70)
-                pdf.set_y(252)
-                pdf.image(date_band_2_temp_file, h=5, type='PNG')
+
+                pdf.image(date_band_2_temp_file, 80, 252, h=5, type='PNG')
 
             #date band 3
             if self.dataset.config.get('Atlas', 'date_band_3_visible'):
@@ -3170,9 +3168,8 @@ class Atlas(gobject.GObject):
 
                 date_band_3_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
                 date_band_3.save(date_band_3_temp_file, format='PNG')
-                pdf.set_x(70)
-                pdf.set_y(260)
-                pdf.image(date_band_3_temp_file, h=5, type='PNG')
+
+                pdf.image(date_band_3_temp_file, 80, 259, h=5, type='PNG')
 
             #### end the explanations
 
