@@ -2954,6 +2954,7 @@ class Atlas(gobject.GObject):
 
 
             #### the explanations
+            pdf.set_font('Helvetica', '', 9)
             pdf.set_draw_color(0,0,0)
             
             #species name
@@ -2962,12 +2963,23 @@ class Atlas(gobject.GObject):
                      x_padding+7,
                      y_padding)
             
+            pdf.set_x(1+x_padding +15)
+            pdf.set_y(11+y_padding -50)
+            pdf.cell(1)
+            pdf.cell(10, 5, 'Species name', 0, 0, 'L', True)  
+            
             #common name
             pdf.line(pdf.w-pdf.l_margin-30,
                      50,
                      pdf.w-pdf.l_margin-x_padding-10,
                      y_padding)
 
+            pdf.set_x(1+x_padding +15)
+            pdf.set_y(11+y_padding -48)
+            pdf.cell(150)
+            pdf.cell(10, 5, 'Common name', 0, 0, 'L', True)  
+                         
+            
             pdf.set_y(y_padding+12)
             pdf.set_x(x_padding+(((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+5))
             
@@ -2977,39 +2989,65 @@ class Atlas(gobject.GObject):
                          y_for_explanation,                                             #y1
                          160,                                                           #x2
                          250)                                                           #y2
+                         
+                pdf.set_x(10)
+                pdf.set_y(250)
+                pdf.cell(120)
+                
+                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                    pdf.cell(10, 5, 'Species description and most recent records', 0, 0, 'L', True)
+                elif self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and not self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                    pdf.cell(10, 5, 'Most recent records', 0, 0, 'L', True)
+                elif not self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                    pdf.cell(10, 5, 'Species description', 0, 0, 'L', True)
             
             #phenology chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
                 pdf.line((   ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3     )       / 2, #x1
-                         ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding    +20, #y1
+                         ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding    +22, #y1
                          70,                                                            #x2
                          260)                                                           #y2
             
-            pdf.set_x(140)
-            pdf.set_y(270)
-            pdf.cell(10, 0, 'Phenology chart', 1, 0, 'L', True)
+                pdf.set_x(10)
+                pdf.set_y(260)
+                pdf.cell(45)
+                pdf.cell(10, 5, 'Monthly phenology chart', 0, 0, 'L', True)
 
             #status
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
-                #earliest
                 pdf.line(1+x_padding                                               +10, #x1
                          11+y_padding                                              -5,  #y1
                          1+x_padding                                               +40, #x2
                          11+y_padding                                              -37) #y2
-            
+
+                pdf.set_x(10)
+                pdf.set_y(11+y_padding -43)
+                pdf.cell(30)
+                pdf.cell(10, 5, 'Species status', 0, 0, 'L', True)                           
+
             #statistics
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
                 #earliest
                 pdf.line(1+x_padding                                               +15, #x1
                          11+y_padding                                              +2,  #y1
                          1+x_padding                                               +50, #x2
-                         11+y_padding                                              -20) #y2
-                         
+                         11+y_padding                                              -20) #y2      
+
+                pdf.set_x(10)
+                pdf.set_y(11+y_padding -25)
+                pdf.cell(45)
+                pdf.cell(10, 5, 'Earliest record', 0, 0, 'L', True)                         
+                        
                 #latest
                 pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +10, #x1
                          11+y_padding,                                                  #y1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +40, #x2
                          11+y_padding -40)                                              #y2
+                         
+                pdf.set_x(10)
+                pdf.set_y(11+y_padding -40)
+                pdf.cell(100)
+                pdf.cell(10, 5, 'Latest record', 0, 0, 'L', True) 
                          
                 #number of records
                 pdf.line(1+x_padding                                               +5,  #x1
@@ -3017,11 +3055,21 @@ class Atlas(gobject.GObject):
                          20,                                                            #x2
                          250)                                                           #y2
 
+                pdf.set_x(10)
+                pdf.set_y(250)
+                pdf.cell(1)
+                pdf.cell(10, 5, 'Number of records', 0, 0, 'L', True)                         
+                         
                 #number of squares                         
                 pdf.line((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +15, #x1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding     +5,  #y1
                          (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding    +30, #x2
                          250                                                       -20) #y2
+                         
+                pdf.set_x(10)
+                pdf.set_y(230)
+                pdf.cell(70)
+                pdf.cell(10, 5, ' '.join(['Number of', self.dataset.config.get('Atlas', 'distribution_unit'), 'squares the species occurs in']), 0, 0, 'L', True)                         
                          
             #### end the explanations
 
