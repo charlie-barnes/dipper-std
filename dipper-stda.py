@@ -41,6 +41,7 @@ import math
 from subprocess import call
 import ConfigParser
 from pygtk_chart import bar_chart
+from colour import Color
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
@@ -792,6 +793,12 @@ class Run():
         #species density visible
         self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
 
+        #species density map low colour
+        self.builder.get_object('colorbutton12').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_low_colour')))
+
+        #species density map high colour
+        self.builder.get_object('colorbutton13').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_high_colour')))
+
         #explanation visible
         self.builder.get_object('checkbutton20').set_active(self.dataset.config.getboolean('Atlas', 'explanation_map_visible'))
 
@@ -1004,7 +1011,13 @@ class Run():
 
         #species density map
         self.dataset.config.set('Atlas', 'species_density_map_visible', str(self.builder.get_object('checkbutton19').get_active()))
-
+        
+        #species density map low colour
+        self.dataset.config.set('Atlas', 'species_density_map_low_colour', str(self.builder.get_object('colorbutton12').get_color()))
+        
+        #species density map high colour
+        self.dataset.config.set('Atlas', 'species_density_map_high_colour', str(self.builder.get_object('colorbutton13').get_color()))
+        
         #explanation map visible
         self.dataset.config.set('Atlas', 'explanation_map_visible', str(self.builder.get_object('checkbutton20').get_active()))
 
@@ -1261,6 +1274,8 @@ class Dataset(gobject.GObject):
                                                              'coverage_style': 'squares',
                                                              'coverage_colour': '#d2d2d2',
                                                              'species_density_map_visible': 'True',
+                                                             'species_density_map_low_colour': '#FFFF80',
+                                                             'species_density_map_high_colour': '#76130A',
                                                              'explanation_map_visible': 'True',
                                                              'grid_lines_visible': 'True',
                                                              'grid_lines_style': '2km',
@@ -2022,8 +2037,28 @@ class Atlas(gobject.GObject):
         self.date_band_1_style_coverage = []
         self.date_band_2_style_coverage = []
         self.date_band_3_style_coverage = []
-
-
+        
+        self.grad_ranges = [[1,1],
+                            [2,2],
+                            [3,3],
+                            [4,5],
+                            [6,10],
+                            [11,15],
+                            [16,20],
+                            [21,35],
+                            [36,50],
+                            [51,75],
+                            [76,100],
+                            [101,250],
+                            [251,500],
+                            [501,1000]]
+        
+        low = Color(self.dataset.config.get('Atlas', 'species_density_map_low_colour'))
+        high = Color(self.dataset.config.get('Atlas', 'species_density_map_high_colour'))
+        self.grad_fills = list(low.range_to(high, 14))
+                
+        
+        
     def generate_density_map(self):
 
         #generate the base map
@@ -2113,36 +2148,9 @@ class Atlas(gobject.GObject):
 
                 gradfill = 'rgb(255, 255, 255)'
 
-                if gridsdict[obj.record[0]] >= 1 and gridsdict[obj.record[0]] <= 1:
-                    gradfill = 'rgb(255, 255, 128)'
-                elif gridsdict[obj.record[0]] >= 2 and gridsdict[obj.record[0]] <= 2:
-                    gradfill = 'rgb(244, 236, 118)'
-                elif gridsdict[obj.record[0]] >= 3 and gridsdict[obj.record[0]] <= 3:
-                    gradfill = 'rgb(233, 218, 109)'
-                elif gridsdict[obj.record[0]] >= 4 and gridsdict[obj.record[0]] <= 5:
-                    gradfill = 'rgb(223, 200, 100)'
-                elif gridsdict[obj.record[0]] >= 6 and gridsdict[obj.record[0]] <= 10:
-                    gradfill = 'rgb(212, 182, 91)'
-                elif gridsdict[obj.record[0]] >= 11 and gridsdict[obj.record[0]] <= 15:
-                    gradfill = 'rgb(202, 164, 82)'
-                elif gridsdict[obj.record[0]] >= 16 and gridsdict[obj.record[0]] <= 20:
-                    gradfill = 'rgb(191, 146, 73)'
-                elif gridsdict[obj.record[0]] >= 21 and gridsdict[obj.record[0]] <= 35:
-                    gradfill = 'rgb(181, 127, 64)'
-                elif gridsdict[obj.record[0]] >= 36 and gridsdict[obj.record[0]] <= 50:
-                    gradfill = 'rgb(170, 109, 55)'
-                elif gridsdict[obj.record[0]] >= 51 and gridsdict[obj.record[0]] <= 75:
-                    gradfill = 'rgb(160, 91, 46)'
-                elif gridsdict[obj.record[0]] >= 76 and gridsdict[obj.record[0]] <= 100:
-                    gradfill = 'rgb(149, 73, 37)'
-                elif gridsdict[obj.record[0]] >= 101 and gridsdict[obj.record[0]] <= 250:
-                    gradfill = 'rgb(139, 55, 28)'
-                elif gridsdict[obj.record[0]] >= 251 and gridsdict[obj.record[0]] <= 500:
-                    gradfill = 'rgb(128, 37, 19)'
-                elif gridsdict[obj.record[0]] >= 501:
-                    gradfill = 'rgb(118, 19, 10)'
-
-                base_map_draw.polygon(pixels, fill=gradfill, outline='rgb(0,0,0)')
+                for swatch_ranges in self.grad_ranges:
+                    if gridsdict[obj.record[0]] >= swatch_ranges[0] and gridsdict[obj.record[0]] <= swatch_ranges[1]:
+                        base_map_draw.polygon(pixels, fill='rgb(' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].red*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].green*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].blue*255)) + ')', outline='rgb(0,0,0)')
 
         #add the grid lines
         if self.dataset.config.getboolean('Atlas', 'grid_lines_visible'):
@@ -2578,6 +2586,63 @@ class Atlas(gobject.GObject):
 
             pdf.image(self.density_map_filename, pdf.l_margin+centerer, 40, w=target_width, h=target_height, type='PNG')
 
+            #add the colour swatches
+            
+            #scale down the marker to a sensible size
+            if self.dataset.config.get('Atlas', 'distribution_unit') == '100km':
+                scalefactor = 0.00025
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '10km':
+                scalefactor = 0.0025
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '5km':
+                scalefactor = 0.005
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '2km':
+                scalefactor = 0.0125
+            elif self.dataset.config.get('Atlas', 'distribution_unit') == '1km':
+                scalefactor = 0.025
+                
+            #draw each band marker in turn and save out
+            #we always show date band 1
+            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+            shapes = r.shapes()
+            pixels = []
+
+            #grab the first marker we come to - no need to be fussy
+            for x, y in shapes[0].points:
+                px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
+                py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
+                pixels.append((px,py))
+
+            count = 0
+
+            pdf.set_font('Helvetica', '', 9)
+            #loop through the grad fills drawing a swatch for each
+            for swatch_ranges in reversed(self.grad_ranges):                
+                swatch = Image.new('RGB',
+                                     (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                        4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                     'white')
+                swatch_draw = ImageDraw.Draw(swatch)
+                swatch_draw.polygon(pixels, fill='rgb(' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].red*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].green*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].blue*255)) + ')', outline='rgb(0, 0, 0)')
+                swatch_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                swatch.save(swatch_temp_file, format='PNG')
+    
+                pdf.image(swatch_temp_file, 10, 200 + (count*5), h=4, type='PNG')
+
+                pdf.set_y(200 + (count*5))
+                pdf.cell(4)
+                
+                if swatch_ranges[0] == swatch_ranges[1]:
+                    swatch_text = str(swatch_ranges[0])
+                else:
+                    swatch_text = ' '.join([str(swatch_ranges[0]), '-', str(swatch_ranges[1])])
+                    
+                pdf.cell(10, 5, swatch_text, 0, 1, 'L', True)
+                
+                count = count + 1         
+                
+
+        #explanation map
+        
         #HACK - this really needs converting a function to create the 'species
         #package' and then choose one at randomn for the explanation, then
         #loop through for the rest. The only difference is the extra Y padding?
@@ -3083,7 +3148,7 @@ class Atlas(gobject.GObject):
             pdf.set_x(70)
             pdf.set_y(240)
             pdf.cell(60)
-            pdf.cell(10, 5, 'Date classes:', 0, 0, 'L', True)
+            pdf.cell(10, 5, 'Date classes:', 0, 1, 'L', True)
 
             #scale down the marker to a sensible size
             if self.dataset.config.get('Atlas', 'distribution_unit') == '100km':
@@ -3105,71 +3170,101 @@ class Atlas(gobject.GObject):
 
             #grab the first marker we come to - no need to be fussy
             for x, y in shapes[0].points:
-                px = int(float(x-shapes[0].bbox[0]) * scalefactor)
-                py = int(float(shapes[0].bbox[3]-y) * scalefactor)
+                px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
+                py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
                 pixels.append((px,py))
-
+            
             date_band_1 = Image.new('RGB',
-                                 (  int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
-                                    int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                 (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                    4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
                                  'white')
             date_band_1_draw = ImageDraw.Draw(date_band_1)
             date_band_1_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).blue_float*255)) + ')')
+            #and as a line so we can increase the thickness
+            date_band_1_draw.line(pixels, width=3, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_1_outline')).blue_float*255)) + ')')
 
             date_band_1_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
             date_band_1.save(date_band_1_temp_file, format='PNG')
 
 
-            pdf.image(date_band_1_temp_file, 80, 245, h=5, type='PNG')
+            pdf.image(date_band_1_temp_file, 80, 245, h=4, type='PNG')
+            pdf.cell(75)
+            
+            if self.dataset.config.get('Atlas', 'date_band_1_from') == '1600.0':
+                date_band_1_from_text = ' '.join(['before', str(int(float(self.dataset.config.get('Atlas', 'date_band_1_to'))))])
+            else:
+                date_band_1_from_text = ' '.join([str(int(float(self.dataset.config.get('Atlas', 'date_band_1_from')))), 'to', str(int(float(self.dataset.config.get('Atlas', 'date_band_1_to'))))])
+            
+            pdf.cell(10, 5, date_band_1_from_text, 0, 1, 'L', True)
                 
 
             #date band 2
-            if self.dataset.config.get('Atlas', 'date_band_2_visible'):
+            if self.dataset.config.getboolean('Atlas', 'date_band_2_visible'):
                 r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_2_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
                 shapes = r.shapes()
                 pixels = []
 
                 #grab the first marker we come to - no need to be fussy
                 for x, y in shapes[0].points:
-                    px = int(float(x-shapes[0].bbox[0]) * scalefactor)
-                    py = int(float(shapes[0].bbox[3]-y) * scalefactor)
+                    px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
+                    py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
                     pixels.append((px,py))
 
                 date_band_2 = Image.new('RGB',
-                                     (  int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
-                                        int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                     (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                        4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
                                      'white')
                 date_band_2_draw = ImageDraw.Draw(date_band_2)
                 date_band_2_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).blue_float*255)) + ')')
+                #and as a line so we can increase the thickness
+                date_band_2_draw.line(pixels, width=3, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_2_outline')).blue_float*255)) + ')')
 
                 date_band_2_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
                 date_band_2.save(date_band_2_temp_file, format='PNG')
 
-                pdf.image(date_band_2_temp_file, 80, 252, h=5, type='PNG')
+                pdf.image(date_band_2_temp_file, 80, 250, h=4, type='PNG')
+                pdf.cell(75)
+                
+                if self.dataset.config.get('Atlas', 'date_band_2_to') == '2050.0':
+                    date_band_2_from_text = ' '.join([str(int(float(self.dataset.config.get('Atlas', 'date_band_2_from')))), 'onwards'])
+                else:
+                    date_band_2_from_text = ' '.join([str(int(float(self.dataset.config.get('Atlas', 'date_band_2_from')))), 'to', str(int(float(self.dataset.config.get('Atlas', 'date_band_2_to'))))])
+                
+                pdf.cell(10, 5, date_band_2_from_text, 0, 1, 'L', True)
 
             #date band 3
-            if self.dataset.config.get('Atlas', 'date_band_3_visible'):
+            if self.dataset.config.getboolean('Atlas', 'date_band_3_visible'):
                 r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_3_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
                 shapes = r.shapes()
                 pixels = []
 
                 #grab the first marker we come to - no need to be fussy
                 for x, y in shapes[0].points:
-                    px = int(float(x-shapes[0].bbox[0]) * scalefactor)
-                    py = int(float(shapes[0].bbox[3]-y) * scalefactor)
+                    px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
+                    py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
                     pixels.append((px,py))
 
                 date_band_3 = Image.new('RGB',
-                                     (  int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
-                                        int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                     (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                        4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
                                      'white')
                 date_band_3_draw = ImageDraw.Draw(date_band_3)
                 date_band_3_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
+                #and as a line so we can increase the thickness
+                date_band_3_draw.line(pixels, width=3, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'date_band_3_outline')).blue_float*255)) + ')')
 
                 date_band_3_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
                 date_band_3.save(date_band_3_temp_file, format='PNG')
 
-                pdf.image(date_band_3_temp_file, 80, 259, h=5, type='PNG')
+                pdf.image(date_band_3_temp_file, 80, 255, h=4, type='PNG')
+                pdf.cell(75)
+                
+                if self.dataset.config.get('Atlas', 'date_band_3_to') == '2050.0':
+                    date_band_3_from_text = ' '.join([str(int(float(self.dataset.config.get('Atlas', 'date_band_3_from')))), 'onwards'])
+                else:
+                    date_band_3_from_text = ' '.join([str(int(float(self.dataset.config.get('Atlas', 'date_band_3_from')))), 'to', str(int(float(self.dataset.config.get('Atlas', 'date_band_3_to'))))])
+                            
+                pdf.cell(10, 5, date_band_3_from_text, 0, 1, 'L', True)
 
             #### end the explanations
 

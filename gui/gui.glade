@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
+  <!-- interface-naming-policy toplevel-contextual -->
   <object class="GtkAdjustment" id="adjustment1">
     <property name="upper">2050</property>
     <property name="value">1980</property>
@@ -49,12 +50,12 @@
     <signal name="destroy-event" handler="quit" swapped="no"/>
     <signal name="delete-event" handler="quit" swapped="no"/>
     <child internal-child="vbox">
-      <object class="GtkBox" id="dialog-vbox1">
+      <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="spacing">2</property>
         <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area1">
+          <object class="GtkHButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="layout_style">end</property>
@@ -65,7 +66,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="show_about" swapped="no"/>
               </object>
@@ -83,7 +83,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="quit" swapped="no"/>
               </object>
@@ -102,7 +101,6 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <signal name="clicked" handler="load_config" swapped="no"/>
               </object>
               <packing>
@@ -119,7 +117,6 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <signal name="clicked" handler="save_config" swapped="no"/>
               </object>
               <packing>
@@ -136,7 +133,6 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <signal name="clicked" handler="generate" swapped="no"/>
               </object>
               <packing>
@@ -209,27 +205,6 @@
                 <property name="column_spacing">5</property>
                 <property name="row_spacing">5</property>
                 <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
                   <object class="GtkLabel" id="label1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
@@ -296,6 +271,8 @@
                     <property name="invisible_char_set">True</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
+                    <property name="primary_icon_sensitive">True</property>
+                    <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -380,6 +357,8 @@
                     <property name="invisible_char">●</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
+                    <property name="primary_icon_sensitive">True</property>
+                    <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -412,11 +391,6 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="headers_visible">False</property>
-                                <child internal-child="selection">
-                                  <object class="GtkTreeSelection" id="treeview-selection1">
-                                    <signal name="changed" handler="update_title" swapped="no"/>
-                                  </object>
-                                </child>
                               </object>
                             </child>
                           </object>
@@ -431,14 +405,13 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                             <signal name="clicked" handler="select_all_families" object="treeview2" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="right_attach">2</property>
                             <property name="x_options">GTK_FILL</property>
-                            <property name="y_options"/>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                         <child>
@@ -448,7 +421,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="draw_indicator">True</property>
                             <signal name="toggled" handler="switch_update_title" swapped="no"/>
@@ -493,9 +465,6 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="headers_visible">False</property>
-                                <child internal-child="selection">
-                                  <object class="GtkTreeSelection" id="treeview-selection2"/>
-                                </child>
                               </object>
                             </child>
                           </object>
@@ -509,7 +478,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="color">#000000000000</property>
                           </object>
                           <packing>
@@ -517,8 +485,8 @@
                             <property name="right_attach">3</property>
                             <property name="top_attach">1</property>
                             <property name="bottom_attach">2</property>
-                            <property name="x_options"/>
-                            <property name="y_options"/>
+                            <property name="x_options"></property>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                         <child>
@@ -527,13 +495,12 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
                             <property name="right_attach">3</property>
-                            <property name="x_options"/>
-                            <property name="y_options"/>
+                            <property name="x_options"></property>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                         <child>
@@ -547,7 +514,7 @@
                             <property name="left_attach">1</property>
                             <property name="right_attach">2</property>
                             <property name="x_options">GTK_FILL</property>
-                            <property name="y_options"/>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                         <child>
@@ -563,7 +530,7 @@
                             <property name="top_attach">1</property>
                             <property name="bottom_attach">2</property>
                             <property name="x_options">GTK_FILL</property>
-                            <property name="y_options"/>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                       </object>
@@ -591,15 +558,6 @@
                         <property name="n_columns">13</property>
                         <property name="column_spacing">5</property>
                         <property name="row_spacing">5</property>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
                         <child>
                           <object class="GtkComboBox" id="combobox2">
                             <property name="visible">True</property>
@@ -632,7 +590,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">5</property>
@@ -647,7 +604,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">5</property>
@@ -666,6 +622,8 @@
                             <property name="invisible_char_set">True</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjustment3</property>
                           </object>
                           <packing>
@@ -683,6 +641,8 @@
                             <property name="invisible_char_set">True</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjustment1</property>
                           </object>
                           <packing>
@@ -702,6 +662,8 @@
                             <property name="invisible_char_set">True</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjustment4</property>
                           </object>
                           <packing>
@@ -719,6 +681,8 @@
                             <property name="invisible_char_set">True</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjustment2</property>
                           </object>
                           <packing>
@@ -737,8 +701,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">False</property>
                           </object>
                           <packing>
@@ -756,8 +718,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">False</property>
                           </object>
                           <packing>
@@ -788,7 +748,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">5</property>
@@ -806,6 +765,8 @@
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjustment5</property>
                           </object>
                           <packing>
@@ -824,6 +785,8 @@
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjustment6</property>
                           </object>
                           <packing>
@@ -878,7 +841,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">7</property>
@@ -893,7 +855,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">7</property>
@@ -910,7 +871,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">7</property>
@@ -1102,8 +1062,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">False</property>
                           </object>
                           <packing>
@@ -1121,8 +1079,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">False</property>
                           </object>
                           <packing>
@@ -1141,8 +1097,6 @@
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">False</property>
                           </object>
@@ -1160,8 +1114,6 @@
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">False</property>
                           </object>
@@ -1170,6 +1122,15 @@
                             <property name="right_attach">4</property>
                             <property name="y_options">GTK_FILL</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                       <packing>
@@ -1193,7 +1154,7 @@
                         <property name="can_focus">False</property>
                         <property name="border_width">5</property>
                         <property name="n_rows">3</property>
-                        <property name="n_columns">4</property>
+                        <property name="n_columns">6</property>
                         <property name="column_spacing">5</property>
                         <property name="row_spacing">5</property>
                         <child>
@@ -1216,7 +1177,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="color">#d2d2d2d2d2d2</property>
                           </object>
                           <packing>
@@ -1248,7 +1208,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="color">#000000000000</property>
                           </object>
                           <packing>
@@ -1267,7 +1226,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1285,7 +1243,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1303,12 +1260,12 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
                             <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
                           </packing>
                         </child>
                         <child>
@@ -1318,13 +1275,72 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>
+                            <property name="right_attach">6</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label47">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">low</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label48">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">high</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">3</property>
                             <property name="right_attach">4</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkColorButton" id="colorbutton12">
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="color">#000000000000</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="right_attach">3</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkColorButton" id="colorbutton13">
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="color">#000000000000</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">4</property>
+                            <property name="right_attach">5</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
                           </packing>
                         </child>
                         <child>
@@ -1449,8 +1465,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1466,8 +1480,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -1484,8 +1496,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -1521,26 +1531,12 @@
                         <property name="column_spacing">5</property>
                         <property name="row_spacing">5</property>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
                           <object class="GtkCheckButton" id="checkbutton12">
                             <property name="label" translatable="yes">Show species description</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1556,8 +1552,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1575,8 +1569,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1594,8 +1586,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="xalign">0.5</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1612,20 +1602,19 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>
                             <property name="right_attach">4</property>
-                            <property name="x_options"/>
-                            <property name="y_options"/>
+                            <property name="x_options"></property>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkEntry" id="entry5">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="tooltip_markup" translatable="yes">Parameters
+                            <property name="tooltip_markup">Parameters
 &lt;b&gt;Location&lt;/b&gt;: %l
 &lt;b&gt;Vice-county&lt;/b&gt;: %v
 &lt;b&gt;Grid reference&lt;/b&gt;: %g
@@ -1633,6 +1622,10 @@
 &lt;b&gt;Recorder&lt;/b&gt;: %r
 &lt;b&gt;Determiner&lt;/b&gt;: %i</property>
                             <property name="invisible_char">●</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1642,16 +1635,12 @@
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
                           <object class="GtkCheckButton" id="checkbutton16">
                             <property name="label" translatable="yes">Show species status</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">True</property>
@@ -1664,6 +1653,21 @@
                             <property name="x_options">GTK_FILL</property>
                             <property name="y_options">GTK_FILL</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                       <packing>
@@ -1725,7 +1729,6 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_stock">True</property>
                     <signal name="clicked" handler="unselect_image" object="filechooserbutton1" swapped="no"/>
                   </object>
@@ -1737,6 +1740,27 @@
                     <property name="x_options">GTK_FILL</property>
                     <property name="y_options">GTK_FILL</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
               </object>
             </child>
@@ -1759,21 +1783,6 @@
                 <property name="n_columns">7</property>
                 <property name="column_spacing">5</property>
                 <property name="row_spacing">5</property>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
                 <child>
                   <object class="GtkLabel" id="label11">
                     <property name="visible">True</property>
@@ -1841,6 +1850,8 @@
                     <property name="invisible_char_set">True</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
+                    <property name="primary_icon_sensitive">True</property>
+                    <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -1925,6 +1936,8 @@
                     <property name="invisible_char">●</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
+                    <property name="primary_icon_sensitive">True</property>
+                    <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -1986,11 +1999,6 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="headers_visible">False</property>
-                                <child internal-child="selection">
-                                  <object class="GtkTreeSelection" id="treeview-selection3">
-                                    <signal name="changed" handler="update_title" swapped="no"/>
-                                  </object>
-                                </child>
                               </object>
                             </child>
                           </object>
@@ -2005,14 +2013,13 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
                             <signal name="clicked" handler="select_all_families" object="treeview3" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="right_attach">2</property>
                             <property name="x_options">GTK_FILL</property>
-                            <property name="y_options"/>
+                            <property name="y_options"></property>
                           </packing>
                         </child>
                         <child>
@@ -2022,7 +2029,6 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="xalign">0</property>
                             <property name="draw_indicator">True</property>
                             <signal name="toggled" handler="switch_update_title" swapped="no"/>
@@ -2066,9 +2072,6 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="headers_visible">False</property>
-                                <child internal-child="selection">
-                                  <object class="GtkTreeSelection" id="treeview-selection4"/>
-                                </child>
                               </object>
                             </child>
                           </object>
@@ -2186,7 +2189,6 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_stock">True</property>
                     <signal name="clicked" handler="unselect_image" object="filechooserbutton5" swapped="no"/>
                   </object>
@@ -2198,6 +2200,21 @@
                     <property name="x_options">GTK_FILL</property>
                     <property name="y_options">GTK_FILL</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
               </object>
               <packing>
