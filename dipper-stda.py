@@ -1179,6 +1179,8 @@ class Dataset(gobject.GObject):
 
         self.atlas_config = {}
         self.list_config = {}
+        
+        self.use_vcs = True
 
         self.temp_dir = tempfile.mkdtemp()
 
@@ -1386,8 +1388,6 @@ class Read(gobject.GObject):
 
         text = ''.join(['Opening <b>', os.path.basename(self.filename) ,'</b>', ' from ', '<b>', os.path.dirname(os.path.abspath(self.filename)), '</b>'])
 
-        vc_position = False
-
         temp_taxa_list = []
 
 
@@ -1396,19 +1396,19 @@ class Read(gobject.GObject):
             for sheet in sheets:
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
-                    if sheet.cell(0, col_index).value.lower() in ('taxon name', 'taxon', 'recommended taxon name'):
+                    if sheet.cell(0, col_index).value.lower() in ['taxon name', 'taxon', 'recommended taxon name']:
                         taxon_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference'):
+                    elif sheet.cell(0, col_index).value.lower() in ['grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference']:
                         grid_reference_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('date', 'sample date'):
+                    elif sheet.cell(0, col_index).value.lower() in ['date', 'sample date']:
                         date_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('location', 'site'):
+                    elif sheet.cell(0, col_index).value.lower() in ['location', 'site']:
                         location_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('recorder', 'recorders'):
+                    elif sheet.cell(0, col_index).value.lower() in ['recorder', 'recorders']:
                         recorder_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('determiner', 'determiners'):
+                    elif sheet.cell(0, col_index).value.lower() in ['determiner', 'determiners']:
                         determiner_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ('vc', 'vice-county', 'vice county'):
+                    elif sheet.cell(0, col_index).value.lower() in ['vc', 'vice-county', 'vice county']:
                         vc_position = col_index
 
                 rownum = 0
@@ -1420,8 +1420,13 @@ class Read(gobject.GObject):
                     grid_reference = sheet.cell(row_index, grid_reference_position).value
                     date = sheet.cell(row_index, date_position).value
                     recorder = sheet.cell(row_index, recorder_position).value
-                    determiner = sheet.cell(row_index, determiner_position).value
-
+                    
+                    #we can allow null determiners
+                    try:
+                        determiner = sheet.cell(row_index, determiner_position).value
+                    except UnboundLocalError:
+                        determiner = None
+                    
                     vaguedate = VagueDate(date)
                     decade, year, month, day, decade_from, year_from, month_from, day_from, decade_to, year_to, month_to, day_to = vaguedate.decade, vaguedate.year, vaguedate.month,  vaguedate.day, vaguedate.decade_from, vaguedate.year_from, vaguedate.month_from,  vaguedate.day_from, vaguedate.decade_to, vaguedate.year_to, vaguedate.month_to,  vaguedate.day_to
 
@@ -1437,11 +1442,13 @@ class Read(gobject.GObject):
                     grid_10m = reference.os_10m
                     grid_1m = reference.os_1m
 
-
-                    if vc_position:
-                      vc = sheet.cell(row_index, vc_position).value
-                    else:
-                      vc = None
+                    #we can allow null vcs 
+                    try:
+                        vc = sheet.cell(row_index, vc_position).value
+                        self.dataset.use_vcs = True
+                    except UnboundLocalError:
+                        vc = None
+                        self.dataset.use_vcs = False
 
                     accuracy = reference.accuracy
 
@@ -1770,17 +1777,23 @@ class List(gobject.GObject):
         taxa_statistics = {}
         taxon_list = []
 
-        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('List', 'vice-counties'), ')'])
+        if self.dataset.use_vcs:
+            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('List', 'vice-counties'), ') AND'])
+            vcs_sql_sel = 'data.vc'
+        else:
+            vcs_sql = ''
+            vcs_sql_sel = '"00"'
+            
         families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('List', 'families').split(',')), '")'])
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS tetrads, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
-                                   data.vc AS VC \
+                                   ' + vcs_sql_sel + ' AS VC \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' AND ' + families_sql + ' \
+                                   WHERE ' + vcs_sql + ' ' + families_sql + ' \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, data.vc \
                                    ORDER BY species_data.sort_order')
 
@@ -1903,16 +1916,22 @@ class List(gobject.GObject):
         pdf.doing_the_list = True
         pdf.set_font('Helvetica', '', 8)
 
-
-        for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
-            #print vckey
-
-            col = self.dataset.config.get('List', 'vice-counties').split(',').index(vckey)+1
-
-            pdf.cell(col_width/col, 5, '', '0', 0, 'C', 0)
+        
+        if self.dataset.use_vcs:
+            for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
+                #print vckey
+    
+                col = self.dataset.config.get('List', 'vice-counties').split(',').index(vckey)+1
+    
+                pdf.cell(col_width/col, 5, '', '0', 0, 'C', 0)
+                pdf.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
+                pdf.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
+                pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
+        else:
+            pdf.cell(col_width/1, 5, '', '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
-            pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
+            pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)                        
 
         taxon_count = 0
 
@@ -1956,35 +1975,64 @@ class List(gobject.GObject):
             pdf.cell(col_width, pdf.font_size+3, taxa_statistics[key]['national_designation'], '', 0, 'L', 0)
             pdf.set_font('Helvetica', '', 10)
 
-            for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
-                #print vckey
-
-                pdf.set_fill_color(230, 230, 230)
-                try:
-
-                    if taxa_statistics[key]['vc'][vckey]['tetrads'] == '0':
-                        tetrads = '-'
-                    else:
-                        tetrads = taxa_statistics[key]['vc'][vckey]['tetrads']
-
-                    pdf.cell(col_width, pdf.font_size+2, tetrads, '', 0, 'L', 1)
-                    pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc'][vckey]['records'], '', 0, 'L', 1)
-                    record_count = record_count + int(taxa_statistics[key]['vc'][vckey]['records'])
-
-                    if taxa_statistics[key]['vc'][vckey]['year'] == 'None':
-                        pdf.cell(col_width, pdf.font_size+2, '?', '', 0, 'L', 1)
-                    else:
-                        pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc'][vckey]['year'], '', 0, 'C', 1)
-
-                except KeyError:
-                    pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'L', 1)
-                    pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'L', 1)
-                    pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'C', 1)
-
-
-                pdf.set_fill_color(255, 255, 255)
-
-                pdf.cell((col_width/4), pdf.font_size+2, '', 0, 0, 'C', 0)
+            if self.dataset.use_vcs:
+                for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
+                    #print vckey
+    
+                    pdf.set_fill_color(230, 230, 230)
+                    try:
+    
+                        if taxa_statistics[key]['vc'][vckey]['tetrads'] == '0':
+                            tetrads = '-'
+                        else:
+                            tetrads = taxa_statistics[key]['vc'][vckey]['tetrads']
+    
+                        pdf.cell(col_width, pdf.font_size+2, tetrads, '', 0, 'L', 1)
+                        pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc'][vckey]['records'], '', 0, 'L', 1)
+                        record_count = record_count + int(taxa_statistics[key]['vc'][vckey]['records'])
+    
+                        if taxa_statistics[key]['vc'][vckey]['year'] == 'None':
+                            pdf.cell(col_width, pdf.font_size+2, '?', '', 0, 'L', 1)
+                        else:
+                            pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc'][vckey]['year'], '', 0, 'C', 1)
+    
+                    except KeyError:
+                        pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'L', 1)
+                        pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'L', 1)
+                        pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'C', 1)
+    
+    
+                    pdf.set_fill_color(255, 255, 255)
+    
+                    pdf.cell((col_width/4), pdf.font_size+2, '', 0, 0, 'C', 0)
+            else:
+ 
+                  pdf.set_fill_color(230, 230, 230)
+                  try:
+  
+                      if taxa_statistics[key]['vc']['00']['tetrads'] == '0':
+                          tetrads = '-'
+                      else:
+                          tetrads = taxa_statistics[key]['vc']['00']['tetrads']
+  
+                      pdf.cell(col_width, pdf.font_size+2, tetrads, '', 0, 'L', 1)
+                      pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc']['00']['records'], '', 0, 'L', 1)
+                      record_count = record_count + int(taxa_statistics[key]['vc']['00']['records'])
+  
+                      if taxa_statistics[key]['vc']['00']['year'] == 'None':
+                          pdf.cell(col_width, pdf.font_size+2, '?', '', 0, 'L', 1)
+                      else:
+                          pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc']['00']['year'], '', 0, 'C', 1)
+  
+                  except KeyError:
+                      pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'L', 1)
+                      pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'L', 1)
+                      pdf.cell(col_width, pdf.font_size+2, '', '', 0, 'C', 1)
+  
+  
+                  pdf.set_fill_color(255, 255, 255)
+  
+                  pdf.cell((col_width/4), pdf.font_size+2, '', 0, 0, 'C', 0)                                
 
 
             pdf.ln()
@@ -2114,12 +2162,15 @@ class Atlas(gobject.GObject):
 
         base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)-hack_diff  ))
 
-        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        if self.dataset.use_vcs:
+            vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        else:
+            vcs_sql = ''
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ' AS grids, COUNT(DISTINCT taxon) as species \
                                      FROM data \
-                                     WHERE ' + vcs_sql + ' \
+                                     ' + vcs_sql + ' \
                                      GROUP BY grid_' + self.dataset.config.get('Atlas', 'distribution_unit'))
 
         data = self.dataset.cursor.fetchall()
@@ -2255,12 +2306,15 @@ class Atlas(gobject.GObject):
         self.base_map = Image.new('RGB', (int(self.xdist*self.scalefactor)+1, int(self.ydist*self.scalefactor)+1), 'white')
         self.base_map_draw = ImageDraw.Draw(self.base_map)
 
-        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        if self.dataset.use_vcs:
+            vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        else:
+            vcs_sql = ''
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                      FROM data \
-                                     WHERE ' + vcs_sql)
+                                    ' + vcs_sql)
 
         data = self.dataset.cursor.fetchall()
 
@@ -2373,7 +2427,11 @@ class Atlas(gobject.GObject):
 
     def generate(self):
 
-        vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        if self.dataset.use_vcs == True:
+            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ') AND'])
+        else:
+            vcs_sql = ''
+            
         families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Atlas', 'families').split(',')), '")'])
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
@@ -2384,10 +2442,10 @@ class Atlas(gobject.GObject):
                                    species_data.common_name \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' AND ' + families_sql + ' \
+                                   WHERE ' + vcs_sql + ' ' + families_sql + ' \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, species_data.description, species_data.common_name \
                                    ORDER BY species_data.sort_order')
-
+        
         data = self.dataset.cursor.fetchall()
 
         record_count = 0
@@ -2473,38 +2531,41 @@ class Atlas(gobject.GObject):
                                     FROM data')
 
         determiner_data = self.dataset.cursor.fetchall()
-
+    
         for determiner in determiner_data:
-            names = determiner[0].split(',')
-            for name in names:
-                if name.strip() not in contrib_data.keys():
-                    parts = name.strip().split()
-
-                    initials = []
-
-                    if len(name) > 0:
-                        if parts[0].strip() == 'Mr':
-                            initials.append('Mr')
-                        elif parts[0].strip() == 'Mrs':
-                            initials.append('Mrs')
-                        elif parts[0].strip() == 'Dr':
-                            initials.append('Dr')
-
-                        for qwert in parts[len(initials):]:
-                            initials.append(qwert[0:1])
-
-                        working_part = len(parts)-1
-                        check_val = 1
-
-                        while ''.join(initials) in contrib_data.values():
-                            if check_val <= len(parts[working_part]):
-                                initials[working_part] = parts[working_part][0:check_val]
-                                check_val = check_val + 1
-                            elif check_val > len(parts[working_part]):
-                                working_part = working_part - 1
-                                check_val = 1
-
-                        contrib_data[name.strip()] = ''.join(initials)
+            try:
+              names = determiner[0].split(',')
+              for name in names:
+                  if name.strip() not in contrib_data.keys():
+                      parts = name.strip().split()
+  
+                      initials = []
+  
+                      if len(name) > 0:
+                          if parts[0].strip() == 'Mr':
+                              initials.append('Mr')
+                          elif parts[0].strip() == 'Mrs':
+                              initials.append('Mrs')
+                          elif parts[0].strip() == 'Dr':
+                              initials.append('Dr')
+  
+                          for qwert in parts[len(initials):]:
+                              initials.append(qwert[0:1])
+  
+                          working_part = len(parts)-1
+                          check_val = 1
+  
+                          while ''.join(initials) in contrib_data.values():
+                              if check_val <= len(parts[working_part]):
+                                  initials[working_part] = parts[working_part][0:check_val]
+                                  check_val = check_val + 1
+                              elif check_val > len(parts[working_part]):
+                                  working_part = working_part - 1
+                                  check_val = 1
+  
+                          contrib_data[name.strip()] = ''.join(initials)
+            except AttributeError:
+                pass
 
         #the pdf
         pdf = PDF(orientation=self.dataset.config.get('Atlas', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
@@ -2709,20 +2770,23 @@ class Atlas(gobject.GObject):
 
                     #if the determiner is different to the recorder, set the
                     #determinater (!)
-                    if indiv_record[8] != indiv_record[9]:
-
-                        detees = indiv_record[9].split(',')
-                        deter = ''
-
-                        for deter_name in sorted(detees):
-                            if deter_name != '':
-                                deter = ','.join([deter, contrib_data[deter_name.strip()]])
-
-                        if deter == 'Unknown' or deter == '':
-                            det = ' anon.'
+                    try:
+                        if indiv_record[8] != indiv_record[9]:
+    
+                            detees = indiv_record[9].split(',')
+                            deter = ''
+    
+                            for deter_name in sorted(detees):
+                                if deter_name != '':
+                                    deter = ','.join([deter, contrib_data[deter_name.strip()]])
+    
+                            if deter == 'Unknown' or deter == '':
+                                det = ' anon.'
+                            else:
+                                det = ''.join([' det. ', deter[1:]])
                         else:
-                            det = ''.join([' det. ', deter[1:]])
-                    else:
+                            det = ''
+                    except AttributeError:
                         det = ''
 
                     if indiv_record[4] == 'Unknown':
@@ -3376,20 +3440,23 @@ class Atlas(gobject.GObject):
 
                     #if the determiner is different to the recorder, set the
                     #determinater (!)
-                    if indiv_record[8] != indiv_record[9]:
-
-                        detees = indiv_record[9].split(',')
-                        deter = ''
-
-                        for deter_name in sorted(detees):
-                            if deter_name != '':
-                                deter = ','.join([deter, contrib_data[deter_name.strip()]])
-
-                        if deter == 'Unknown' or deter == '':
-                            det = ' anon.'
+                    try:
+                        if indiv_record[8] != indiv_record[9]:
+    
+                            detees = indiv_record[9].split(',')
+                            deter = ''
+    
+                            for deter_name in sorted(detees):
+                                if deter_name != '':
+                                    deter = ','.join([deter, contrib_data[deter_name.strip()]])
+    
+                            if deter == 'Unknown' or deter == '':
+                                det = ' anon.'
+                            else:
+                                det = ''.join([' det. ', deter[1:]])
                         else:
-                            det = ''.join([' det. ', deter[1:]])
-                    else:
+                            det = ''
+                    except AttributeError:
                         det = ''
 
                     if indiv_record[4] == 'Unknown':
