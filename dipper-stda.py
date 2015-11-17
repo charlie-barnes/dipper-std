@@ -184,6 +184,22 @@ vc_list = [[1, 'West Cornwall'],
          [111, 'Orkney'],
          [112, 'Shetland']]
 
+gradation_ranges = [[1,1],
+                    [2,2],
+                    [3,3],
+                    [4,5],
+                    [6,10],
+                    [11,15],
+                    [16,20],
+                    [21,35],
+                    [36,50],
+                    [51,75],
+                    [76,100],
+                    [101,250],
+                    [251,500],
+                    [501,1000]]
+
+
 def repeat_to_length(string_to_expand, length):
    return (string_to_expand * ((length/len(string_to_expand))+1))[:length]
 
@@ -395,6 +411,32 @@ class Run():
 
         combo = self.builder.get_object('combobox1')
         combo.set_model(grid_lines_liststore)
+        cell = gtk.CellRendererText()
+        combo.pack_start(cell, True)
+        combo.add_attribute(cell, 'text',0)
+
+
+
+
+
+        species_density_style_liststore = gtk.ListStore(gobject.TYPE_STRING)
+
+        for i in range(len(markers)):
+            species_density_style_liststore.append([markers[i]])
+
+        combo = self.builder.get_object('combobox13')
+        combo.set_model(species_density_style_liststore)
+        cell = gtk.CellRendererText()
+        combo.pack_start(cell, True)
+        combo.add_attribute(cell, 'text',0)
+
+        species_density_unit_liststore = gtk.ListStore(gobject.TYPE_STRING)
+
+        for i in range(len(grid_resolution)):
+            species_density_unit_liststore.append([grid_resolution[i]])
+
+        combo = self.builder.get_object('combobox14')
+        combo.set_model(species_density_unit_liststore)
         cell = gtk.CellRendererText()
         combo.pack_start(cell, True)
         combo.add_attribute(cell, 'text',0)
@@ -641,63 +683,82 @@ class Run():
     def generate(self, widget):
         """Process the data file and configuration."""
         if self.dataset is not None:
+            self.update_config()
+
             vbox = widget.get_parent().get_parent()
-            notebook = vbox.get_children()[1]
-            vbox.set_sensitive(False)
+            notebook = vbox.get_children()[1]            
 
-            dialog = gtk.FileChooserDialog('Save As...',
-                                           None,
-                                           gtk.FILE_CHOOSER_ACTION_SAVE,
-                                           (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                            gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-            dialog.set_default_response(gtk.RESPONSE_OK)
-            dialog.set_do_overwrite_confirmation(True)
+            #we can't produce an atlas without any geographic entity!
+            if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0 and notebook.get_current_page() == 0:
+                md = gtk.MessageDialog(None,
+                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                    gtk.BUTTONS_CLOSE, 'Select at least one vice-county.')
+                md.run()
+                md.destroy()
+            #we can't produce an atlas or list without any families selected!
+            elif (not len(self.dataset.config.get('Atlas', 'families'))>0 and notebook.get_current_page() == 0) or (not len(self.dataset.config.get('List', 'families'))>0 and notebook.get_current_page() == 1):
+                md = gtk.MessageDialog(None,
+                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                    gtk.BUTTONS_CLOSE, 'Select at least one family.')
+                md.run()
+                md.destroy()                   
+            else:              
 
-            if notebook.get_current_page() == 0:
-                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_atlas.pdf']))
-            elif notebook.get_current_page() == 1:
-                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_checklist.pdf']))
+                vbox.set_sensitive(False)
 
-            response = dialog.run()
+                dialog = gtk.FileChooserDialog('Save As...',
+                                               None,
+                                               gtk.FILE_CHOOSER_ACTION_SAVE,
+                                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                                gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+                dialog.set_default_response(gtk.RESPONSE_OK)
+                dialog.set_do_overwrite_confirmation(True)
 
-            output = dialog.get_filename()
-
-            dialog.destroy()
-
-            while gtk.events_pending():
-                gtk.main_iteration()
-
-            watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
-            self.builder.get_object('dialog1').window.set_cursor(watch)
-
-            while gtk.events_pending():
-                gtk.main_iteration()
-
-            if response == gtk.RESPONSE_OK:
-                self.update_config()
-
-                #add the extension if it's missing
-                if output[-4:] != '.pdf':
-                    output = ''.join([output, '.pdf'])
-
-                #do the atlas
                 if notebook.get_current_page() == 0:
-                    atlas = Atlas(self.dataset)
-                    atlas.save_in = output
-
-                    atlas.generate_base_map()
-
-                    if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
-                        atlas.generate_density_map()
-
-                    atlas.generate()
-
+                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                    dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_atlas.pdf']))
                 elif notebook.get_current_page() == 1:
-                    listing = List(self.dataset)
-                    listing.save_in = output
-                    listing.generate()
+                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                    dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_checklist.pdf']))
+
+                response = dialog.run()
+
+                output = dialog.get_filename()
+
+                dialog.destroy()
+
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+                watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+                self.builder.get_object('dialog1').window.set_cursor(watch)
+
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+                if response == gtk.RESPONSE_OK:
+
+                    #add the extension if it's missing
+                    if output[-4:] != '.pdf':
+                        output = ''.join([output, '.pdf'])
+
+                    #do the atlas
+                    if notebook.get_current_page() == 0:
+                            
+                        atlas = Atlas(self.dataset)
+                        atlas.save_in = output
+
+                        atlas.generate_base_map()
+
+                        if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
+                            atlas.generate_density_map()
+
+                        atlas.generate()
+                        
+                    elif notebook.get_current_page() == 1:
+                        listing = List(self.dataset)
+                        listing.save_in = output
+                        listing.generate()
 
             vbox.set_sensitive(True)
             self.builder.get_object('dialog1').window.set_cursor(None)
@@ -792,6 +853,12 @@ class Run():
 
         #species density visible
         self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
+
+        #species density style
+        self.builder.get_object('combobox13').set_active(markers.index(self.dataset.config.get('Atlas', 'species_density_map_style')))
+
+        #species density unit
+        self.builder.get_object('combobox14').set_active(grid_resolution.index(self.dataset.config.get('Atlas', 'species_density_map_unit')))
 
         #species density map low colour
         self.builder.get_object('colorbutton12').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_low_colour')))
@@ -1011,7 +1078,13 @@ class Run():
 
         #species density map
         self.dataset.config.set('Atlas', 'species_density_map_visible', str(self.builder.get_object('checkbutton19').get_active()))
-        
+
+        #species density style
+        self.dataset.config.set('Atlas', 'species_density_map_style', self.builder.get_object('combobox13').get_active_text())
+
+        #species density unit
+        self.dataset.config.set('Atlas', 'species_density_map_unit', self.builder.get_object('combobox14').get_active_text())
+
         #species density map low colour
         self.dataset.config.set('Atlas', 'species_density_map_low_colour', str(self.builder.get_object('colorbutton12').get_color()))
         
@@ -1276,6 +1349,8 @@ class Dataset(gobject.GObject):
                                                              'coverage_style': 'squares',
                                                              'coverage_colour': '#d2d2d2',
                                                              'species_density_map_visible': 'True',
+                                                             'species_density_map_style': 'squares',
+                                                             'species_density_map_unit': '10km',
                                                              'species_density_map_low_colour': '#FFFF80',
                                                              'species_density_map_high_colour': '#76130A',
                                                              'explanation_map_visible': 'True',
@@ -2089,26 +2164,7 @@ class Atlas(gobject.GObject):
         self.date_band_1_style_coverage = []
         self.date_band_2_style_coverage = []
         self.date_band_3_style_coverage = []
-        
-        self.grad_ranges = [[1,1],
-                            [2,2],
-                            [3,3],
-                            [4,5],
-                            [6,10],
-                            [11,15],
-                            [16,20],
-                            [21,35],
-                            [36,50],
-                            [51,75],
-                            [76,100],
-                            [101,250],
-                            [251,500],
-                            [501,1000]]
-        
-        low = Color(self.dataset.config.get('Atlas', 'species_density_map_low_colour'))
-        high = Color(self.dataset.config.get('Atlas', 'species_density_map_high_colour'))
-        self.grad_fills = list(low.range_to(high, 14))
-                
+        self.increments = 14               
         
         
     def generate_density_map(self):
@@ -2172,23 +2228,37 @@ class Atlas(gobject.GObject):
             vcs_sql = ''
 
         #add the total coverage & calc first and date band 2 grid arrays
-        self.dataset.cursor.execute('SELECT grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ' AS grids, COUNT(DISTINCT taxon) as species \
+        self.dataset.cursor.execute('SELECT grid_' + self.dataset.config.get('Atlas', 'species_density_map_unit') + ' AS grids, COUNT(DISTINCT taxon) as species \
                                      FROM data \
                                      ' + vcs_sql + ' \
-                                     GROUP BY grid_' + self.dataset.config.get('Atlas', 'distribution_unit'))
+                                     GROUP BY grid_' + self.dataset.config.get('Atlas', 'species_density_map_unit'))
 
         data = self.dataset.cursor.fetchall()
         #print data
         grids = []
 
         gridsdict = {}
+        max_count = 0
 
         for tup in data:
             grids.append(tup[0])
             gridsdict[tup[0]] = tup[1]
-            #print tup[0]
+            if tup[1] > max_count:
+                max_count = tup[1]
 
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #work out how many increments we need
+        for ranges in gradation_ranges:
+            if max_count >= ranges[0] and max_count <= ranges[1]:
+                self.increments = gradation_ranges.index(ranges)+1
+
+        self.grad_ranges = gradation_ranges[:self.increments]
+        
+        #calculate the colour gradient
+        low = Color(self.dataset.config.get('Atlas', 'species_density_map_low_colour'))
+        high = Color(self.dataset.config.get('Atlas', 'species_density_map_high_colour'))
+        self.grad_fills = list(low.range_to(high, self.increments))
+        
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + '/' + self.dataset.config.get('Atlas', 'species_density_map_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -2219,8 +2289,6 @@ class Atlas(gobject.GObject):
                     py = (bounds_top_y - y) * scalefactor
                     pixels.append((px,py))
                 base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
-
-
 
         #mask off grid lines outside the boundary area
         mask = Image.new('RGBA', base_map.size)
@@ -2691,9 +2759,9 @@ class Atlas(gobject.GObject):
                 swatch_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
                 swatch.save(swatch_temp_file, format='PNG')
     
-                pdf.image(swatch_temp_file, 10, 200 + (count*5), h=4, type='PNG')
+                pdf.image(swatch_temp_file, 10, (200 + (count*5) + ((14-self.increments)*5)), h=4, type='PNG')
 
-                pdf.set_y(200 + (count*5))
+                pdf.set_y(200 + (count*5) + ((14-self.increments)*5))
                 pdf.cell(4)
                 
                 if swatch_ranges[0] == swatch_ranges[1]:
