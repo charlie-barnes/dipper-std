@@ -9,9 +9,9 @@ m = sys.modules['gtk']
 gtk_base_path = m.__path__[0]
 
 setup(
-    name = 'dipper-std',
-    description = 'dipper-std',
-    version = '1.0',
+    name = 'dipper-stda',
+    description = 'dipper-stda',
+    version = '1.0a6',
 
     windows = [
                   {
