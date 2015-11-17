@@ -415,10 +415,6 @@ class Run():
         combo.pack_start(cell, True)
         combo.add_attribute(cell, 'text',0)
 
-
-
-
-
         species_density_style_liststore = gtk.ListStore(gobject.TYPE_STRING)
 
         for i in range(len(markers)):
@@ -437,6 +433,17 @@ class Run():
 
         combo = self.builder.get_object('combobox14')
         combo.set_model(species_density_unit_liststore)
+        cell = gtk.CellRendererText()
+        combo.pack_start(cell, True)
+        combo.add_attribute(cell, 'text',0)
+
+        species_density_grid_lines_liststore = gtk.ListStore(gobject.TYPE_STRING)
+
+        for i in range(len(grid_resolution)):
+            species_density_grid_lines_liststore.append([grid_resolution[i]])
+
+        combo = self.builder.get_object('combobox15')
+        combo.set_model(species_density_grid_lines_liststore)
         cell = gtk.CellRendererText()
         combo.pack_start(cell, True)
         combo.add_attribute(cell, 'text',0)
@@ -866,6 +873,16 @@ class Run():
         #species density map high colour
         self.builder.get_object('colorbutton13').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_high_colour')))
 
+        #species density map grid line visible
+        self.builder.get_object('checkbutton21').set_active(self.dataset.config.getboolean('Atlas', 'species_density_grid_lines_visible'))
+
+        #species density map grid line style
+        self.builder.get_object('combobox15').set_active(grid_resolution.index(self.dataset.config.get('Atlas', 'species_density_map_grid_lines_style')))
+
+        #species density map grid line colour
+        self.builder.get_object('colorbutton14').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_grid_lines_colour')))
+
+
         #explanation visible
         self.builder.get_object('checkbutton20').set_active(self.dataset.config.getboolean('Atlas', 'explanation_map_visible'))
 
@@ -1090,6 +1107,15 @@ class Run():
         
         #species density map high colour
         self.dataset.config.set('Atlas', 'species_density_map_high_colour', str(self.builder.get_object('colorbutton13').get_color()))
+
+        #species density map grid lines visible
+        self.dataset.config.set('Atlas', 'species_density_grid_lines_visible', str(self.builder.get_object('checkbutton21').get_active()))
+        
+        #species density map grid line style
+        self.dataset.config.set('Atlas', 'species_density_map_grid_lines_style', self.builder.get_object('combobox15').get_active_text())
+        
+        #species density map grid line colour
+        self.dataset.config.set('Atlas', 'species_density_map_grid_lines_colour', str(self.builder.get_object('colorbutton14').get_color()))
         
         #explanation map visible
         self.dataset.config.set('Atlas', 'explanation_map_visible', str(self.builder.get_object('checkbutton20').get_active()))
@@ -1353,6 +1379,9 @@ class Dataset(gobject.GObject):
                                                              'species_density_map_unit': '10km',
                                                              'species_density_map_low_colour': '#FFFF80',
                                                              'species_density_map_high_colour': '#76130A',
+                                                             'species_density_grid_lines_visible': 'True',
+                                                             'species_density_map_grid_lines_style': '2km',
+                                                             'species_density_map_grid_lines_colour': '#d2d2d2',
                                                              'explanation_map_visible': 'True',
                                                              'grid_lines_visible': 'True',
                                                              'grid_lines_style': '2km',
@@ -2278,8 +2307,8 @@ class Atlas(gobject.GObject):
                         base_map_draw.polygon(pixels, fill='rgb(' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].red*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].green*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].blue*255)) + ')', outline='rgb(0,0,0)')
 
         #add the grid lines
-        if self.dataset.config.getboolean('Atlas', 'grid_lines_visible'):
-            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'grid_lines_style'))
+        if self.dataset.config.getboolean('Atlas', 'species_density_grid_lines_visible'):
+            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'species_density_map_grid_lines_style'))
             #loop through each object in the shapefile
             for obj in r.shapes():
                 pixels = []
@@ -2288,7 +2317,7 @@ class Atlas(gobject.GObject):
                     px = (xdist * scalefactor)- (bounds_top_x - x) * scalefactor
                     py = (bounds_top_y - y) * scalefactor
                     pixels.append((px,py))
-                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
+                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_density_map_grid_lines_colour')).blue_float*255)) + ')')
 
         #mask off grid lines outside the boundary area
         mask = Image.new('RGBA', base_map.size)
