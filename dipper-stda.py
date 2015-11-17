@@ -1501,32 +1501,32 @@ class Read(gobject.GObject):
                         try:
                             family = sheet.cell(row_index, family_position).value
                         except UnboundLocalError:
-                            family = None
+                            family = ''
 
                         try:
                             sort_order = sheet.cell(row_index, sort_order_position).value
                         except UnboundLocalError:
-                            sort_order = None
+                            sort_order = ''
 
                         try:
                             nbn_key = sheet.cell(row_index, nbn_key_position).value
                         except UnboundLocalError:
-                            nbn_key = None
+                            nbn_key = ''
 
                         try:
                             national_status = sheet.cell(row_index, national_status_position).value
                         except UnboundLocalError:
-                            national_status = None
+                            national_status = ''
 
                         try:
                             description = sheet.cell(row_index, description_position).value
                         except UnboundLocalError:
-                            description = None
+                            description = ''
 
                         try:
                             common_name = sheet.cell(row_index, common_name_position).value
                         except UnboundLocalError:
-                            common_name = None
+                            common_name = ''
 
                         if family not in self.dataset.families:
                             self.dataset.families.append(family)
@@ -1705,6 +1705,7 @@ class PDF(FPDF):
                 self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.p_vcs))))
 
                 self.cell(col_width, 5, '', '0', 0, 'C', 0)
+                
                 for vc in sorted(self.p_vcs):
                     self.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
                     self.cell(col_width/4, 5, '', '0', 0, 'C', 0)
@@ -1888,9 +1889,14 @@ class List(gobject.GObject):
         pdf.set_x(pdf.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('List', 'vice-counties').split(',')))))
 
         pdf.cell(col_width, 5, '', '0', 0, 'C', 0)
-        for vc in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
-            pdf.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
-            pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)
+        
+        if self.dataset.use_vcs:
+            for vc in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
+                pdf.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
+                pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)
+        else:
+            pdf.cell((col_width*3), 5, '', '0', 0, 'C', 0)
+            pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)                
 
 
         pdf.ln()
