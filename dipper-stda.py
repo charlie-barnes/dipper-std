@@ -1337,7 +1337,6 @@ class Read(gobject.GObject):
         #if more than one sheet is in the workbook, display sheet selection
         #dialog
         has_data = False
-        has_config = False
         ignore_sheets = 0
         for name in book.sheet_names():
             if name[:2] == '--' and name [-2:] == '--':
@@ -1346,10 +1345,6 @@ class Read(gobject.GObject):
             # do we have a data sheet?
             if name == '--data--':
                 has_data = True
-
-            # do we have a config sheet?
-            if name == '--config--':
-                has_config = True
 
         if (book.nsheets)-ignore_sheets > 1:
             builder = gtk.Builder()
@@ -1787,6 +1782,8 @@ class List(gobject.GObject):
             
         families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('List', 'families').split(',')), '")'])
 
+        self.dataset.cursor.execute('select * from species_data')
+
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS tetrads, \
                                    COUNT(data.taxon) AS records, \
@@ -1796,9 +1793,10 @@ class List(gobject.GObject):
                                    JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE ' + vcs_sql + ' ' + families_sql + ' \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, data.vc \
-                                   ORDER BY species_data.sort_order')
+                                   ORDER BY species_data.sort_order, species_data.family, data.taxon')
 
         data = self.dataset.cursor.fetchall()
+
         numrecords = 0
 
         for row in data:
@@ -1864,21 +1862,21 @@ class List(gobject.GObject):
         pdf.multi_cell(0, 6, self.dataset.config.get('List', 'inside_cover'), 0, 'J', False)
 
         #introduction
-        pdf.do_header = True
-        pdf.section = ('Introduction')
-        pdf.p_add_page()
-        pdf.startPageNums()
-        pdf.set_font('Helvetica', '', 20)
-        pdf.cell(0, 20, 'Introduction', 0, 0, 'L', 0)
-        pdf.ln()
-        pdf.set_font('Helvetica', '', 12)
-        pdf.multi_cell(0, 6, self.dataset.config.get('List', 'introduction'), 0, 0, 'L')
-        pdf.ln()
+        if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
+            pdf.do_header = True
+            pdf.section = ('Introduction')
+            pdf.p_add_page()
+            pdf.startPageNums()
+            pdf.set_font('Helvetica', '', 20)
+            pdf.cell(0, 20, 'Introduction', 0, 0, 'L', 0)
+            pdf.ln()
+            pdf.set_font('Helvetica', '', 12)
+            pdf.multi_cell(0, 6, self.dataset.config.get('List', 'introduction'), 0, 0, 'L')
+            pdf.ln()
+
+        #main heading            
         pdf.set_font('Helvetica', '', 20)
         pdf.cell(0, 15, 'Checklist', 0, 1, 'L', 0)
-
-
-
 
         col_width = 12.7#((self.w - self.l_margin - self.r_margin)/2)/7.5
 
@@ -2450,7 +2448,7 @@ class Atlas(gobject.GObject):
                                    JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE ' + vcs_sql + ' ' + families_sql + ' \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, species_data.description, species_data.common_name \
-                                   ORDER BY species_data.sort_order')
+                                   ORDER BY species_data.sort_order, species_data.family, data.taxon')
         
         data = self.dataset.cursor.fetchall()
 
