@@ -5,3 +5,4 @@ dipper-stda creates beautiful atlases and checklists from species occurrence dat
 * pygtkChart
 * pyfpdf
 * pyshp
+* colour
