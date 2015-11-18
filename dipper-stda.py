@@ -297,10 +297,8 @@ class Run():
         store.append(iter, ['Vice-counties', 0, 2])
         store.append(iter, ['Page Setup', 0, 3])
         store.append(iter, ['Table of Contents', 0, 4])
-        store.append(iter, ['Species density map', 0, 5])
-        store.append(iter, ['Species accounts', 0, 6])
-        store.append(iter, ['Maps', 0, 7])
-        store.append(iter, ['Date bands', 0, 8])
+        store.append(iter, ['Species Density Map', 0, 5])
+        store.append(iter, ['Species Accounts', 0, 6])
         iter = store.append(None, ['Checklist', 1, 0])
         store.append(iter, ['Families', 1, 1])
         store.append(iter, ['Vice-counties', 1, 2])
@@ -660,6 +658,18 @@ class Run():
 
             if self.dataset.data_source.read() == True:
 
+                self.builder.get_object('treeview4').set_sensitive(self.dataset.use_vcs)
+                
+                if self.dataset.use_vcs:
+                    self.builder.get_object('label61').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
+                    self.builder.get_object('label37').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
+                else:
+                    self.builder.get_object('label61').set_markup('<i>Data will be grouped as one</i>')
+                    self.builder.get_object('label37').set_markup('<i>Selection will just be used draw the maps</i>')
+
+                while gtk.events_pending():
+                    gtk.main_iteration_do(True)
+                
                 self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.filename), ' (',  os.path.dirname(self.dataset.filename), ') - Atlas & Checklist Generator',]) )
                 self.builder.get_object('notebook1').set_sensitive(True)
 
@@ -676,8 +686,8 @@ class Run():
                 if len(config_files) > 1:
                     builder = gtk.Builder()
                     builder.add_from_file('./gui/select_dialog.glade')
-                    builder.get_object('label68').set_text('Configuration file:')
-                    builder.get_object('dialog').set_title('Select configuration file')
+                    builder.get_object('label68').set_text('Settings file:')
+                    builder.get_object('dialog').set_title('Select settings file')
                     builder.get_object('button1').hide()
                     dialog = builder.get_object('dialog')
 
@@ -715,7 +725,7 @@ class Run():
                 else:
                     config_file_txt = '(default)'
                     
-                self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Configuration:</b> ', config_file_txt]))
+                self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', config_file_txt]))
                 
                 self.update_widgets()
 
@@ -1366,9 +1376,9 @@ class Run():
 
     def load_config(self, widget):
         '''Load a configuration file'''
-        dialog = gtk.FileChooserDialog('Save As...',
+        dialog = gtk.FileChooserDialog('Load...',
                                        None,
-                                       gtk.FILE_CHOOSER_ACTION_SAVE,
+                                       gtk.FILE_CHOOSER_ACTION_OPEN,
                                        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                         gtk.STOCK_SAVE, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
@@ -1388,7 +1398,7 @@ class Run():
 
         self.dataset.config.read([config_file])
         self.dataset.config.filename = config_file
-        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Configuration:</b> ', os.path.basename(self.dataset.config.filename)]))
+        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', os.path.basename(self.dataset.config.filename)]))
                     
         self.update_widgets()
         
