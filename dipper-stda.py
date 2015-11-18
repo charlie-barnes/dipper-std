@@ -229,6 +229,10 @@ class Run():
         self.builder.connect_signals(signals)
         self.dataset = None
 
+        self.builder.get_object('notebook1').set_show_tabs(False)
+        self.builder.get_object('notebook2').set_show_tabs(False)
+        self.builder.get_object('notebook3').set_show_tabs(False)
+        
         #filter for the data file filechooser
         filter = gtk.FileFilter()
         filter.set_name("Supported data files")
@@ -295,8 +299,40 @@ class Run():
         self.builder.get_object('filechooserbutton1').set_use_preview_label(False)
 
 
-        atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
+        #navigation treeview        
+        treeview = self.builder.get_object('treeview5')
+        treeview.set_rules_hint(False)
+        treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 
+        rendererText = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Atlas", rendererText, text=0)
+        treeview.append_column(column)
+        
+        treeselection = treeview.get_selection()
+        
+        store = gtk.TreeStore(str, int, int)
+        self.builder.get_object('treeview5').set_model(store)
+        iter = store.append(None, ['Atlas', 0, 0])
+        treeselection.select_iter(iter)
+        store.append(iter, ['Families', 0, 1])
+        store.append(iter, ['Vice-counties', 0, 2])
+        store.append(iter, ['Page Setup', 0, 3])
+        store.append(iter, ['Table of Contents', 0, 4])
+        store.append(iter, ['Species density map', 0, 5])
+        store.append(iter, ['Species accounts', 0, 6])
+        store.append(iter, ['Maps', 0, 7])
+        store.append(iter, ['Date bands', 0, 8])
+        iter = store.append(None, ['List', 1, 0])
+        store.append(iter, ['Families', 1, 1])
+        store.append(iter, ['Vice-counties', 1, 2])
+        store.append(iter, ['Page Setup', 1, 3])
+        
+        treeview.expand_all()
+        treeselection.connect("changed", self.navigation_change)   
+
+        #atlas paper orientation
+        atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
+        
         for i in range(len(paper_orientation)):
             atlas_orientation_liststore.append([paper_orientation[i]])
 
@@ -529,7 +565,20 @@ class Run():
 
         if filename != None:
             self.open_dataset(None, filename)
-
+            
+    def navigation_change(self, widget):
+        store = widget.get_selected()[0]
+        iter = widget.get_selected()[1]
+        main_notebook_page = store.get_value(iter, 1)
+        sub_notebook_page = store.get_value(iter, 2)
+        
+        self.builder.get_object('notebook1').set_current_page(main_notebook_page)
+        
+        if main_notebook_page == 0:
+            self.builder.get_object('notebook2').set_current_page(sub_notebook_page)
+        elif main_notebook_page == 1:
+            self.builder.get_object('notebook3').set_current_page(sub_notebook_page)
+            
 
     def update_preview_cb(self, file_chooser, preview):
         filename = file_chooser.get_preview_filename()
@@ -546,7 +595,7 @@ class Run():
     def show_about(self, widget):
         """Show the about dialog."""
         dialog = gtk.AboutDialog()
-        dialog.set_name('VA&CG')
+        dialog.set_name('A&CG')
         dialog.set_version(__version__)
         dialog.set_authors(['Charlie Barnes'])
         dialog.set_license("This is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the Licence, or (at your option) any later version.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA")
@@ -678,7 +727,7 @@ class Run():
 
                 self.update_widgets()
 
-                self.builder.get_object('notebook1').show()
+                self.builder.get_object('hbox1').show()
                 self.builder.get_object('button3').set_sensitive(True)
                 self.builder.get_object('button8').set_sensitive(True)
                 self.builder.get_object('button9').set_sensitive(True)
@@ -708,8 +757,8 @@ class Run():
         if self.dataset is not None:
             self.update_config()
 
-            vbox = widget.get_parent().get_parent()
-            notebook = vbox.get_children()[1]            
+            vbox = self.builder.get_object('dialog-vbox1') 
+            notebook = self.builder.get_object('notebook1')           
 
             #we can't produce an atlas without any geographic entity!
             if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0 and notebook.get_current_page() == 0:
