@@ -212,19 +212,26 @@ class Run():
 
     def __init__(self, filename=None):
 
+       
         self.builder = gtk.Builder()
         self.builder.add_from_file('./gui/gui.glade')
 
+        win = self.builder.get_object('window1')
+        win.maximize()   
+
         signals = {'quit':self.quit,
-                   'generate':self.generate,
+                   'generate_atlas':self.generate_atlas,
+                   'generate_list':self.generate_list,
                    'open_dataset':self.open_dataset,
                    'select_all_families':self.select_all_families,
                    'unselect_image':self.unselect_image,
                    'update_title':self.update_title,
                    'show_about':self.show_about,
-                   'save_config':self.save_config,
+                   'save_config_as':self.save_config_as,
+                   'save_configuration':self.save_configuration,
                    'load_config':self.load_config,
                    'switch_update_title':self.switch_update_title,
+                   'open_file':self.open_file,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -233,35 +240,7 @@ class Run():
         self.builder.get_object('notebook2').set_show_tabs(False)
         self.builder.get_object('notebook3').set_show_tabs(False)
         
-        #filter for the data file filechooser
-        filter = gtk.FileFilter()
-        filter.set_name("Supported data files")
-        filter.add_pattern("*.xls")
-        filter.add_mime_type("application/vnd.ms-excel")
-        self.builder.get_object('filechooserbutton3').add_filter(filter)
-        self.builder.get_object('filechooserbutton3').set_filter(filter)
 
-        #if we can run ssconvert, add ssconvert-able filter to the data file filechooser
-        try:
-            returncode = call(["ssconvert"])
-
-            if returncode == 1:
-                filter = gtk.FileFilter()
-                filter.set_name("ssconvert-able data files")
-                filter.add_pattern("*.csv")
-                filter.add_pattern("*.txt")
-                filter.add_pattern("*.xlsx")
-                filter.add_pattern("*.gnumeric")
-                filter.add_pattern("*.ods")
-                filter.add_mime_type("text/csv")
-                filter.add_mime_type("text/plain")
-                filter.add_mime_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                filter.add_mime_type("application/x-gnumeric")
-                filter.add_mime_type("application/vnd.oasis.opendocument.spreadsheet")
-                self.builder.get_object('filechooserbutton3').add_filter(filter)
-        except OSError:
-            print "ssconvert isn't available - you're limited to reading XLS files. Install Gnumeric to make use of ssconvert."
-            pass
 
         #filter for the cover image filechooser
         filter = gtk.FileFilter()
@@ -322,7 +301,7 @@ class Run():
         store.append(iter, ['Species accounts', 0, 6])
         store.append(iter, ['Maps', 0, 7])
         store.append(iter, ['Date bands', 0, 8])
-        iter = store.append(None, ['List', 1, 0])
+        iter = store.append(None, ['Checklist', 1, 0])
         store.append(iter, ['Families', 1, 1])
         store.append(iter, ['Vice-counties', 1, 2])
         store.append(iter, ['Page Setup', 1, 3])
@@ -560,7 +539,7 @@ class Run():
         column.set_sort_column_id(1)
         treeView.append_column(column)
 
-        dialog = self.builder.get_object('dialog1')
+        dialog = self.builder.get_object('window1')
         dialog.show()
 
         if filename != None:
@@ -595,9 +574,10 @@ class Run():
     def show_about(self, widget):
         """Show the about dialog."""
         dialog = gtk.AboutDialog()
-        dialog.set_name('A&CG')
-        dialog.set_version(__version__)
+        dialog.set_name('Atlas & Checklist Generator\n')
+        dialog.set_version(''.join(['dipper-stda ', __version__]))
         dialog.set_authors(['Charlie Barnes'])
+        dialog.set_website('https://github.com/charlie-barnes/dipper-stda')
         dialog.set_license("This is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the Licence, or (at your option) any later version.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA")
         dialog.set_wrap_license(True)
         dialog.set_property('skip-taskbar-hint', True)
@@ -675,12 +655,12 @@ class Run():
             self.dataset = Dataset(widget.get_filename())
         except AttributeError:
             self.dataset = Dataset(filename)
-            self.builder.get_object('filechooserbutton3').set_filename(filename)
 
         try:
 
             if self.dataset.data_source.read() == True:
 
+                self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.filename), ' (',  os.path.dirname(self.dataset.filename), ') - Atlas & Checklist Generator',]) )
                 self.builder.get_object('notebook1').set_sensitive(True)
 
                 config_files = []
@@ -724,17 +704,33 @@ class Run():
 
                 self.dataset.config.read([config_file])
                 self.dataset.config.filename = config_file
-
+                
+                if os.path.isfile(self.dataset.config.filename):
+                    config_file_txt = os.path.basename(self.dataset.config.filename)
+                else:
+                    config_file_txt = '(default)'
+                    
+                if os.path.isfile(self.dataset.config.filename):
+                    config_file_txt = os.path.basename(self.dataset.config.filename)
+                else:
+                    config_file_txt = '(default)'
+                    
+                self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Configuration:</b> ', config_file_txt]))
+                
                 self.update_widgets()
 
                 self.builder.get_object('hbox1').show()
-                self.builder.get_object('button3').set_sensitive(True)
-                self.builder.get_object('button8').set_sensitive(True)
-                self.builder.get_object('button9').set_sensitive(True)
+                self.builder.get_object('menuitem5').set_sensitive(True)
+                self.builder.get_object('menuitem6').set_sensitive(True)
+                self.builder.get_object('menuitem7').set_sensitive(True)
+                self.builder.get_object('imagemenuitem3').set_sensitive(True)
+                self.builder.get_object('imagemenuitem4').set_sensitive(True)
         except AttributeError as e:
-            self.builder.get_object('button3').set_sensitive(False)
-            self.builder.get_object('button8').set_sensitive(False)
-            self.builder.get_object('button9').set_sensitive(False)
+            self.builder.get_object('menuitem5').set_sensitive(False)
+            self.builder.get_object('menuitem6').set_sensitive(False)
+            self.builder.get_object('menuitem7').set_sensitive(False)
+            self.builder.get_object('imagemenuitem3').set_sensitive(False)
+            self.builder.get_object('imagemenuitem4').set_sensitive(False)
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                 gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
@@ -752,23 +748,23 @@ class Run():
         gtk.main_quit()
         sys.exit()
 
-    def generate(self, widget):
+    def generate_atlas(self, widget):
         """Process the data file and configuration."""
         if self.dataset is not None:
             self.update_config()
 
-            vbox = self.builder.get_object('dialog-vbox1') 
+            vbox = self.builder.get_object('vbox2') 
             notebook = self.builder.get_object('notebook1')           
 
             #we can't produce an atlas without any geographic entity!
-            if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0 and notebook.get_current_page() == 0:
+            if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0:
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                     gtk.BUTTONS_CLOSE, 'Select at least one vice-county.')
                 md.run()
                 md.destroy()
             #we can't produce an atlas or list without any families selected!
-            elif (not len(self.dataset.config.get('Atlas', 'families'))>0 and notebook.get_current_page() == 0) or (not len(self.dataset.config.get('List', 'families'))>0 and notebook.get_current_page() == 1):
+            elif not len(self.dataset.config.get('Atlas', 'families'))>0:
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                     gtk.BUTTONS_CLOSE, 'Select at least one family.')
@@ -786,12 +782,8 @@ class Run():
                 dialog.set_default_response(gtk.RESPONSE_OK)
                 dialog.set_do_overwrite_confirmation(True)
 
-                if notebook.get_current_page() == 0:
-                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                    dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_atlas.pdf']))
-                elif notebook.get_current_page() == 1:
-                    dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
-                    dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_checklist.pdf']))
+                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_atlas.pdf']))
 
                 response = dialog.run()
 
@@ -803,7 +795,7 @@ class Run():
                     gtk.main_iteration()
 
                 watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
-                self.builder.get_object('dialog1').window.set_cursor(watch)
+                self.builder.get_object('window1').window.set_cursor(watch)
 
                 while gtk.events_pending():
                     gtk.main_iteration()
@@ -815,25 +807,78 @@ class Run():
                         output = ''.join([output, '.pdf'])
 
                     #do the atlas
-                    if notebook.get_current_page() == 0:
-                            
-                        atlas = Atlas(self.dataset)
-                        atlas.save_in = output
+                    atlas = Atlas(self.dataset)
+                    atlas.save_in = output
 
-                        atlas.generate_base_map()
+                    atlas.generate_base_map()
 
-                        if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
-                            atlas.generate_density_map()
+                    if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
+                        atlas.generate_density_map()
 
-                        atlas.generate()
+                    atlas.generate()
                         
-                    elif notebook.get_current_page() == 1:
-                        listing = List(self.dataset)
-                        listing.save_in = output
-                        listing.generate()
+            vbox.set_sensitive(True)
+            self.builder.get_object('window1').window.set_cursor(None)
+
+
+    def generate_list(self, widget):
+        """Process the data file and configuration."""
+        if self.dataset is not None:
+            self.update_config()
+
+            vbox = self.builder.get_object('vbox2') 
+            notebook = self.builder.get_object('notebook1')           
+
+            #we can't produce an atlas without any geographic entity!
+            if not len(self.dataset.config.get('List', 'families'))>0:
+                md = gtk.MessageDialog(None,
+                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                    gtk.BUTTONS_CLOSE, 'Select at least one family.')
+                md.run()
+                md.destroy()                   
+            else:              
+
+                vbox.set_sensitive(False)
+
+                dialog = gtk.FileChooserDialog('Save As...',
+                                               None,
+                                               gtk.FILE_CHOOSER_ACTION_SAVE,
+                                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                                gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+                dialog.set_default_response(gtk.RESPONSE_OK)
+                dialog.set_do_overwrite_confirmation(True)
+
+                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_checklist.pdf']))
+
+                response = dialog.run()
+
+                output = dialog.get_filename()
+
+                dialog.destroy()
+
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+                watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+                self.builder.get_object('window1').window.set_cursor(watch)
+
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+                if response == gtk.RESPONSE_OK:
+
+                    #add the extension if it's missing
+                    if output[-4:] != '.pdf':
+                        output = ''.join([output, '.pdf'])
+
+                    #do the list
+                    listing = List(self.dataset)
+                    listing.save_in = output
+                    listing.generate()
 
             vbox.set_sensitive(True)
-            self.builder.get_object('dialog1').window.set_cursor(None)
+            self.builder.get_object('window1').window.set_cursor(None)
 
     def update_widgets(self):
 
@@ -1267,6 +1312,58 @@ class Run():
         self.dataset.config.set('Atlas', 'families_update_title', str(self.builder.get_object('checkbutton18').get_active()))
         self.dataset.config.set('List', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
 
+
+    def open_file(self, widget):
+        '''Open a dataset file'''
+        dialog = gtk.FileChooserDialog('Open...',
+                                       None,
+                                       gtk.FILE_CHOOSER_ACTION_SAVE,
+                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                        gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        dialog.set_default_response(gtk.RESPONSE_OK)
+
+        #filter for the data file filechooser
+        filter = gtk.FileFilter()
+        filter.set_name("Supported data files")
+        filter.add_pattern("*.xls")
+        filter.add_mime_type("application/vnd.ms-excel")
+        dialog.add_filter(filter)
+        dialog.set_filter(filter)
+        
+        
+        #if we can run ssconvert, add ssconvert-able filter to the data file filechooser
+        try:
+            returncode = call(["ssconvert"])
+
+            if returncode == 1:
+                filter = gtk.FileFilter()
+                filter.set_name("ssconvert-able data files")
+                filter.add_pattern("*.csv")
+                filter.add_pattern("*.txt")
+                filter.add_pattern("*.xlsx")
+                filter.add_pattern("*.gnumeric")
+                filter.add_pattern("*.ods")
+                filter.add_mime_type("text/csv")
+                filter.add_mime_type("text/plain")
+                filter.add_mime_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                filter.add_mime_type("application/x-gnumeric")
+                filter.add_mime_type("application/vnd.oasis.opendocument.spreadsheet")
+                dialog.add_filter(filter)
+        except OSError:
+            print "ssconvert isn't available - you're limited to reading XLS files. Install Gnumeric to make use of ssconvert."
+            pass
+
+        response = dialog.run()
+        data_file = dialog.get_filename()
+        dialog.destroy()
+
+        if response == -5:
+            self.open_dataset(widget, data_file)
+          
+
+
+        #self.update_widgets()
+
     def load_config(self, widget):
         '''Load a configuration file'''
         dialog = gtk.FileChooserDialog('Save As...',
@@ -1291,10 +1388,21 @@ class Run():
 
         self.dataset.config.read([config_file])
         self.dataset.config.filename = config_file
-
+        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Configuration:</b> ', os.path.basename(self.dataset.config.filename)]))
+                    
         self.update_widgets()
+        
 
-    def save_config(self, widget):
+    def save_configuration(self, widget):
+        '''Save a configuration file based on the current settings'''
+
+        self.update_config()
+
+        #write the config file
+        with open(self.dataset.config.filename, 'wb') as configfile:
+            self.dataset.config.write(configfile)        
+
+    def save_config_as(self, widget):
         '''Save a configuration file based on the current settings'''
 
         dialog = gtk.FileChooserDialog('Save As...',
@@ -1345,6 +1453,7 @@ class Dataset(gobject.GObject):
         self.sql_filters = []
 
         self.chart = None
+        self.sheet = ''
 
         self.atlas_config = {}
         self.list_config = {}
@@ -1556,6 +1665,8 @@ class Read(gobject.GObject):
         else:
             sheets = (book.sheet_by_index(0),)
 
+        
+
         text = ''.join(['Opening <b>', os.path.basename(self.filename) ,'</b>', ' from ', '<b>', os.path.dirname(os.path.abspath(self.filename)), '</b>'])
 
         temp_taxa_list = []
@@ -1564,6 +1675,8 @@ class Read(gobject.GObject):
         try:
             #loop through the selected sheets of the workbook
             for sheet in sheets:
+                self.dataset.sheet = ' + '.join([self.dataset.sheet, sheet.name])
+                
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
                     if sheet.cell(0, col_index).value.lower() in ['taxon name', 'taxon', 'recommended taxon name']:
@@ -1641,6 +1754,8 @@ class Read(gobject.GObject):
 
                     rownum = rownum + 1
 
+            self.dataset.sheet = self.dataset.sheet[3:]
+            
             #load the data sheet
             if has_data:
                 sheet = book.sheet_by_name('--data--')
@@ -4241,5 +4356,5 @@ if __name__ == '__main__':
         else:
             Run()
     else:
-        Run()
+        Run()     
     gtk.main()
