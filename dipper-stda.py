@@ -719,12 +719,7 @@ class Run():
                     config_file_txt = os.path.basename(self.dataset.config.filename)
                 else:
                     config_file_txt = '(default)'
-                    
-                if os.path.isfile(self.dataset.config.filename):
-                    config_file_txt = os.path.basename(self.dataset.config.filename)
-                else:
-                    config_file_txt = '(default)'
-                    
+                                      
                 self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', config_file_txt]))
                 
                 self.update_widgets()
@@ -1428,7 +1423,15 @@ class Run():
 
         #write the config file
         with open(self.dataset.config.filename, 'wb') as configfile:
-            self.dataset.config.write(configfile)        
+            self.dataset.config.write(configfile)
+            
+        if os.path.isfile(self.dataset.config.filename):
+            config_file_txt = os.path.basename(self.dataset.config.filename)
+        else:
+            config_file_txt = '(default)'
+                              
+        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', config_file_txt]))
+ 
 
     def save_config_as(self, widget):
         '''Save a configuration file based on the current settings'''
