@@ -3864,12 +3864,8 @@ class Atlas(gobject.GObject):
                 chart = Chart(self.dataset, item[0])
                 if chart.temp_filename != None:
                     pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
-                pre_y = pdf.get_y()
-                pre_x = pdf.get_x()
-                pdf.cell(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, 'No records can be assigned to a month', 0, 0, 'L', 0)
                 pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
-                pdf.set_y(pre_y)
-                pdf.set_x(pre_x)
+
 
             #do the map
 
@@ -4294,8 +4290,17 @@ class Chart(gtk.Window):
             barchart = bar_chart.BarChart()
             barchart.grid.set_visible(False)
             barchart.set_mode(bar_chart.MODE_VERTICAL)
+            
+            max_val = 1
 
+            #HACK - Draw a hidden bar with a value, so we can have an 'empty' chart            
+            bar = bar_chart.Bar('', max_val, '')
+            bar.set_visible(False)
+            barchart.add_bar(bar)
+            
             for bar_info in data:
+                if max_val < bar_info[1]:
+                    max_val = bar_info[1]
                 bar = bar_chart.Bar(*bar_info)
                 bar.set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
                 bar._label_object.set_property('size', 16)
@@ -4305,7 +4310,12 @@ class Chart(gtk.Window):
                 bar._label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
                 bar._value_label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
                 barchart.add_bar(bar)
-
+            
+            #HACK - Draw a hidden bar with a value, so we can have an 'empty' chart            
+            bar = bar_chart.Bar('', max_val, '')
+            bar.set_visible(False)
+            barchart.add_bar(bar)
+            
             self.chart = barchart
             self.chart.set_enable_mouseover(False)
             self.get_children()[0].pack_start(self.chart, True, True, 0)
