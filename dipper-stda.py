@@ -664,8 +664,8 @@ class Run():
                     self.builder.get_object('label61').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
                     self.builder.get_object('label37').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
                 else:
-                    self.builder.get_object('label61').set_markup('<i>Data will be grouped as one</i>')
-                    self.builder.get_object('label37').set_markup('<i>Selection will just be used draw the maps</i>')
+                    self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file - data will be grouped as one</i>')
+                    self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file - selection will just be used draw the maps</i>')
 
                 while gtk.events_pending():
                     gtk.main_iteration_do(True)
@@ -2926,12 +2926,12 @@ class Atlas(gobject.GObject):
         pdf.p_add_page()
         pdf.set_font('Helvetica', '', 12)
         pdf.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover'), 0, 'J', False)
-        pdf.p_add_page()
 
         pdf.do_header = True
 
         #introduction
         if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
+            pdf.p_add_page()
             pdf.section = ('Introduction')
             pdf.set_font('Helvetica', '', 20)
             pdf.multi_cell(0, 20, 'Introduction', 0, 'J', False)
@@ -3106,7 +3106,7 @@ class Atlas(gobject.GObject):
                             if deter_name != '':
                                 deter = ','.join([deter, contrib_data[deter_name.strip()]])
 
-                        if deter == 'Unknown' or deter == '':
+                        if deter == 'Unknown' or deter == 'Unknown Unknown' or deter == '':
                             det = ' anon.'
                         else:
                             det = ''.join([' det. ', deter[1:]])
@@ -3121,7 +3121,7 @@ class Atlas(gobject.GObject):
                     date = indiv_record[4]
 
 
-                if indiv_record[8] == 'Unknown' or indiv_record[8] == '':
+                if indiv_record[8] == 'Unknown' or indiv_record[8] == 'Unknown Unknown' or indiv_record[8] == '':
                     rec = ' anon.'
                 else:
                     recs = indiv_record[8].split(',')
@@ -3864,7 +3864,12 @@ class Atlas(gobject.GObject):
                 chart = Chart(self.dataset, item[0])
                 if chart.temp_filename != None:
                     pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
+                pre_y = pdf.get_y()
+                pre_x = pdf.get_x()
+                pdf.cell(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, 'No records can be assigned to a month', 0, 0, 'L', 0)
                 pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
+                pdf.set_y(pre_y)
+                pdf.set_x(pre_x)
 
             #do the map
 
