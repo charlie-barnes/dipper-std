@@ -1306,7 +1306,7 @@ class Run():
         introduction = buffer.get_text(startiter, enditer, True)
 
         self.dataset.config.set('List', 'introduction', introduction)
-        self.dataset.config.set('List', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
+        self.dataset.config.set('List', 'distribution_unit', self.builder.get_object('combobox5').get_active_text())
 
         #grab a comma delimited list of families
         selection = self.builder.get_object('treeview3').get_selection()
@@ -1899,8 +1899,9 @@ class PDF(FPDF):
         self.type = None
         self.toc_length = 0
         self.doing_the_list = False
-        self.p_vcs = []
+        self.vcs = []
         self.toc_page_num = 2
+        self.dataset = None
 
     def p_add_page(self):
         #if(self.numbering):
@@ -2002,7 +2003,6 @@ class PDF(FPDF):
             if self.page_no()%2 == 0:
                 self.cell(0, 5, self.section, 'B', 0, 'L', 0) # even page header
                 self.cell(0, 5, self.title.replace('\n', ' - '), 'B', 1, 'R', 0) # even page header
-
             else:
                 self.cell(0, 5, self.section, 'B', 1, 'R', 0) #odd page header
 
@@ -2015,23 +2015,27 @@ class PDF(FPDF):
                 self.set_line_width(0.0)
                 self.set_y(20)
 
-                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.p_vcs))))
+                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
 
                 self.cell(col_width, 5, '', '0', 0, 'C', 0)
-                
-                for vc in sorted(self.p_vcs):
-                    self.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
+
+                for vc in sorted(self.vcs):
+                    if vc == None:
+                        vc_head_text = ''
+                    else:
+                        vc_head_text = ''.join(['VC',vc])
+                    self.cell((col_width*3), 5, vc_head_text, '0', 0, 'C', 0)
                     self.cell(col_width/4, 5, '', '0', 0, 'C', 0)
 
                 self.ln()
 
-                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.p_vcs))))
+                self.set_x(self.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.vcs))))
                 self.set_font('Helvetica', '', 8)
                 self.cell(col_width, 5, '', '0', 0, 'C', 0)
 
-                for vc in sorted(self.p_vcs):
+                for vc in sorted(self.vcs):                    
                     #colum headings
-                    self.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
+                    self.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
                     self.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
                     self.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
                     self.cell(col_width/4, 5, '', '0', 0, 'C', 0)
@@ -2103,7 +2107,7 @@ class List(gobject.GObject):
         self.dataset.cursor.execute('select * from species_data')
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
-                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS tetrads, \
+                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS squares, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    ' + vcs_sql_sel + ' AS VC \
@@ -2129,7 +2133,7 @@ class List(gobject.GObject):
             if row[0] in taxa_statistics:
                 taxa_statistics[row[0]]['vc'][str(row[7])] = {}
 
-                taxa_statistics[row[0]]['vc'][str(row[7])]['tetrads'] = str(row[4])
+                taxa_statistics[row[0]]['vc'][str(row[7])]['squares'] = str(row[4])
                 taxa_statistics[row[0]]['vc'][str(row[7])]['records'] = str(row[5])
                 taxa_statistics[row[0]]['vc'][str(row[7])]['year'] = str(row[6])
 
@@ -2142,7 +2146,7 @@ class List(gobject.GObject):
 
                 taxa_statistics[row[0]]['vc'][str(row[7])] = {}
 
-                taxa_statistics[row[0]]['vc'][str(row[7])]['tetrads'] = str(row[4])
+                taxa_statistics[row[0]]['vc'][str(row[7])]['squares'] = str(row[4])
                 taxa_statistics[row[0]]['vc'][str(row[7])]['records'] = str(row[5])
                 taxa_statistics[row[0]]['vc'][str(row[7])]['year'] = str(row[6])
 
@@ -2150,7 +2154,7 @@ class List(gobject.GObject):
         pdf = PDF(orientation=self.dataset.config.get('List', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('List', 'paper_size'))
         pdf.type = 'list'
         pdf.do_header = False
-        pdf.vcs = self.dataset.config.get('List', 'vice-counties').split(',')
+        pdf.dataset = self.dataset
 
         pdf.col = 0
         pdf.y0 = 0
@@ -2176,14 +2180,15 @@ class List(gobject.GObject):
 
         #inside cover
         pdf.p_add_page()
+        pdf.do_header = True
         pdf.set_font('Helvetica', '', 12)
         pdf.multi_cell(0, 6, self.dataset.config.get('List', 'inside_cover'), 0, 'J', False)
-        pdf.p_add_page()
 
         #introduction
-        if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
+        if len(self.dataset.config.get('List', 'introduction')) > 0:
+            pdf.section = ('Introduction')       
+            pdf.p_add_page() 
             pdf.do_header = True
-            pdf.section = ('Introduction')
             pdf.startPageNums()
             pdf.set_font('Helvetica', '', 20)
             pdf.cell(0, 20, 'Introduction', 0, 0, 'L', 0)
@@ -2191,6 +2196,11 @@ class List(gobject.GObject):
             pdf.set_font('Helvetica', '', 12)
             pdf.multi_cell(0, 6, self.dataset.config.get('List', 'introduction'), 0, 0, 'L')
             pdf.ln()
+        else:
+            pdf.section = (' '.join(['Family', data[0][1].upper()]))     
+            pdf.p_add_page()
+            pdf.ln()
+            
 
         #main heading            
         pdf.set_font('Helvetica', '', 20)
@@ -2208,9 +2218,11 @@ class List(gobject.GObject):
         
         if self.dataset.use_vcs:
             for vc in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
+                pdf.vcs = self.dataset.config.get('List', 'vice-counties').split(',')
                 pdf.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
                 pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)
         else:
+            pdf.vcs = [None]
             pdf.cell((col_width*3), 5, '', '0', 0, 'C', 0)
             pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)                
 
@@ -2223,21 +2235,13 @@ class List(gobject.GObject):
 
         for vc in sorted(pdf.vcs):
             #colum headings
-            pdf.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
+            pdf.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
             pdf.cell(col_width/4, 5, '', '0', 0, 'C', 0)
 
-
-
-
-
-
-
-
         pdf.doing_the_list = True
         pdf.set_font('Helvetica', '', 8)
-
         
         if self.dataset.use_vcs:
             for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
@@ -2246,12 +2250,12 @@ class List(gobject.GObject):
                 col = self.dataset.config.get('List', 'vice-counties').split(',').index(vckey)+1
     
                 pdf.cell(col_width/col, 5, '', '0', 0, 'C', 0)
-                pdf.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
+                pdf.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
                 pdf.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
                 pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
         else:
             pdf.cell(col_width/1, 5, '', '0', 0, 'C', 0)
-            pdf.cell(col_width, 5, 'Tetrads', '0', 0, 'C', 0)
+            pdf.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
             pdf.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)                        
 
@@ -2304,12 +2308,12 @@ class List(gobject.GObject):
                     pdf.set_fill_color(230, 230, 230)
                     try:
     
-                        if taxa_statistics[key]['vc'][vckey]['tetrads'] == '0':
-                            tetrads = '-'
+                        if taxa_statistics[key]['vc'][vckey]['squares'] == '0':
+                            squares = '-'
                         else:
-                            tetrads = taxa_statistics[key]['vc'][vckey]['tetrads']
+                            squares = taxa_statistics[key]['vc'][vckey]['squares']
     
-                        pdf.cell(col_width, pdf.font_size+2, tetrads, '', 0, 'L', 1)
+                        pdf.cell(col_width, pdf.font_size+2, squares, '', 0, 'L', 1)
                         pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc'][vckey]['records'], '', 0, 'L', 1)
                         record_count = record_count + int(taxa_statistics[key]['vc'][vckey]['records'])
     
@@ -2332,12 +2336,12 @@ class List(gobject.GObject):
                   pdf.set_fill_color(230, 230, 230)
                   try:
   
-                      if taxa_statistics[key]['vc']['00']['tetrads'] == '0':
-                          tetrads = '-'
+                      if taxa_statistics[key]['vc']['00']['squares'] == '0':
+                          squares = '-'
                       else:
-                          tetrads = taxa_statistics[key]['vc']['00']['tetrads']
+                          squares = taxa_statistics[key]['vc']['00']['squares']
   
-                      pdf.cell(col_width, pdf.font_size+2, tetrads, '', 0, 'L', 1)
+                      pdf.cell(col_width, pdf.font_size+2, squares, '', 0, 'L', 1)
                       pdf.cell(col_width, pdf.font_size+2, taxa_statistics[key]['vc']['00']['records'], '', 0, 'L', 1)
                       record_count = record_count + int(taxa_statistics[key]['vc']['00']['records'])
   
@@ -2759,7 +2763,7 @@ class Atlas(gobject.GObject):
         families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Atlas', 'families').split(',')), '")'])
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
-                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS tetrads, \
+                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS squares, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    species_data.description, \
@@ -4062,7 +4066,7 @@ class Atlas(gobject.GObject):
                 pdf.set_line_width(0.1)
                 pdf.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
 
-                #tetrads
+                #squares
                 pdf.set_y((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+7)+y_padding)
                 pdf.set_x((((pdf.w / 2)-pdf.l_margin-pdf.r_margin)-15)+x_padding)
                 pdf.set_font('Helvetica', '', 12)
