@@ -2160,6 +2160,7 @@ class List(gobject.GObject):
         pdf.y0 = 0
         pdf.set_title(self.dataset.config.get('List', 'title'))
         pdf.set_author(self.dataset.config.get('List', 'author'))
+        pdf.set_creator(' '.join(['dipper-stda', __version__])) 
         pdf.section = ''
 
         #title page
@@ -3776,7 +3777,7 @@ class Atlas(gobject.GObject):
                                 if deter_name != '':
                                     deter = ','.join([deter, contrib_data[deter_name.strip()]])
     
-                            if deter == 'Unknown' or deter == '':
+                            if deter == 'Unknown' or deter == 'Unknown Unknown' or deter == '':
                                 det = ' anon.'
                             else:
                                 det = ''.join([' det. ', deter[1:]])
@@ -3791,7 +3792,7 @@ class Atlas(gobject.GObject):
                         date = indiv_record[4]
 
 
-                    if indiv_record[8] == 'Unknown' or indiv_record[8] == '':
+                    if indiv_record[8] == 'Unknown' or indiv_record[8] == 'Unknown Unknown' or indiv_record[8] == '':
                         rec = ' anon.'
                     else:
                         recs = indiv_record[8].split(',')
@@ -4177,7 +4178,7 @@ class Atlas(gobject.GObject):
         contrib_blurb = []
 
         for name in sorted(contrib_data.keys()):
-            if name != 'Unknown':
+            if name != 'Unknown' and name != 'Unknown Unknown':
                 contrib_blurb.append(''.join([name, ' (', contrib_data[name], ')']))
 
         pdf.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
