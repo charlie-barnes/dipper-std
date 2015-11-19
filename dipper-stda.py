@@ -943,7 +943,10 @@ class Run():
         selection = self.builder.get_object('treeview2').get_selection()
 
         selection.unselect_all()
-        self.builder.get_object('treeview2').scroll_to_point(0,0)
+        
+        if self.builder.get_object('treeview2').get_realized():
+            self.builder.get_object('treeview2').scroll_to_point(0,0)
+            
         for family in self.dataset.families:
             iter = store.append([family])
 
@@ -962,7 +965,10 @@ class Run():
         selection = self.builder.get_object('treeview1').get_selection()
 
         selection.unselect_all()
-        self.builder.get_object('treeview1').scroll_to_point(0,0)
+        
+        if self.builder.get_object('treeview1').get_realized():
+            self.builder.get_object('treeview1').scroll_to_point(0,0)
+            
         try:
             for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
                 selection.select_path(int(float(vc))-1)
@@ -1114,7 +1120,10 @@ class Run():
         selection = self.builder.get_object('treeview3').get_selection()
 
         selection.unselect_all()
-        self.builder.get_object('treeview3').scroll_to_point(0,0)
+        
+        if self.builder.get_object('treeview3').get_realized():
+            self.builder.get_object('treeview3').scroll_to_point(0,0)
+            
         for family in self.dataset.families:
             iter = store.append([family])
 
@@ -1133,7 +1142,10 @@ class Run():
         selection = self.builder.get_object('treeview4').get_selection()
 
         selection.unselect_all()
-        self.builder.get_object('treeview4').scroll_to_point(0,0)
+        
+        if self.builder.get_object('treeview4').get_realized():
+            self.builder.get_object('treeview4').scroll_to_point(0,0)
+            
         try:
             for vc in self.dataset.config.get('List', 'vice-counties').split(','):
                 selection.select_path(int(float(vc))-1)
@@ -2825,7 +2837,7 @@ class Atlas(gobject.GObject):
         contrib_data = {}
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
-                                   FROM data')
+                                    FROM data')
 
         recorder_data = self.dataset.cursor.fetchall()
 
@@ -2853,8 +2865,8 @@ class Atlas(gobject.GObject):
 
                         while ''.join(initials) in contrib_data.values():
                             if check_val <= len(parts[working_part]):
-                                initials[working_part] = parts[working_part][0:check_val]
-                                check_val = check_val + 1
+                                    initials[working_part] = parts[working_part][0:check_val]
+                                    check_val = check_val + 1
                             elif check_val > len(parts[working_part]):
                                 working_part = working_part - 1
                                 check_val = 1
@@ -2862,7 +2874,7 @@ class Atlas(gobject.GObject):
                         contrib_data[name.strip()] = ''.join(initials)
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
-                                    FROM data')
+                                     FROM data')
 
         determiner_data = self.dataset.cursor.fetchall()
     
@@ -3262,6 +3274,14 @@ class Atlas(gobject.GObject):
 
         date_band_1 = self.dataset.cursor.fetchall()
         date_band_1_grids = []
+
+        ###
+        ###Overlay:
+        ### rather than work out which we should/shouln't display, 
+        ### would it be easier to draw a white square if we're
+        ### not overlaying? would make it easier should we
+        ### transition to user specified number of date bands
+        ###
 
         #show 2 and 3, don't overlay 2 and 3
         if self.dataset.config.get('Atlas', 'date_band_2_visible') and self.dataset.config.get('Atlas', 'date_band_3_visible') and not self.dataset.config.get('Atlas', 'date_band_2_overlay') and not self.dataset.config.get('Atlas', 'date_band_3_overlay'):
@@ -4220,7 +4240,7 @@ class Chart(gtk.Window):
 
     def __init__(self, dataset, item):
         gtk.Window.__init__(self)
-
+        print "doing chart"
         vbox = gtk.VBox()
         self.add(vbox)
         combo_box = gtk.combo_box_new_text()
