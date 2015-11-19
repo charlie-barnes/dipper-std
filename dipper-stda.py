@@ -830,7 +830,7 @@ class Run():
                     
                     if self.builder.get_object('menuitem9').get_active():
                         if sys.platform == 'linux2':
-                            subprocess.call(["xdg-open", output])
+                            call(["xdg-open", output])
                         else:
                             os.startfile(output)
                         
@@ -896,7 +896,7 @@ class Run():
                     
                     if self.builder.get_object('menuitem9').get_active():
                         if sys.platform == 'linux2':
-                            subprocess.call(["xdg-open", output])
+                            call(["xdg-open", output])
                         else:
                             os.startfile(output)
 
@@ -4240,7 +4240,6 @@ class Chart(gtk.Window):
 
     def __init__(self, dataset, item):
         gtk.Window.__init__(self)
-        print "doing chart"
         vbox = gtk.VBox()
         self.add(vbox)
         combo_box = gtk.combo_box_new_text()
