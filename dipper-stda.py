@@ -735,12 +735,18 @@ class Run():
                 self.builder.get_object('menuitem7').set_sensitive(True)
                 self.builder.get_object('imagemenuitem3').set_sensitive(True)
                 self.builder.get_object('imagemenuitem4').set_sensitive(True)
+                self.builder.get_object('toolbutton5').set_sensitive(True)
+                self.builder.get_object('toolbutton2').set_sensitive(True)
+                self.builder.get_object('toolbutton3').set_sensitive(True)
         except AttributeError as e:
             self.builder.get_object('menuitem5').set_sensitive(False)
             self.builder.get_object('menuitem6').set_sensitive(False)
             self.builder.get_object('menuitem7').set_sensitive(False)
             self.builder.get_object('imagemenuitem3').set_sensitive(False)
             self.builder.get_object('imagemenuitem4').set_sensitive(False)
+            self.builder.get_object('toolbutton5').set_sensitive(False)
+            self.builder.get_object('toolbutton2').set_sensitive(False)
+            self.builder.get_object('toolbutton3').set_sensitive(False)
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                 gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
@@ -826,6 +832,12 @@ class Run():
                         atlas.generate_density_map()
 
                     atlas.generate()
+                    
+                    if self.builder.get_object('menuitem9').get_active():
+                        if sys.platform == 'linux2':
+                            subprocess.call(["xdg-open", output])
+                        else:
+                            os.startfile(output)
                         
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
@@ -886,6 +898,12 @@ class Run():
                     listing = List(self.dataset)
                     listing.save_in = output
                     listing.generate()
+                    
+                    if self.builder.get_object('menuitem9').get_active():
+                        if sys.platform == 'linux2':
+                            subprocess.call(["xdg-open", output])
+                        else:
+                            os.startfile(output)
 
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
@@ -1327,9 +1345,9 @@ class Run():
         '''Open a dataset file'''
         dialog = gtk.FileChooserDialog('Open...',
                                        None,
-                                       gtk.FILE_CHOOSER_ACTION_SAVE,
+                                       gtk.FILE_CHOOSER_ACTION_OPEN,
                                        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                        gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+                                        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
 
         #filter for the data file filechooser
@@ -2160,12 +2178,12 @@ class List(gobject.GObject):
         pdf.p_add_page()
         pdf.set_font('Helvetica', '', 12)
         pdf.multi_cell(0, 6, self.dataset.config.get('List', 'inside_cover'), 0, 'J', False)
+        pdf.p_add_page()
 
         #introduction
         if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
             pdf.do_header = True
             pdf.section = ('Introduction')
-            pdf.p_add_page()
             pdf.startPageNums()
             pdf.set_font('Helvetica', '', 20)
             pdf.cell(0, 20, 'Introduction', 0, 0, 'L', 0)
@@ -2374,7 +2392,14 @@ class List(gobject.GObject):
 
 
         #output
-        pdf.output(self.save_in,'F')
+        try:
+            pdf.output(self.save_in,'F')
+        except IOError:
+            md = gtk.MessageDialog(None,
+                gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                gtk.BUTTONS_CLOSE, 'Unable to write to file. This usually means it''s open - close it and try again.')
+            md.run()
+            md.destroy()        
 
 
 class Atlas(gobject.GObject):
@@ -2897,13 +2922,13 @@ class Atlas(gobject.GObject):
         pdf.p_add_page()
         pdf.set_font('Helvetica', '', 12)
         pdf.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover'), 0, 'J', False)
+        pdf.p_add_page()
 
         pdf.do_header = True
 
         #introduction
         if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
             pdf.section = ('Introduction')
-            pdf.p_add_page()
             pdf.set_font('Helvetica', '', 20)
             pdf.multi_cell(0, 20, 'Introduction', 0, 'J', False)
             pdf.set_font('Helvetica', '', 12)
@@ -4168,7 +4193,14 @@ class Atlas(gobject.GObject):
         pdf.insertTOC(3)
 
         #output
-        pdf.output(self.save_in,'F')
+        try:
+            pdf.output(self.save_in,'F')
+        except IOError:
+            md = gtk.MessageDialog(None,
+                gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                gtk.BUTTONS_CLOSE, 'Unable to write to file. This usually means it''s open - close it and try again.')
+            md.run()
+            md.destroy()       
 
 
 
