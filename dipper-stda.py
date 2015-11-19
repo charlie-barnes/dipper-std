@@ -3074,20 +3074,20 @@ class Atlas(gobject.GObject):
             #add the colour swatches
             
             #scale down the marker to a sensible size
-            if self.dataset.config.get('Atlas', 'distribution_unit') == '100km':
+            if self.dataset.config.get('Atlas', 'species_density_map_unit') == '100km':
                 scalefactor = 0.00025
-            elif self.dataset.config.get('Atlas', 'distribution_unit') == '10km':
+            elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '10km':
                 scalefactor = 0.0025
-            elif self.dataset.config.get('Atlas', 'distribution_unit') == '5km':
+            elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '5km':
                 scalefactor = 0.005
-            elif self.dataset.config.get('Atlas', 'distribution_unit') == '2km':
+            elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '2km':
                 scalefactor = 0.0125
-            elif self.dataset.config.get('Atlas', 'distribution_unit') == '1km':
+            elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '1km':
                 scalefactor = 0.025
                 
             #draw each band marker in turn and save out
             #we always show date band 1
-            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + '/' + self.dataset.config.get('Atlas', 'species_density_map_unit'))
             shapes = r.shapes()
             pixels = []
 
