@@ -4336,7 +4336,7 @@ class Chart(gtk.Window):
         self.maximum_decade = None
         self.months = None
         self.decades = None
-        self.mode = 'months'
+        self.mode = 'decades'
         self.chart = None
 
         self.temp_filename = None
@@ -4388,7 +4388,20 @@ class Chart(gtk.Window):
                     ('N', self.data['Nov'], 'N'),
                     ('D', self.data['Dec'], 'D')]
         elif self.mode == 'decades':
-            print self.data.keys()
+
+            self.dataset.cursor.execute('SELECT MIN(data.decade), MAX(data.decade) \
+                                        FROM data \
+                                        WHERE data.decade IS NOT NULL')
+
+            datas = self.dataset.cursor.fetchall()
+            
+            data = []
+            for decade in range(datas[0][0], datas[0][1], 10):
+                try:
+                    data.append((decade, self.data[decade], decade))
+                except KeyError:
+                    data.append((decade, 0, decade))                
+            
         try:
             barchart = bar_chart.BarChart()
             barchart.grid.set_visible(False)
@@ -4498,18 +4511,10 @@ class Chart(gtk.Window):
 
             decades = self.dataset.cursor.fetchall()
 
-            try:
-                self.minimum_decade = decades[0][0]
-            except IndexError:
-                pass
-            else:
-                self.maximum_decade = decades[len(decades)-1][0]
+            self.data = {}
 
-                self.data = {}
-
-                for decade in decades:
-                    self.data[str(decade[0])] = decade[1]
-
+            for decade in decades:
+                self.data[decade[0]] = decade[1]
 
 if __name__ == '__main__':
 
