@@ -232,6 +232,7 @@ class Run():
                    'load_config':self.load_config,
                    'switch_update_title':self.switch_update_title,
                    'open_file':self.open_file,
+                   'navigation_change':self.navigation_change,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -305,7 +306,6 @@ class Run():
         store.append(iter, ['Page Setup', 1, 3])
         
         treeview.expand_all()
-        treeselection.connect("changed", self.navigation_change)   
 
         #atlas paper orientation
         atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
@@ -546,15 +546,19 @@ class Run():
     def navigation_change(self, widget):
         store = widget.get_selected()[0]
         iter = widget.get_selected()[1]
-        main_notebook_page = store.get_value(iter, 1)
-        sub_notebook_page = store.get_value(iter, 2)
         
-        self.builder.get_object('notebook1').set_current_page(main_notebook_page)
-        
-        if main_notebook_page == 0:
-            self.builder.get_object('notebook2').set_current_page(sub_notebook_page)
-        elif main_notebook_page == 1:
-            self.builder.get_object('notebook3').set_current_page(sub_notebook_page)
+        try:
+            main_notebook_page = store.get_value(iter, 1)
+            sub_notebook_page = store.get_value(iter, 2)
+            
+            self.builder.get_object('notebook1').set_current_page(main_notebook_page)
+            
+            if main_notebook_page == 0:
+                self.builder.get_object('notebook2').set_current_page(sub_notebook_page)
+            elif main_notebook_page == 1:
+                self.builder.get_object('notebook3').set_current_page(sub_notebook_page)
+        except TypeError:
+            pass
             
 
     def update_preview_cb(self, file_chooser, preview):
@@ -1346,7 +1350,6 @@ class Run():
     def switch_update_title(self, widget):
         self.dataset.config.set('Atlas', 'families_update_title', str(self.builder.get_object('checkbutton18').get_active()))
         self.dataset.config.set('List', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
-
 
     def open_file(self, widget):
         '''Open a dataset file'''
