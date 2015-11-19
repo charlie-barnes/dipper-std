@@ -2622,16 +2622,106 @@ class Atlas(gobject.GObject):
         #generate the base map
         self.scalefactor = 0.0035
 
+        if self.dataset.use_vcs:
+            vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
+        else:
+            vcs_sql = ''
+
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
             layers.append(''.join(['./vice-counties/',vc_list[int(vc)-1][1],'.shp']))
+
+        #add the total coverage & calc first and date band 2 grid arrays
+        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                     FROM data \
+                                    ' + vcs_sql)
+
+        data = self.dataset.cursor.fetchall()
+
+        grids = []
+
+        for tup in data:
+            grids.append(tup[0])
+            #print tup[0]
 
         self.bounds_bottom_x = 700000
         self.bounds_bottom_y = 1300000
         self.bounds_top_x = 0
         self.bounds_top_y = 0
 
-        # Read in the shapefiles to get the bounding box
+        # Read in the coverage grid ref shapefiles and extend the bounding box
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #loop through each object in the shapefile
+        for obj in r.shapeRecords():
+            #if the grid is in our coverage, extend the bounds to match
+            if obj.record[0] in grids:
+                if obj.shape.bbox[0] < self.bounds_bottom_x:
+                    self.bounds_bottom_x = obj.shape.bbox[0]
+
+                if obj.shape.bbox[1] < self.bounds_bottom_y:
+                    self.bounds_bottom_y = obj.shape.bbox[1]
+
+                if obj.shape.bbox[2] > self.bounds_top_x:
+                    self.bounds_top_x = obj.shape.bbox[2]
+
+                if obj.shape.bbox[3] > self.bounds_top_y:
+                    self.bounds_top_y = obj.shape.bbox[3]
+
+        # Read in the date band 1 grid ref shapefiles and extend the bounding box
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_1_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #loop through each object in the shapefile
+        for obj in r.shapeRecords():
+            #if the grid is in our coverage, extend the bounds to match
+            if obj.record[0] in grids:
+                if obj.shape.bbox[0] < self.bounds_bottom_x:
+                    self.bounds_bottom_x = obj.shape.bbox[0]
+
+                if obj.shape.bbox[1] < self.bounds_bottom_y:
+                    self.bounds_bottom_y = obj.shape.bbox[1]
+
+                if obj.shape.bbox[2] > self.bounds_top_x:
+                    self.bounds_top_x = obj.shape.bbox[2]
+
+                if obj.shape.bbox[3] > self.bounds_top_y:
+                    self.bounds_top_y = obj.shape.bbox[3]
+
+        # Read in the date band 2 grid ref shapefiles and extend the bounding box
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_2_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #loop through each object in the shapefile
+        for obj in r.shapeRecords():
+            #if the grid is in our coverage, extend the bounds to match
+            if obj.record[0] in grids:
+                if obj.shape.bbox[0] < self.bounds_bottom_x:
+                    self.bounds_bottom_x = obj.shape.bbox[0]
+
+                if obj.shape.bbox[1] < self.bounds_bottom_y:
+                    self.bounds_bottom_y = obj.shape.bbox[1]
+
+                if obj.shape.bbox[2] > self.bounds_top_x:
+                    self.bounds_top_x = obj.shape.bbox[2]
+
+                if obj.shape.bbox[3] > self.bounds_top_y:
+                    self.bounds_top_y = obj.shape.bbox[3]
+
+        # Read in the date band 3 grid ref shapefiles and extend the bounding box
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_3_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #loop through each object in the shapefile
+        for obj in r.shapeRecords():
+            #if the grid is in our coverage, extend the bounds to match
+            if obj.record[0] in grids:
+                if obj.shape.bbox[0] < self.bounds_bottom_x:
+                    self.bounds_bottom_x = obj.shape.bbox[0]
+
+                if obj.shape.bbox[1] < self.bounds_bottom_y:
+                    self.bounds_bottom_y = obj.shape.bbox[1]
+
+                if obj.shape.bbox[2] > self.bounds_top_x:
+                    self.bounds_top_x = obj.shape.bbox[2]
+
+                if obj.shape.bbox[3] > self.bounds_top_y:
+                    self.bounds_top_y = obj.shape.bbox[3]
+
+        # Read in the vc shapefiles and extend the bounding box
         # BUG https://github.com/charlie-barnes/dipper-stda/issues/1
         for shpfile in layers:
             r = shapefile.Reader(shpfile)
@@ -2648,31 +2738,15 @@ class Atlas(gobject.GObject):
             if r.bbox[3] > self.bounds_top_y:
                 self.bounds_top_y = r.bbox[3]
 
-            # Geographic x & y distance
-            self.xdist = self.bounds_top_x - self.bounds_bottom_x
-            self.ydist = self.bounds_top_y - self.bounds_bottom_y
+        # Geographic x & y distance
+        #this was indented under the for above. this didn't seem right?
+        self.xdist = self.bounds_top_x - self.bounds_bottom_x
+        self.ydist = self.bounds_top_y - self.bounds_bottom_y
 
         self.base_map = Image.new('RGB', (int(self.xdist*self.scalefactor)+1, int(self.ydist*self.scalefactor)+1), 'white')
         self.base_map_draw = ImageDraw.Draw(self.base_map)
 
-        if self.dataset.use_vcs:
-            vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
-        else:
-            vcs_sql = ''
-
-        #add the total coverage & calc first and date band 2 grid arrays
-        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                     FROM data \
-                                    ' + vcs_sql)
-
-        data = self.dataset.cursor.fetchall()
-
-        grids = []
-
-        for tup in data:
-            grids.append(tup[0])
-            #print tup[0]
-
+        #grab the grids we're dealing with and draw them
         r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
