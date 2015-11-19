@@ -2905,6 +2905,7 @@ class Atlas(gobject.GObject):
         pdf.y0 = 0
         pdf.set_title(self.dataset.config.get('Atlas', 'title'))
         pdf.set_author(self.dataset.config.get('Atlas', 'author'))
+        pdf.set_creator(' '.join(['dipper-stda', __version__])) 
         pdf.section = ''
 
         #title page
