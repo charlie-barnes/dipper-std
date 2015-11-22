@@ -208,6 +208,20 @@ gradation_ranges = [[1,1],
 def repeat_to_length(string_to_expand, length):
    return (string_to_expand * ((length/len(string_to_expand))+1))[:length]
 
+class CellRendererClickablePixbuf(gtk.CellRendererPixbuf):
+
+    __gsignals__ = {'clicked': (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                                (gobject.TYPE_STRING,))
+                   }
+
+    def __init__(self):
+        gtk.CellRendererPixbuf.__init__(self)
+        self.set_property('mode', gtk.CELL_RENDERER_MODE_ACTIVATABLE)
+
+    def do_activate(self, event, widget, path, background_area, cell_area,
+                    flags):
+        self.emit('clicked', path)
+
 class Run():
 
     def __init__(self, filename=None):
@@ -236,6 +250,8 @@ class Run():
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
+        
+        self.pre_generate = (None, None)
 
         self.builder.get_object('notebook1').set_show_tabs(False)
         self.builder.get_object('notebook2').set_show_tabs(False)
@@ -285,25 +301,30 @@ class Run():
         treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 
         rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Atlas", rendererText, text=0)
+        column = gtk.TreeViewColumn("nav page", rendererText, text=0)
         treeview.append_column(column)
+        
+        renderer_pix = CellRendererClickablePixbuf()
+        column = gtk.TreeViewColumn("icon", renderer_pix, stock_id=3)
+        treeview.append_column(column)        
+        renderer_pix.connect('clicked', self.generate_from_treeview)
         
         treeselection = treeview.get_selection()
         
-        store = gtk.TreeStore(str, int, int)
+        store = gtk.TreeStore(str, int, int, str)
         self.builder.get_object('treeview5').set_model(store)
-        iter = store.append(None, ['Atlas', 0, 0])
+        iter = store.append(None, ['Atlas', 0, 0, gtk.STOCK_SAVE])
         treeselection.select_iter(iter)
-        store.append(iter, ['Families', 0, 1])
-        store.append(iter, ['Vice-counties', 0, 2])
-        store.append(iter, ['Page Setup', 0, 3])
-        store.append(iter, ['Table of Contents', 0, 4])
-        store.append(iter, ['Species Density Map', 0, 5])
-        store.append(iter, ['Species Accounts', 0, 6])
-        iter = store.append(None, ['Checklist', 1, 0])
-        store.append(iter, ['Families', 1, 1])
-        store.append(iter, ['Vice-counties', 1, 2])
-        store.append(iter, ['Page Setup', 1, 3])
+        store.append(iter, ['Families', 0, 1, None])
+        store.append(iter, ['Vice-counties', 0, 2, None])
+        store.append(iter, ['Page Setup', 0, 3, None])
+        store.append(iter, ['Table of Contents', 0, 4, None])
+        store.append(iter, ['Species Density Map', 0, 5, None])
+        store.append(iter, ['Species Accounts', 0, 6, None])
+        iter = store.append(None, ['Checklist', 1, 0, gtk.STOCK_SAVE])
+        store.append(iter, ['Families', 1, 1, None])
+        store.append(iter, ['Vice-counties', 1, 2, None])
+        store.append(iter, ['Page Setup', 1, 3, None])
         
         treeview.expand_all()
 
@@ -542,8 +563,21 @@ class Run():
 
         if filename != None:
             self.open_dataset(None, filename)
+
+    def generate_from_treeview(self, widget, path):
+        if path == '0':
+            self.generate_atlas(widget)
+        elif path == '1':
+            self.generate_list(widget)
+        
             
     def navigation_change(self, widget):
+    
+        if not self.pre_generate == (None, None):
+            selection = self.builder.get_object('treeview5').get_selection()
+            selection.select_iter(self.pre_generate[1])
+            self.pre_generate = (None, None)
+    
         store = widget.get_selected()[0]
         iter = widget.get_selected()[1]
         
@@ -729,22 +763,16 @@ class Run():
                 self.update_widgets()
 
                 self.builder.get_object('hbox1').show()
-                self.builder.get_object('menuitem5').set_sensitive(True)
-                self.builder.get_object('menuitem6').set_sensitive(True)
                 self.builder.get_object('menuitem7').set_sensitive(True)
                 self.builder.get_object('imagemenuitem3').set_sensitive(True)
                 self.builder.get_object('imagemenuitem4').set_sensitive(True)
                 self.builder.get_object('toolbutton5').set_sensitive(True)
-                self.builder.get_object('toolbutton2').set_sensitive(True)
                 self.builder.get_object('toolbutton3').set_sensitive(True)
         except AttributeError as e:
-            self.builder.get_object('menuitem5').set_sensitive(False)
-            self.builder.get_object('menuitem6').set_sensitive(False)
             self.builder.get_object('menuitem7').set_sensitive(False)
             self.builder.get_object('imagemenuitem3').set_sensitive(False)
             self.builder.get_object('imagemenuitem4').set_sensitive(False)
             self.builder.get_object('toolbutton5').set_sensitive(False)
-            self.builder.get_object('toolbutton2').set_sensitive(False)
             self.builder.get_object('toolbutton3').set_sensitive(False)
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
@@ -773,6 +801,9 @@ class Run():
 
             #we can't produce an atlas without any geographic entity!
             if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0:
+                selection = self.builder.get_object('treeview5').get_selection()
+                self.pre_generate = selection.get_selected()
+            
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                     gtk.BUTTONS_CLOSE, 'Select at least one vice-county.')
@@ -780,6 +811,9 @@ class Run():
                 md.destroy()
             #we can't produce an atlas or list without any families selected!
             elif not len(self.dataset.config.get('Atlas', 'families'))>0:
+                selection = self.builder.get_object('treeview5').get_selection()
+                self.pre_generate = selection.get_selected()
+                
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                     gtk.BUTTONS_CLOSE, 'Select at least one family.')
@@ -832,12 +866,11 @@ class Run():
 
                     atlas.generate()
                     
-                    if self.builder.get_object('menuitem9').get_active():
-                        if sys.platform == 'linux2':
-                            call(["xdg-open", output])
-                        else:
-                            os.startfile(output)
-                        
+                    if sys.platform == 'linux2':
+                        call(["xdg-open", output])
+                    else:
+                        os.startfile(output)
+                    
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
 
@@ -852,6 +885,9 @@ class Run():
 
             #we can't produce an atlas without any geographic entity!
             if not len(self.dataset.config.get('List', 'families'))>0:
+                selection = self.builder.get_object('treeview5').get_selection()
+                self.pre_generate = selection.get_selected()
+                
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                     gtk.BUTTONS_CLOSE, 'Select at least one family.')
@@ -898,11 +934,10 @@ class Run():
                     listing.save_in = output
                     listing.generate()
                     
-                    if self.builder.get_object('menuitem9').get_active():
-                        if sys.platform == 'linux2':
-                            call(["xdg-open", output])
-                        else:
-                            os.startfile(output)
+                    if sys.platform == 'linux2':
+                        call(["xdg-open", output])
+                    else:
+                        os.startfile(output)
 
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
@@ -1419,16 +1454,14 @@ class Run():
         dialog.add_filter(filter)
 
         response = dialog.run()
-
         config_file = dialog.get_filename()
-
         dialog.destroy()
 
-        self.dataset.config.read([config_file])
-        self.dataset.config.filename = config_file
-        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', os.path.basename(self.dataset.config.filename)]))
-                    
-        self.update_widgets()
+        if response == -5:
+            self.dataset.config.read([config_file])
+            self.dataset.config.filename = config_file
+            self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', os.path.basename(self.dataset.config.filename)]))                    
+            self.update_widgets()
         
 
     def save_configuration(self, widget):
