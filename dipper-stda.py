@@ -2831,22 +2831,6 @@ class Atlas(gobject.GObject):
         self.base_map = Image.new('RGB', (int(self.xdist*self.scalefactor)+1, int(self.ydist*self.scalefactor)+1), 'white')
         self.base_map_draw = ImageDraw.Draw(self.base_map)
 
-        #grab the grids we're dealing with and draw them
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
-        #loop through each object in the shapefile
-        for obj in r.shapeRecords():
-            #if the grid is in our coverage, add it to the map
-            if obj.record[0] in grids:
-                #add the grid to our holding layer so we can access it later without having to loop through all of them each time
-                pixels = []
-                #loop through each point in the object
-                for x,y in obj.shape.points:
-                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                    py = (self.bounds_top_y - y) * self.scalefactor
-                    pixels.append((px,py))
-                if self.dataset.config.getboolean('Atlas', 'coverage_visible'):
-                    self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).blue_float*255)) + ')')
-
         #create date band 1 grid array
         #we always show date band 1
         r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'date_band_1_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
@@ -2907,6 +2891,24 @@ class Atlas(gobject.GObject):
                     py = (self.bounds_top_y - y) * self.scalefactor
                     pixels.append((px,py))
                 self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
+
+
+        #grab the grids we're dealing with and draw them
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #loop through each object in the shapefile
+        for obj in r.shapeRecords():
+            #if the grid is in our coverage, add it to the map
+            if obj.record[0] in grids:
+                #add the grid to our holding layer so we can access it later without having to loop through all of them each time
+                pixels = []
+                #loop through each point in the object
+                for x,y in obj.shape.points:
+                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                    py = (self.bounds_top_y - y) * self.scalefactor
+                    pixels.append((px,py))
+                if self.dataset.config.getboolean('Atlas', 'coverage_visible'):
+                    self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'coverage_colour')).blue_float*255)) + ')')
+
 
         #mask off everything outside the boundary area
         mask = Image.new('RGBA', self.base_map.size)
