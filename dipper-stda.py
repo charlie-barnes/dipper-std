@@ -189,20 +189,21 @@ vc_list = [[1, 'West Cornwall'],
          [111, 'Orkney'],
          [112, 'Shetland']]
 
-gradation_ranges = [[1,1],
-                    [2,2],
-                    [3,3],
-                    [4,5],
-                    [6,10],
-                    [11,15],
-                    [16,20],
-                    [21,35],
-                    [36,50],
-                    [51,75],
-                    [76,100],
-                    [101,250],
-                    [251,500],
-                    [501,1000]]
+#min, max, count
+gradation_ranges = [[1,1, 0],
+                    [2,2, 0],
+                    [3,3, 0],
+                    [4,5, 0],
+                    [6,10, 0],
+                    [11,15, 0],
+                    [16,20, 0],
+                    [21,35, 0],
+                    [36,50, 0],
+                    [51,75, 0],
+                    [76,100, 0],
+                    [101,250, 0],
+                    [251,500, 0],
+                    [501,1000, 0]]
 
 
 def repeat_to_length(string_to_expand, length):
@@ -247,11 +248,15 @@ class Run():
                    'switch_update_title':self.switch_update_title,
                    'open_file':self.open_file,
                    'navigation_change':self.navigation_change,
+                   'list_family_selection_change':self.list_family_selection_change,
+                   'atlas_family_selection_change':self.atlas_family_selection_change,
+                   'atlas_vice_county_selection_change':self.atlas_vice_county_selection_change,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
         
         self.pre_generate = (None, None)
+        self.navigate_to = (None, None)
 
         self.builder.get_object('notebook1').set_show_tabs(False)
         self.builder.get_object('notebook2').set_show_tabs(False)
@@ -572,12 +577,17 @@ class Run():
         
             
     def navigation_change(self, widget):
-    
         if not self.pre_generate == (None, None):
             selection = self.builder.get_object('treeview5').get_selection()
             selection.select_iter(self.pre_generate[1])
             self.pre_generate = (None, None)
     
+    
+        if not self.navigate_to == (None, None):
+            selection = self.builder.get_object('treeview5').get_selection()
+            selection.select_path(self.navigate_to)
+            self.navigate_to = (None, None)
+        
         store = widget.get_selected()[0]
         iter = widget.get_selected()[1]
         
@@ -619,6 +629,33 @@ class Run():
         dialog.set_property('skip-taskbar-hint', True)
         dialog.run()
         dialog.destroy()
+        
+    def atlas_family_selection_change(self, selection):
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        if len(iters) > 0:    
+            self.builder.get_object('hbox4').hide()
+        else:
+            self.builder.get_object('hbox4').show()
+
+    def atlas_vice_county_selection_change(self, selection):
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        if len(iters) > 0:    
+            self.builder.get_object('hbox5').hide()
+        else:
+            self.builder.get_object('hbox5').show()
+
+    def list_family_selection_change(self, selection):
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        if len(iters) > 0:    
+            self.builder.get_object('hbox3').hide()
+        else:
+            self.builder.get_object('hbox3').show()
 
     def update_title(self, selection):
         """Update the title of the generated document based on the selection
@@ -662,6 +699,10 @@ class Run():
                                         "\n",
                                         model.get_value(iters[0], 0),
                                         ]))
+
+            elif len(iters) == 0:
+                entry.set_text(''.join([orig_title,
+                                        ]))
         except UnboundLocalError:
             pass
 
@@ -703,7 +744,7 @@ class Run():
                     self.builder.get_object('label37').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
                 else:
                     self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file - data will be grouped as one</i>')
-                    self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file - selection will just be used draw the maps</i>')
+                    self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file - selection will just be used to draw the maps</i>')
 
                 while gtk.events_pending():
                     gtk.main_iteration_do(True)
@@ -800,25 +841,13 @@ class Run():
             notebook = self.builder.get_object('notebook1')           
 
             #we can't produce an atlas without any geographic entity!
-            if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0:
-                selection = self.builder.get_object('treeview5').get_selection()
-                self.pre_generate = selection.get_selected()
-            
-                md = gtk.MessageDialog(None,
-                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                    gtk.BUTTONS_CLOSE, 'Select at least one vice-county.')
-                md.run()
-                md.destroy()
+            if not len(self.dataset.config.get('Atlas', 'vice-counties'))>0:            
+                self.navigate_to = (0, 1)
+                self.builder.get_object('treeview5').get_selection().emit("changed")
             #we can't produce an atlas or list without any families selected!
-            elif not len(self.dataset.config.get('Atlas', 'families'))>0:
-                selection = self.builder.get_object('treeview5').get_selection()
-                self.pre_generate = selection.get_selected()
-                
-                md = gtk.MessageDialog(None,
-                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                    gtk.BUTTONS_CLOSE, 'Select at least one family.')
-                md.run()
-                md.destroy()                   
+            elif not len(self.dataset.config.get('Atlas', 'families'))>0:            
+                self.navigate_to = (0, 0)
+                self.builder.get_object('treeview5').get_selection().emit("changed")               
             else:              
 
                 vbox.set_sensitive(False)
@@ -871,6 +900,9 @@ class Run():
                     else:
                         os.startfile(output)
                     
+            selection = self.builder.get_object('treeview5').get_selection()
+            self.pre_generate = selection.get_selected()
+            
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
 
@@ -884,15 +916,9 @@ class Run():
             notebook = self.builder.get_object('notebook1')           
 
             #we can't produce an atlas without any geographic entity!
-            if not len(self.dataset.config.get('List', 'families'))>0:
-                selection = self.builder.get_object('treeview5').get_selection()
-                self.pre_generate = selection.get_selected()
-                
-                md = gtk.MessageDialog(None,
-                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                    gtk.BUTTONS_CLOSE, 'Select at least one family.')
-                md.run()
-                md.destroy()                   
+            if not len(self.dataset.config.get('List', 'families'))>0:            
+                self.navigate_to = (1, 0)
+                self.builder.get_object('treeview5').get_selection().emit("changed")               
             else:              
 
                 vbox.set_sensitive(False)
@@ -939,6 +965,9 @@ class Run():
                     else:
                         os.startfile(output)
 
+            selection = self.builder.get_object('treeview5').get_selection()
+            self.pre_generate = selection.get_selected()
+                
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
 
@@ -2586,7 +2615,11 @@ class Atlas(gobject.GObject):
                 for swatch_ranges in self.grad_ranges:
                     if gridsdict[obj.record[0]] >= swatch_ranges[0] and gridsdict[obj.record[0]] <= swatch_ranges[1]:
                         base_map_draw.polygon(pixels, fill='rgb(' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].red*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].green*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].blue*255)) + ')', outline='rgb(0,0,0)')
-
+                        
+                        #increment the swatch count
+                        swatch_ranges[2] = swatch_ranges[2] + 1
+                        
+                        
         #add the grid lines
         if self.dataset.config.getboolean('Atlas', 'species_density_grid_lines_visible'):
             r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'species_density_map_grid_lines_style'))
@@ -3152,7 +3185,7 @@ class Atlas(gobject.GObject):
                 if swatch_ranges[0] == swatch_ranges[1]:
                     swatch_text = str(swatch_ranges[0])
                 else:
-                    swatch_text = ' '.join([str(swatch_ranges[0]), '-', str(swatch_ranges[1])])
+                    swatch_text = ' '.join([str(swatch_ranges[0]), '-', str(swatch_ranges[1]), ' (', str(self.grad_ranges[2]), ')'])
                     
                 pdf.cell(10, 5, swatch_text, 0, 1, 'L', True)
                 
