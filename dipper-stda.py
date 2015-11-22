@@ -75,6 +75,9 @@ paper_size = ['A4',]
 #paper orientation list
 paper_orientation = ['Portrait', 'Landscape',]
 
+#phenology chart types
+phenology_types = ['Months', 'Decades']
+
 #vice county list - number & filename
 vc_list = [[1, 'West Cornwall'],
          [2, 'East Cornwall'],
@@ -458,6 +461,18 @@ class Run():
         cell = gtk.CellRendererText()
         combo.pack_start(cell, True)
         combo.add_attribute(cell, 'text',0)
+
+
+        phenology_type_liststore = gtk.ListStore(gobject.TYPE_STRING)
+
+        for i in range(len(phenology_types)):
+            phenology_type_liststore.append([phenology_types[i]])
+
+        combo = self.builder.get_object('combobox12')
+        combo.set_model(phenology_type_liststore)
+        cell = gtk.CellRendererText()
+        combo.pack_start(cell, True)
+        combo.add_attribute(cell, 'text',0)        
 
         species_density_background_liststore = gtk.ListStore(gobject.TYPE_STRING)
 
@@ -1157,6 +1172,7 @@ class Run():
         self.builder.get_object('checkbutton14').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'))
         self.builder.get_object('checkbutton16').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'))
         self.builder.get_object('checkbutton15').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'))
+        self.builder.get_object('combobox12').set_active(phenology_types.index(self.dataset.config.get('Atlas', 'species_accounts_phenology_type')))
         self.builder.get_object('colorbutton11').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
         self.builder.get_object('entry5').set_text(self.dataset.config.get('Atlas', 'species_accounts_latest_format'))
 
@@ -1358,6 +1374,7 @@ class Run():
         self.dataset.config.set('Atlas', 'species_accounts_show_statistics', str(self.builder.get_object('checkbutton14').get_active()))
         self.dataset.config.set('Atlas', 'species_accounts_show_status', str(self.builder.get_object('checkbutton16').get_active()))
         self.dataset.config.set('Atlas', 'species_accounts_show_phenology', str(self.builder.get_object('checkbutton15').get_active()))
+        self.dataset.config.set('Atlas', 'species_accounts_phenology_type', str(self.builder.get_object('combobox12').get_active_text()))
         self.dataset.config.set('Atlas', 'species_accounts_phenology_colour', str(self.builder.get_object('colorbutton11').get_color()))
         self.dataset.config.set('Atlas', 'species_accounts_latest_format', self.builder.get_object('entry5').get_text())
 
@@ -1688,6 +1705,7 @@ class Dataset(gobject.GObject):
                                                              'species_accounts_show_status': 'True',
                                                              'species_accounts_show_phenology': 'True',
                                                              'species_accounts_phenology_colour': '#000',
+                                                             'species_accounts_phenology_type': 'Months',
                                                             })
 
             self.config.add_section('Atlas')
@@ -3183,9 +3201,9 @@ class Atlas(gobject.GObject):
                 pdf.cell(4)
                 
                 if swatch_ranges[0] == swatch_ranges[1]:
-                    swatch_text = str(swatch_ranges[0])
+                    swatch_text = ''.join([str(swatch_ranges[0]), ' (', str(swatch_ranges[2]), ')'])
                 else:
-                    swatch_text = ' '.join([str(swatch_ranges[0]), '-', str(swatch_ranges[1]), ' (', str(self.grad_ranges[2]), ')'])
+                    swatch_text = ''.join([str(swatch_ranges[0]), ' - ', str(swatch_ranges[1]), ' (', str(swatch_ranges[2]), ')'])
                     
                 pdf.cell(10, 5, swatch_text, 0, 1, 'L', True)
                 
@@ -3355,7 +3373,7 @@ class Atlas(gobject.GObject):
 
         #chart
         if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-            chart = Chart(self.dataset, random_species)
+            chart = Chart(self.dataset, random_species, self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
             if chart.temp_filename != None:
                 pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
             pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
@@ -4031,7 +4049,7 @@ class Atlas(gobject.GObject):
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-                chart = Chart(self.dataset, item[0])
+                chart = Chart(self.dataset, item[0], self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
                 if chart.temp_filename != None:
                     pdf.image(chart.temp_filename, x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75, 'PNG')
                 pdf.rect(x_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3+10+y_padding, ((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3, (((pdf.w / 2)-pdf.l_margin-pdf.r_margin)+3)/3.75)
@@ -4381,20 +4399,15 @@ class Atlas(gobject.GObject):
 
 class Chart(gtk.Window):
 
-    def __init__(self, dataset, item):
+    def __init__(self, dataset, item, mode):
         gtk.Window.__init__(self)
         vbox = gtk.VBox()
         self.add(vbox)
         combo_box = gtk.combo_box_new_text()
         vbox.pack_end(combo_box, False, False, 0)
-        combo_box.append_text('months')
-        combo_box.append_text('decades')
-        combo_box.set_active(0)
 
         self.set_decorated(False)
         self.item = item
-
-        combo_box.connect('changed', self.set_mode)
 
         self.data = None
         self.division = None
@@ -4402,7 +4415,7 @@ class Chart(gtk.Window):
         self.maximum_decade = None
         self.months = None
         self.decades = None
-        self.mode = 'decades'
+        self.mode = mode
         self.chart = None
 
         self.temp_filename = None
@@ -4433,14 +4446,10 @@ class Chart(gtk.Window):
 
         return True
 
-    def set_mode(self, widget):
-        self.mode = widget.get_active_text()
-        #self.filter_()
-
     def __redraw__(self):
         # this should be done more efficently. init the bar chart with null values, then just update?
 
-        if self.mode == 'months':
+        if self.mode == 'Months':
             data = [('J', self.data['Jan'], 'J'),
                     ('F', self.data['Feb'], 'F'),
                     ('M', self.data['Mar'], 'M'),
@@ -4453,7 +4462,7 @@ class Chart(gtk.Window):
                     ('O', self.data['Oct'], 'O'),
                     ('N', self.data['Nov'], 'N'),
                     ('D', self.data['Dec'], 'D')]
-        elif self.mode == 'decades':
+        elif self.mode == 'Decades':
 
             self.dataset.cursor.execute('SELECT MIN(data.decade), MAX(data.decade) \
                                         FROM data \
@@ -4462,11 +4471,21 @@ class Chart(gtk.Window):
             datas = self.dataset.cursor.fetchall()
             
             data = []
-            for decade in range(datas[0][0], datas[0][1], 10):
+            count = 1
+            date_range = range(datas[0][0], datas[0][1], 10)
+            
+            for decade in date_range:
+                if len(date_range) > 5:
+                    if count % 3 == 0:
+                        label = decade
+                    else:
+                        label = ''
                 try:
-                    data.append((decade, self.data[decade], decade))
+                    data.append((label, self.data[decade], label))
                 except KeyError:
-                    data.append((decade, 0, decade))                
+                    data.append((label, 0, label))     
+                
+                count = count + 1           
             
         try:
             barchart = bar_chart.BarChart()
@@ -4491,9 +4510,11 @@ class Chart(gtk.Window):
                 bar._value_label_object.set_property('weight', pango.WEIGHT_BOLD)
                 bar._label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
                 bar._value_label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
+                #bar._label_object.set_rotation(180)
+                bar._label_object.set_property('wrap', False)
                 barchart.add_bar(bar)
             
-            #HACK - Draw a hidden bar with a value, so we can have an 'empty' chart            
+            #HACK - Draw a hidden bar with the max value, so we can have an 'empty' chart            
             bar = bar_chart.Bar('', max_val, '')
             bar.set_visible(False)
             barchart.add_bar(bar)
@@ -4527,7 +4548,7 @@ class Chart(gtk.Window):
         data = self.dataset.cursor.fetchall()
         self.decades = data[0][0]
 
-        if self.mode == 'months':
+        if self.mode == 'Months':
             self.data = {'Jan': 0, 'Feb': 0, 'Mar': 0, 'Apr': 0, 'May': 0,
                          'Jun': 0, 'Jul': 0, 'Aug': 0, 'Sep': 0, 'Oct': 0,
                          'Nov': 0, 'Dec': 0,}
@@ -4566,7 +4587,7 @@ class Chart(gtk.Window):
                 elif month[0] == 12:
                     self.data['Dec'] = month[1]
 
-        elif self.mode == 'decades':
+        elif self.mode == 'Decades':
 
             self.dataset.cursor.execute('SELECT data.decade, COUNT(data.taxon) \
                                          FROM data \
