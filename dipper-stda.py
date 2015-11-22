@@ -328,11 +328,16 @@ class Run():
         store.append(iter, ['Page Setup', 0, 3, None])
         store.append(iter, ['Table of Contents', 0, 4, None])
         store.append(iter, ['Species Density Map', 0, 5, None])
-        store.append(iter, ['Species Accounts', 0, 6, None])
+        iter = store.append(iter, ['Species Accounts', 0, 6, None])
+        #store.append(iter, ['Date bands', 0, 7, None])
         iter = store.append(None, ['Checklist', 1, 0, gtk.STOCK_SAVE])
         store.append(iter, ['Families', 1, 1, None])
         store.append(iter, ['Vice-counties', 1, 2, None])
         store.append(iter, ['Page Setup', 1, 3, None])
+        #iter = store.append(None, ['Single Species', 2, 0, gtk.STOCK_SAVE])
+        #store.append(iter, ['Species', 2, 1, None])
+        #store.append(iter, ['Vice-counties', 2, 2, None])
+        #store.append(iter, ['Page Setup', 2, 3, None])
         
         treeview.expand_all()
 
