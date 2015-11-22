@@ -2871,47 +2871,8 @@ class Atlas(gobject.GObject):
                 if obj.record[0] in grids:
                     self.date_band_3_style_coverage.append(obj)
 
-        #add the grid lines
-        if self.dataset.config.getboolean('Atlas', 'grid_lines_visible'):
-            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'grid_lines_style'))
-            #loop through each object in the shapefile
-            for obj in r.shapes():
-                pixels = []
-                #loop through each point in the object
-                for x,y in obj.points:
-                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                    py = (self.bounds_top_y - y) * self.scalefactor
-                    pixels.append((px,py))
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
 
 
-
-        #mask off grid lines outside the boundary area
-        mask = Image.new('RGBA', self.base_map.size)
-        mask_draw = ImageDraw.Draw(mask)
-
-        #mask each boundary shapefile
-        for shpfile in layers:
-            r = shapefile.Reader(shpfile)
-            #loop through each object in the shapefile
-            for obj in r.shapes():
-                pixels = []
-                counter = 1
-                #loop through each point in the object
-                for x,y in obj.points:
-                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                    py = (self.bounds_top_y - y) * self.scalefactor
-                    pixels.append((px,py))
-                    #if we reach the start of new part, draw our polygon and clear pixels for the next
-                    if counter in obj.parts:
-                        mask_draw.polygon(pixels, fill='rgb(0,0,0)')
-                        pixels = []
-                    counter = counter + 1
-                #draw the final polygon (or the only, if we have just the one)
-                mask_draw.polygon(pixels, fill='rgb(0,0,0)')
-
-        mask = ImageChops.invert(mask)
-        self.base_map.paste(mask, (0,0), mask)
 
         #add each boundary shapefile
         for shpfile in layers:
@@ -2932,6 +2893,47 @@ class Atlas(gobject.GObject):
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
                 self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+
+
+        #add the grid lines
+        if self.dataset.config.getboolean('Atlas', 'grid_lines_visible'):
+            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Atlas', 'grid_lines_style'))
+            #loop through each object in the shapefile
+            for obj in r.shapes():
+                pixels = []
+                #loop through each point in the object
+                for x,y in obj.points:
+                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                    py = (self.bounds_top_y - y) * self.scalefactor
+                    pixels.append((px,py))
+                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'grid_lines_colour')).blue_float*255)) + ')')
+
+        #mask off everything outside the boundary area
+        mask = Image.new('RGBA', self.base_map.size)
+        mask_draw = ImageDraw.Draw(mask)
+
+        #mask each boundary shapefile
+        for shpfile in layers:
+            r = shapefile.Reader(shpfile)
+            #loop through each object in the shapefile
+            for obj in r.shapes():
+                pixels = []
+                counter = 1
+                #loop through each point in the object
+                for x,y in obj.points:
+                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                    py = (self.bounds_top_y - y) * self.scalefactor
+                    pixels.append((px,py))
+                    #if we reach the start of new part, draw our polygon and clear pixels for the next
+                    if counter in obj.parts:
+                        mask_draw.polygon(pixels, fill='rgb(0,0,0)')
+                        pixels = []
+                    counter = counter + 1
+                #draw the final polygon (or the only one, if we have just the one)
+                mask_draw.polygon(pixels, fill='rgb(0,0,0)')
+
+        mask = ImageChops.invert(mask)
+        self.base_map.paste(mask, (0,0), mask)
 
     def generate(self):
 
