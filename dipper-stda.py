@@ -226,6 +226,20 @@ class CellRendererClickablePixbuf(gtk.CellRendererPixbuf):
                     flags):
         self.emit('clicked', path)
 
+class CellRendererClickableText(gtk.CellRendererText):
+
+    __gsignals__ = {'clicked': (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                                (gobject.TYPE_STRING,))
+                   }
+
+    def __init__(self):
+        gtk.CellRendererText.__init__(self)
+        self.set_property('mode', gtk.CELL_RENDERER_MODE_ACTIVATABLE)
+
+    def do_activate(self, event, widget, path, background_area, cell_area,
+                    flags):
+        self.emit('clicked', path)
+
 class Run():
 
     def __init__(self, filename=None):
@@ -254,6 +268,7 @@ class Run():
                    'list_family_selection_change':self.list_family_selection_change,
                    'atlas_family_selection_change':self.atlas_family_selection_change,
                    'atlas_vice_county_selection_change':self.atlas_vice_county_selection_change,
+                   'add_dateband':self.add_dateband,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -329,17 +344,75 @@ class Run():
         store.append(iter, ['Table of Contents', 0, 4, None])
         store.append(iter, ['Species Density Map', 0, 5, None])
         iter = store.append(iter, ['Species Accounts', 0, 6, None])
-        #store.append(iter, ['Date bands', 0, 7, None])
+        store.append(iter, ['Date bands', 0, 7, None])
         iter = store.append(None, ['Checklist', 1, 0, gtk.STOCK_SAVE])
         store.append(iter, ['Families', 1, 1, None])
         store.append(iter, ['Vice-counties', 1, 2, None])
         store.append(iter, ['Page Setup', 1, 3, None])
-        #iter = store.append(None, ['Single Species', 2, 0, gtk.STOCK_SAVE])
-        #store.append(iter, ['Species', 2, 1, None])
-        #store.append(iter, ['Vice-counties', 2, 2, None])
-        #store.append(iter, ['Page Setup', 2, 3, None])
+        iter = store.append(None, ['Single Species', 2, 0, gtk.STOCK_SAVE])
+        store.append(iter, ['Species', 2, 1, None])
+        store.append(iter, ['Vice-counties', 2, 2, None])
+        store.append(iter, ['Page Setup', 2, 3, None])
         
         treeview.expand_all()
+
+        #date bands treeview
+
+
+        #navigation treeview     
+        store = gtk.TreeStore(str, bool, str, str, int, int)
+           
+        treeview = self.builder.get_object('treeview6')
+        treeview.set_rules_hint(False)
+        treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
+
+        liststore = gtk.ListStore(gobject.TYPE_STRING)
+        
+        for i in range(len(markers)):
+            liststore.append([markers[i]])
+
+        renderer = gtk.CellRendererCombo()
+        renderer.set_property("model", liststore)
+        renderer.set_property("editable", True)
+        renderer.connect("changed", self.combo_cell_edited, [store, 0])
+        column = gtk.TreeViewColumn("Style", renderer, text=0)        
+        treeview.append_column(column)
+        
+        renderer = gtk.CellRendererToggle()
+        renderer.set_activatable(True)
+        renderer.connect("toggled", self.toggle_cell_edited, [store, 1])
+        column = gtk.TreeViewColumn("Overlay", renderer, active=1)
+        treeview.append_column(column)
+        
+        renderer = CellRendererClickableText()
+        renderer.connect("clicked", self.color_cell_edited, [store, 2])
+        column = gtk.TreeViewColumn("Fill", renderer, markup=2)
+        treeview.append_column(column)
+       
+        renderer = CellRendererClickableText()
+        renderer.connect("clicked", self.color_cell_edited, [store, 3])
+        column = gtk.TreeViewColumn("Border", renderer, markup=3)
+        treeview.append_column(column)
+        
+        adjustment = gtk.Adjustment(0, 0, 2050, 1, 1, 0)
+        renderer = gtk.CellRendererSpin()
+        renderer.set_property("editable", True)
+        renderer.set_property("adjustment", adjustment)
+        renderer.connect("edited", self.spin_cell_edited, [store, 4])      
+        column = gtk.TreeViewColumn("From", renderer, text=4)
+        treeview.append_column(column)
+        
+        adjustment = gtk.Adjustment(0, 0, 2050, 1, 1, 0)
+        renderer = gtk.CellRendererSpin()
+        renderer.set_property("editable", True)
+        renderer.set_property("adjustment", adjustment)
+        renderer.connect("edited", self.spin_cell_edited, [store, 5])
+        column = gtk.TreeViewColumn("To", renderer, text=5)  
+        treeview.append_column(column)
+        
+        treeview.set_model(store)
+        store.append(None, ['str', True, '<span background="#797979">      </span>', '<span background="#797979">      </span>', 1980, 2010])
+     
 
         #atlas paper orientation
         atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
@@ -588,6 +661,40 @@ class Run():
 
         if filename != None:
             self.open_dataset(None, filename)
+
+    def add_dateband(self, widget):
+        model = self.builder.get_object('treeview6').get_model()
+        model.append(None, ['str', False, '<span background="#797979">      </span>', '<span background="#797979">      </span>', 1980, 2030])
+
+    def color_cell_edited(self, widget, path, userdata):
+        self.builder.get_object('treeview6').set_reorderable(False)
+        selection = self.builder.get_object('treeview6').get_selection()
+
+        #hacky but it works        
+        pre_colour = userdata[0][path][userdata[1]].split('"')
+        
+        if selection.path_is_selected(path):
+            dialog = gtk.ColorSelectionDialog('Pick a Colour')
+            dialog.colorsel.set_current_color(gtk.gdk.color_parse(pre_colour[1]))
+
+            response = dialog.run()
+            dialog.destroy()
+
+            if response == gtk.RESPONSE_OK:
+                color = dialog.colorsel.get_current_color()   
+                userdata[0][path][userdata[1]] = ''.join(['<span background="', str(color), '">      </span>'])
+         
+
+    def combo_cell_edited(self, widget, path, value, userdata):
+        userdata[0][path][userdata[1]] = int(value)
+
+    def spin_cell_edited(self, widget, path, value, userdata):
+        userdata[0][path][userdata[1]] = int(value)
+
+    def toggle_cell_edited(self, widget, path, userdata):
+        selection = self.builder.get_object('treeview6').get_selection()
+        if selection.path_is_selected(path):
+            userdata[0][path][userdata[1]] = not widget.get_active()
 
     def generate_from_treeview(self, widget, path):
         if path == '0':
