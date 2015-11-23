@@ -64,5 +64,8 @@ compile.bat
 #Binary release
 binary-release/
 
+#example datasets
+examples/datasets
+
 #Gedit backups
 *.*~
