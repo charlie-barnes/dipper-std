@@ -357,14 +357,12 @@ class Run():
         treeview.expand_all()
 
         #date bands treeview
-
-
-        #navigation treeview     
         store = gtk.TreeStore(str, bool, str, str, int, int)
            
         treeview = self.builder.get_object('treeview6')
         treeview.set_rules_hint(False)
         treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
+        treeview.set_show_expanders(False)
 
         liststore = gtk.ListStore(gobject.TYPE_STRING)
         
@@ -373,25 +371,28 @@ class Run():
 
         renderer = gtk.CellRendererCombo()
         renderer.set_property("model", liststore)
+        renderer.set_property("text_column", 0)
         renderer.set_property("editable", True)
-        renderer.connect("changed", self.combo_cell_edited, [store, 0])
+        renderer.connect("changed", self.combo_cell_edited, [store, 0, liststore])
         column = gtk.TreeViewColumn("Style", renderer, text=0)        
+        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_fixed_width(120)
         treeview.append_column(column)
         
         renderer = gtk.CellRendererToggle()
         renderer.set_activatable(True)
         renderer.connect("toggled", self.toggle_cell_edited, [store, 1])
-        column = gtk.TreeViewColumn("Overlay", renderer, active=1)
+        column = gtk.TreeViewColumn("Overlay", renderer, active=1)  
         treeview.append_column(column)
         
         renderer = CellRendererClickableText()
         renderer.connect("clicked", self.color_cell_edited, [store, 2])
-        column = gtk.TreeViewColumn("Fill", renderer, markup=2)
+        column = gtk.TreeViewColumn("Fill", renderer, markup=2)    
         treeview.append_column(column)
        
         renderer = CellRendererClickableText()
         renderer.connect("clicked", self.color_cell_edited, [store, 3])
-        column = gtk.TreeViewColumn("Border", renderer, markup=3)
+        column = gtk.TreeViewColumn("Border", renderer, markup=3)  
         treeview.append_column(column)
         
         adjustment = gtk.Adjustment(0, 0, 2050, 1, 1, 0)
@@ -399,7 +400,9 @@ class Run():
         renderer.set_property("editable", True)
         renderer.set_property("adjustment", adjustment)
         renderer.connect("edited", self.spin_cell_edited, [store, 4])      
-        column = gtk.TreeViewColumn("From", renderer, text=4)
+        column = gtk.TreeViewColumn("From", renderer, text=4)      
+        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_fixed_width(75)
         treeview.append_column(column)
         
         adjustment = gtk.Adjustment(0, 0, 2050, 1, 1, 0)
@@ -407,11 +410,13 @@ class Run():
         renderer.set_property("editable", True)
         renderer.set_property("adjustment", adjustment)
         renderer.connect("edited", self.spin_cell_edited, [store, 5])
-        column = gtk.TreeViewColumn("To", renderer, text=5)  
+        column = gtk.TreeViewColumn("To", renderer, text=5)        
+        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_fixed_width(75)
         treeview.append_column(column)
         
         treeview.set_model(store)
-        store.append(None, ['str', True, '<span background="#797979">      </span>', '<span background="#797979">      </span>', 1980, 2010])
+        store.append(None, ['squares', True, '<span background="#797979" >      </span>', '<span background="#797979">      </span>', 1980, 2010])
      
 
         #atlas paper orientation
@@ -664,7 +669,7 @@ class Run():
 
     def add_dateband(self, widget):
         model = self.builder.get_object('treeview6').get_model()
-        model.append(None, ['str', False, '<span background="#797979">      </span>', '<span background="#797979">      </span>', 1980, 2030])
+        model.append(None, ['squares', False, '<span background="#797979">      </span>', '<span background="#797979">      </span>', 1980, 2030])
 
     def color_cell_edited(self, widget, path, userdata):
         self.builder.get_object('treeview6').set_reorderable(False)
@@ -685,8 +690,8 @@ class Run():
                 userdata[0][path][userdata[1]] = ''.join(['<span background="', str(color), '">      </span>'])
          
 
-    def combo_cell_edited(self, widget, path, value, userdata):
-        userdata[0][path][userdata[1]] = int(value)
+    def combo_cell_edited(self, widget, path, new_iter, userdata):
+        userdata[0][path][userdata[1]] = userdata[2].get_value(new_iter, 0)
 
     def spin_cell_edited(self, widget, path, value, userdata):
         userdata[0][path][userdata[1]] = int(value)
