@@ -2611,6 +2611,7 @@ class Atlas(gobject.GObject):
 
         #work out how many increments we need
         for ranges in gradation_ranges:
+            ranges[2] = 0 # reset the swatch count
             if max_count >= ranges[0] and max_count <= ranges[1]:
                 self.increments = gradation_ranges.index(ranges)+1
 
