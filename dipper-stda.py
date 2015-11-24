@@ -373,6 +373,7 @@ class Run():
         renderer.set_property("model", liststore)
         renderer.set_property("text_column", 0)
         renderer.set_property("editable", True)
+        renderer.set_property("has-entry", False)
         renderer.connect("changed", self.combo_cell_edited, [store, 0, liststore])
         column = gtk.TreeViewColumn("Style", renderer, text=0)        
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
@@ -383,16 +384,19 @@ class Run():
         renderer.set_activatable(True)
         renderer.connect("toggled", self.toggle_cell_edited, [store, 1])
         column = gtk.TreeViewColumn("Overlay", renderer, active=1)  
+        column.set_fixed_width(75) 
         treeview.append_column(column)
         
         renderer = CellRendererClickableText()
         renderer.connect("clicked", self.color_cell_edited, [store, 2])
-        column = gtk.TreeViewColumn("Fill", renderer, markup=2)    
+        column = gtk.TreeViewColumn("Fill", renderer, markup=2)   
+        column.set_fixed_width(75) 
         treeview.append_column(column)
        
         renderer = CellRendererClickableText()
         renderer.connect("clicked", self.color_cell_edited, [store, 3])
         column = gtk.TreeViewColumn("Border", renderer, markup=3)  
+        column.set_fixed_width(75)
         treeview.append_column(column)
         
         adjustment = gtk.Adjustment(0, 0, 2050, 1, 1, 0)
@@ -413,6 +417,10 @@ class Run():
         column = gtk.TreeViewColumn("To", renderer, text=5)        
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         column.set_fixed_width(75)
+        treeview.append_column(column)
+       
+        #padding column
+        column = gtk.TreeViewColumn('')  
         treeview.append_column(column)
         
         treeview.set_model(store)
