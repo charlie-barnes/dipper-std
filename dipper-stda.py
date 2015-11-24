@@ -2755,7 +2755,7 @@ class Atlas(gobject.GObject):
         # Read in the coverage grid ref shapefiles and extend the bounding box
         r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
-        '''for obj in r.shapeRecords():
+        for obj in r.shapeRecords():
             #if the grid is in our coverage, extend the bounds to match
             if obj.record[0] in grids:
                 if obj.shape.bbox[0] < self.bounds_bottom_x:
@@ -2768,7 +2768,7 @@ class Atlas(gobject.GObject):
                     self.bounds_top_x = obj.shape.bbox[2]
 
                 if obj.shape.bbox[3] > self.bounds_top_y:
-                    self.bounds_top_y = obj.shape.bbox[3]'''
+                    self.bounds_top_y = obj.shape.bbox[3]
 
 
         #loop through the date bands treeview
@@ -3936,6 +3936,13 @@ class Atlas(gobject.GObject):
                 #loop through each object in the date band grids
                 for obj in self.date_band_coverage[count]:
                     if obj.record[0] in date_b_grids:
+                    
+                        #if we're not overlaying this marker on a previous one,
+                        #blank out the previous one 
+                        #### HOW ??
+                        if not row[1]:
+                            pass
+                    
                         pixels = []
                         #loop through each point in the object
                         for x,y in obj.shape.points:
