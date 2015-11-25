@@ -3391,7 +3391,7 @@ class Atlas(gobject.GObject):
             current_map =  self.base_map.copy()
             current_map_draw = ImageDraw.Draw(current_map)
 
-
+            all_grids = []
 
             #loop through each date band, grabbing the records
             count = 0
@@ -3430,10 +3430,6 @@ class Atlas(gobject.GObject):
     
                     count = count + 1
     
-                    #add the current date band grids for reference next time round
-                    for g in date_band_grids:
-                        all_grids.append(g[0])
-
             #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
             else:
                 for row in self.dataset.builder.get_object('treeview6').get_model():
@@ -4220,7 +4216,7 @@ class Atlas(gobject.GObject):
         pdf.section = 'Contributors'
         pdf.p_add_page()
         pdf.set_font('Helvetica', '', 20)
-        pdf.multi_cell(0, 20, 'Contributors', 0, 'J', False)
+        pdf.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
         pdf.set_font('Helvetica', '', 12)
 
         contrib_blurb = []
