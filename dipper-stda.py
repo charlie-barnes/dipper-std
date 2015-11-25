@@ -1166,7 +1166,7 @@ class Run():
         self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
 
         #date band overlay visible
-        #self.builder.get_object('checkbutton3').set_active(self.dataset.config.getboolean('Atlas', 'date_band_overlay'))
+        self.builder.get_object('checkbutton3').set_active(self.dataset.config.getboolean('Atlas', 'date_band_overlay'))
 
         #species density visible
         self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
@@ -1357,7 +1357,7 @@ class Run():
         self.dataset.config.set('Atlas', 'coverage_colour', str(self.builder.get_object('colorbutton4').get_color()))
 
         #date band overlay
-        #self.dataset.config.set('Atlas', 'date_band_overlay', str(self.builder.get_object('checkbutton3').get_active()))
+        self.dataset.config.set('Atlas', 'date_band_overlay', str(self.builder.get_object('checkbutton3').get_active()))
 
         #species density map visible
         self.dataset.config.set('Atlas', 'species_density_map_visible', str(self.builder.get_object('checkbutton19').get_active()))
