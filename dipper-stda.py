@@ -638,14 +638,19 @@ class Run():
     def add_dateband(self, widget):
         model = self.builder.get_object('treeview6').get_model()
         model.append(None, ['squares', '   <span background="#797979">      </span>   ', '   <span background="#797979">      </span>   ', 1980, 2030])
+        self.builder.get_object('button3').set_sensitive(True)
 
     def remove_dateband(self, widget):
         selection = self.builder.get_object('treeview6').get_selection()
         model, selected = selection.get_selected_rows()
-     
+
         iters = [model.get_iter(path) for path in selected]
         for iter in iters:
             model.remove(iter)
+
+        if len(model) == 1:
+            self.builder.get_object('button3').set_sensitive(False)
+       
 
     def color_cell_edited(self, widget, path, userdata):
         selection = self.builder.get_object('treeview6').get_selection()
