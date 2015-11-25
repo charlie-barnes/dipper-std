@@ -2599,12 +2599,24 @@
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="label24">
+          <object class="GtkHBox" id="hbox8">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="xalign">0.0099999997764825821</property>
-            <property name="ypad">3</property>
-            <property name="use_markup">True</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkLabel" id="label24">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="xalign">0.10000000149011612</property>
+                <property name="ypad">3</property>
+                <property name="use_markup">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
