@@ -358,7 +358,7 @@ class Run():
         treeview.expand_all()
 
         #date bands treeview
-        store = gtk.TreeStore(str, bool, str, str, int, int)
+        store = gtk.TreeStore(str, str, str, int, int)
            
         treeview = self.builder.get_object('treeview6')
         treeview.set_rules_hint(False)
@@ -380,23 +380,16 @@ class Run():
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         column.set_fixed_width(120)
         treeview.append_column(column)
-        
-        renderer = gtk.CellRendererToggle()
-        renderer.set_activatable(True)
-        renderer.connect("toggled", self.toggle_cell_edited, [store, 1])
-        column = gtk.TreeViewColumn("Overlay", renderer, active=1)  
-        column.set_fixed_width(75) 
-        treeview.append_column(column)
-        
+                
         renderer = CellRendererClickableText()
-        renderer.connect("clicked", self.color_cell_edited, [store, 2])
-        column = gtk.TreeViewColumn("Fill", renderer, markup=2)   
+        renderer.connect("clicked", self.color_cell_edited, [store, 1])
+        column = gtk.TreeViewColumn("Fill", renderer, markup=1)   
         column.set_fixed_width(75) 
         treeview.append_column(column)
        
         renderer = CellRendererClickableText()
-        renderer.connect("clicked", self.color_cell_edited, [store, 3])
-        column = gtk.TreeViewColumn("Border", renderer, markup=3)  
+        renderer.connect("clicked", self.color_cell_edited, [store, 2])
+        column = gtk.TreeViewColumn("Border", renderer, markup=2)  
         column.set_fixed_width(75)
         treeview.append_column(column)
         
@@ -404,8 +397,8 @@ class Run():
         renderer = gtk.CellRendererSpin()
         renderer.set_property("editable", True)
         renderer.set_property("adjustment", adjustment)
-        renderer.connect("edited", self.spin_cell_edited, [store, 4])      
-        column = gtk.TreeViewColumn("From", renderer, text=4)      
+        renderer.connect("edited", self.spin_cell_edited, [store, 3])      
+        column = gtk.TreeViewColumn("From", renderer, text=3)      
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         column.set_fixed_width(75)
         treeview.append_column(column)
@@ -414,8 +407,8 @@ class Run():
         renderer = gtk.CellRendererSpin()
         renderer.set_property("editable", True)
         renderer.set_property("adjustment", adjustment)
-        renderer.connect("edited", self.spin_cell_edited, [store, 5])
-        column = gtk.TreeViewColumn("To", renderer, text=5)        
+        renderer.connect("edited", self.spin_cell_edited, [store, 4])
+        column = gtk.TreeViewColumn("To", renderer, text=4)        
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         column.set_fixed_width(75)
         treeview.append_column(column)
@@ -643,7 +636,7 @@ class Run():
 
     def add_dateband(self, widget):
         model = self.builder.get_object('treeview6').get_model()
-        model.append(None, ['squares', False, '   <span background="#797979">      </span>   ', '   <span background="#797979">      </span>   ', 1980, 2030])
+        model.append(None, ['squares', '   <span background="#797979">      </span>   ', '   <span background="#797979">      </span>   ', 1980, 2030])
 
     def color_cell_edited(self, widget, path, userdata):
         self.builder.get_object('treeview6').set_reorderable(False)
@@ -1172,6 +1165,9 @@ class Run():
         #coverage visible
         self.builder.get_object('checkbutton1').set_active(self.dataset.config.getboolean('Atlas', 'coverage_visible'))
 
+        #date band overlay visible
+        #self.builder.get_object('checkbutton3').set_active(self.dataset.config.getboolean('Atlas', 'date_band_overlay'))
+
         #species density visible
         self.builder.get_object('checkbutton19').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_visible'))
 
@@ -1207,9 +1203,9 @@ class Run():
         store.clear()
         
         for row in json.loads(self.dataset.config.get('Atlas', 'date_bands')):
-            fill_colour = ''.join(['   <span background="', row[2], '" >      </span>   '])
+            fill_colour = ''.join(['   <span background="', row[1], '" >      </span>   '])
             border_colour = ''.join(['   <span background="', row[2], '" >      </span>   '])
-            store.append(None, [row[0], row[1], fill_colour, border_colour, row[4], row[5]])
+            store.append(None, [row[0], fill_colour, border_colour, row[3], row[4]])
 
         #table of contents
         self.builder.get_object('checkbutton6').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_families'))
@@ -1349,9 +1345,9 @@ class Run():
         date_bands = []
 
         for row in self.builder.get_object('treeview6').get_model():
-            fill_colour = row[2].split('"')[1]
-            border_colour = row[3].split('"')[1]
-            date_bands.append([row[0], row[1], fill_colour, border_colour,  row[4],  row[5]])
+            fill_colour = row[1].split('"')[1]
+            border_colour = row[2].split('"')[1]
+            date_bands.append([row[0], row[1], fill_colour, border_colour,  row[3],  row[4]])
 
         self.dataset.config.set('Atlas', 'date_bands', json.dumps(date_bands))
 
@@ -1359,6 +1355,9 @@ class Run():
         self.dataset.config.set('Atlas', 'coverage_visible', str(self.builder.get_object('checkbutton1').get_active()))
         self.dataset.config.set('Atlas', 'coverage_style', self.builder.get_object('combobox6').get_active_text())
         self.dataset.config.set('Atlas', 'coverage_colour', str(self.builder.get_object('colorbutton4').get_color()))
+
+        #date band overlay
+        #self.dataset.config.set('Atlas', 'date_band_overlay', str(self.builder.get_object('checkbutton3').get_active()))
 
         #species density map visible
         self.dataset.config.set('Atlas', 'species_density_map_visible', str(self.builder.get_object('checkbutton19').get_active()))
@@ -1696,6 +1695,7 @@ class Dataset(gobject.GObject):
                                                      'vice-counties_fill': '#fff',
                                                      'vice-counties_outline': '#000',
                                                      'date_bands': '[["circles", false, "#a9a9a9", "#000", 1600, 1980], ["squares", false, "#000", "#000", 1980, 2050]]',
+                                                     'date_band_overlay': 'False',
                                                      'coverage_visible': 'True',
                                                      'coverage_style': 'squares',
                                                      'coverage_colour': '#d2d2d2',
@@ -2819,10 +2819,6 @@ class Atlas(gobject.GObject):
         for row in self.dataset.builder.get_object('treeview6').get_model():
             current_grids = []
                     
-            #fill_colour = row[2].split('"')[1]
-            #border_colour = row[3].split('"')[1]
-            #date_bands.append([row[0], row[1], fill_colour, border_colour,  row[4],  row[5]])
-
             r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
             #loop through each object in the shapefile
             for obj in r.shapeRecords():
@@ -3387,38 +3383,81 @@ class Atlas(gobject.GObject):
             #loop through each date band, grabbing the records
             count = 0
             
-            for row in self.dataset.builder.get_object('treeview6').get_model():
-                fill_colour = row[2].split('"')[1]
-                border_colour = row[3].split('"')[1]
-                
-                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                            FROM data \
-                                            WHERE data.taxon = "' + random_species + '" \
-                                            AND data.year_to >= ' + str(row[4]) + '\
-                                            AND data.year_to < ' + str(row[5]) + ' \
-                                            AND data.year_from >= ' + str(row[4]) + ' \
-                                            AND data.year_from < ' + str(row[5]))
+            #if we're overlaying the markers, we draw the date bands backwards (oldest first)
+            if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
+                for row in reversed(self.dataset.builder.get_object('treeview6').get_model()):
+                    fill_colour = row[1].split('"')[1]
+                    border_colour = row[2].split('"')[1]
+                    
+                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                FROM data \
+                                                WHERE data.taxon = "' + item[0] + '" \
+                                                AND data.year_to >= ' + str(row[3]) + '\
+                                                AND data.year_to < ' + str(row[4]) + ' \
+                                                AND data.year_from >= ' + str(row[3]) + ' \
+                                                AND data.year_from < ' + str(row[4]))
+    
+                    date_b_grids = []
+                    date_band_grids = self.dataset.cursor.fetchall()
+                    for g in date_band_grids:
+                        date_b_grids.append(g[0])
+                        
+                    #loop through each object in the coverage (to save having to loop through ALL objects)
+                    for obj in self.date_band_coverage[count]:
+                        #if the object is in our date band
+                        if obj.record[0] in date_b_grids:
+                            
+                            pixels = []
+                            #loop through each point in the object
+                            for x,y in obj.shape.points:
+                                px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                py = (self.bounds_top_y - y) * self.scalefactor
+                                pixels.append((px,py))
+                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+    
+                    count = count + 1
+    
+                    #add the current date band grids for reference next time round
+                    for g in date_band_grids:
+                        all_grids.append(g[0])
 
-                date_b_grids = []
-                date_band_grids = self.dataset.cursor.fetchall()
-                for g in date_band_grids:
-                    date_b_grids.append(g[0])
-
-                #loop through each object in the date band grids
-                for obj in self.date_band_coverage[count]:
-                    #print random_species, obj.record[0]
-                    if obj.record[0] in date_b_grids:
-                        #print "yes"
-                        pixels = []
-                        #loop through each point in the object
-                        for x,y in obj.shape.points:
-                            px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                            py = (self.bounds_top_y - y) * self.scalefactor
-                            pixels.append((px,py))
-
-                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
-
-                count = count + 1
+            #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
+            else:
+                for row in self.dataset.builder.get_object('treeview6').get_model():
+                    fill_colour = row[1].split('"')[1]
+                    border_colour = row[2].split('"')[1]
+                    
+                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                FROM data \
+                                                WHERE data.taxon = "' + item[0] + '" \
+                                                AND data.year_to >= ' + str(row[3]) + '\
+                                                AND data.year_to < ' + str(row[4]) + ' \
+                                                AND data.year_from >= ' + str(row[3]) + ' \
+                                                AND data.year_from < ' + str(row[4]))
+    
+                    date_b_grids = []
+                    date_band_grids = self.dataset.cursor.fetchall()
+                    for g in date_band_grids:
+                        date_b_grids.append(g[0])
+                        
+                    #loop through each object in the coverage (to save having to loop through ALL objects)
+                    for obj in self.date_band_coverage[count]:
+                        #if the object is in our date band and it's not already been drawn by a more recent date band
+                        if (obj.record[0] in date_b_grids) and (obj.record[0] not in all_grids):
+                            
+                            pixels = []
+                            #loop through each point in the object
+                            for x,y in obj.shape.points:
+                                px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                py = (self.bounds_top_y - y) * self.scalefactor
+                                pixels.append((px,py))
+                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+    
+                    count = count + 1
+    
+                    #add the current date band grids for reference next time round
+                    for g in date_band_grids:
+                        all_grids.append(g[0])
 
 
 
@@ -3652,8 +3691,8 @@ class Atlas(gobject.GObject):
             #draw each band marker in turn and save out
             count = 0
             for row in self.dataset.builder.get_object('treeview6').get_model():
-                fill_colour = row[2].split('"')[1]
-                border_colour = row[3].split('"')[1]
+                fill_colour = row[1].split('"')[1]
+                border_colour = row[2].split('"')[1]
                 
                 r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
                 shapes = r.shapes()
@@ -3680,11 +3719,11 @@ class Atlas(gobject.GObject):
 
                 pdf.image(date_band_temp_file, 80, 245+(count*5), h=4, type='PNG')
                 pdf.cell(75)
-                print row[0]
+                
                 if row[0] == '1600.0':
-                    date_band_from_text = ' '.join(['before', str(int(float(row[4])))])
+                    date_band_from_text = ' '.join(['before', str(int(float(row[3])))])
                 else:
-                    date_band_from_text = ' '.join([str(int(float(row[4]))), 'to', str(int(float(row[5])))])
+                    date_band_from_text = ' '.join([str(int(float(row[3]))), 'to', str(int(float(row[4])))])
                 
                 pdf.cell(10, 5, date_band_from_text, 0, 1, 'L', True)
                 
@@ -3915,44 +3954,83 @@ class Atlas(gobject.GObject):
 
             #loop through each date band, grabbing the records
             count = 0
+            all_grids = []
             
-            for row in self.dataset.builder.get_object('treeview6').get_model():
-                fill_colour = row[2].split('"')[1]
-                border_colour = row[3].split('"')[1]
-                
-                self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                            FROM data \
-                                            WHERE data.taxon = "' + item[0] + '" \
-                                            AND data.year_to >= ' + str(row[4]) + '\
-                                            AND data.year_to < ' + str(row[5]) + ' \
-                                            AND data.year_from >= ' + str(row[4]) + ' \
-                                            AND data.year_from < ' + str(row[5]))
-
-                date_b_grids = []
-                date_band_grids = self.dataset.cursor.fetchall()
-                for g in date_band_grids:
-                    date_b_grids.append(g[0])
+            #if we're overlaying the markers, we draw the date bands backwards (oldest first)
+            if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
+                for row in reversed(self.dataset.builder.get_object('treeview6').get_model()):
+                    fill_colour = row[1].split('"')[1]
+                    border_colour = row[2].split('"')[1]
                     
-                #loop through each object in the date band grids
-                for obj in self.date_band_coverage[count]:
-                    if obj.record[0] in date_b_grids:
-                    
-                        #if we're not overlaying this marker on a previous one,
-                        #blank out the previous one 
-                        #### HOW ??
-                        if not row[1]:
-                            pass
-                    
-                        pixels = []
-                        #loop through each point in the object
-                        for x,y in obj.shape.points:
-                            px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                            py = (self.bounds_top_y - y) * self.scalefactor
-                            pixels.append((px,py))
-                        current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                FROM data \
+                                                WHERE data.taxon = "' + item[0] + '" \
+                                                AND data.year_to >= ' + str(row[3]) + '\
+                                                AND data.year_to < ' + str(row[4]) + ' \
+                                                AND data.year_from >= ' + str(row[3]) + ' \
+                                                AND data.year_from < ' + str(row[4]))
+    
+                    date_b_grids = []
+                    date_band_grids = self.dataset.cursor.fetchall()
+                    for g in date_band_grids:
+                        date_b_grids.append(g[0])
+                        
+                    #loop through each object in the coverage (to save having to loop through ALL objects)
+                    for obj in self.date_band_coverage[count]:
+                        #if the object is in our date band
+                        if obj.record[0] in date_b_grids:
+                            
+                            pixels = []
+                            #loop through each point in the object
+                            for x,y in obj.shape.points:
+                                px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                py = (self.bounds_top_y - y) * self.scalefactor
+                                pixels.append((px,py))
+                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+    
+                    count = count + 1
+    
+                    #add the current date band grids for reference next time round
+                    for g in date_band_grids:
+                        all_grids.append(g[0])
 
-                count = count + 1
-
+            #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
+            else:
+                for row in self.dataset.builder.get_object('treeview6').get_model():
+                    fill_colour = row[1].split('"')[1]
+                    border_colour = row[2].split('"')[1]
+                    
+                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                FROM data \
+                                                WHERE data.taxon = "' + item[0] + '" \
+                                                AND data.year_to >= ' + str(row[3]) + '\
+                                                AND data.year_to < ' + str(row[4]) + ' \
+                                                AND data.year_from >= ' + str(row[3]) + ' \
+                                                AND data.year_from < ' + str(row[4]))
+    
+                    date_b_grids = []
+                    date_band_grids = self.dataset.cursor.fetchall()
+                    for g in date_band_grids:
+                        date_b_grids.append(g[0])
+                        
+                    #loop through each object in the coverage (to save having to loop through ALL objects)
+                    for obj in self.date_band_coverage[count]:
+                        #if the object is in our date band and it's not already been drawn by a more recent date band
+                        if (obj.record[0] in date_b_grids) and (obj.record[0] not in all_grids):
+                            
+                            pixels = []
+                            #loop through each point in the object
+                            for x,y in obj.shape.points:
+                                px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                py = (self.bounds_top_y - y) * self.scalefactor
+                                pixels.append((px,py))
+                            current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+    
+                    count = count + 1
+    
+                    #add the current date band grids for reference next time round
+                    for g in date_band_grids:
+                        all_grids.append(g[0])
 
 
 
