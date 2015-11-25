@@ -270,6 +270,7 @@ class Run():
                    'atlas_family_selection_change':self.atlas_family_selection_change,
                    'atlas_vice_county_selection_change':self.atlas_vice_county_selection_change,
                    'add_dateband':self.add_dateband,
+                   'remove_dateband':self.remove_dateband,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -638,8 +639,15 @@ class Run():
         model = self.builder.get_object('treeview6').get_model()
         model.append(None, ['squares', '   <span background="#797979">      </span>   ', '   <span background="#797979">      </span>   ', 1980, 2030])
 
+    def remove_dateband(self, widget):
+        selection = self.builder.get_object('treeview6').get_selection()
+        model, selected = selection.get_selected_rows()
+     
+        iters = [model.get_iter(path) for path in selected]
+        for iter in iters:
+            model.remove(iter)
+
     def color_cell_edited(self, widget, path, userdata):
-        self.builder.get_object('treeview6').set_reorderable(False)
         selection = self.builder.get_object('treeview6').get_selection()
 
         #hacky but it works        
@@ -1694,7 +1702,7 @@ class Dataset(gobject.GObject):
                                                      'vice-counties': '',
                                                      'vice-counties_fill': '#fff',
                                                      'vice-counties_outline': '#000',
-                                                     'date_bands': '[["circles", false, "#a9a9a9", "#000", 1600, 1980], ["squares", false, "#000", "#000", 1980, 2050]]',
+                                                     'date_bands': '[["squares", "#000", "#000", 1980, 2050], ["circles", "#a9a9a9", "#000", 1600, 1980]]',
                                                      'date_band_overlay': 'False',
                                                      'coverage_visible': 'True',
                                                      'coverage_style': 'squares',
