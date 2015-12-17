@@ -3396,9 +3396,14 @@ class Atlas(gobject.GObject):
             #loop through each date band, grabbing the records
             count = 0
             
-            #if we're overlaying the markers, we draw the date bands backwards (oldest first)            
+            #if we're overlaying the markers, we draw the date bands backwards (oldest first)
             if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
-                for row in reversed(self.dataset.builder.get_object('treeview6').get_model()):
+                treemodel_reversed = []
+                           
+                for row in self.dataset.builder.get_object('treeview6').get_model():
+                    treemodel_reversed.insert(0, row)
+                
+                for row in treemodel_reversed:
                     fill_colour = row[1].split('"')[1]
                     border_colour = row[2].split('"')[1]
                     
@@ -3967,7 +3972,7 @@ class Atlas(gobject.GObject):
             
             #if we're overlaying the markers, we draw the date bands backwards (oldest first)
             if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
-                for row in reversed(self.dataset.builder.get_object('treeview6').get_model()):
+                for row in treemodel_reversed:
                     fill_colour = row[1].split('"')[1]
                     border_colour = row[2].split('"')[1]
                     
