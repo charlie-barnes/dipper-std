@@ -47,6 +47,9 @@ import json
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
 
+import initialize
+import cfg
+
 try:
     from fpdf import FPDF
 except ImportError:
@@ -79,119 +82,6 @@ paper_orientation = ['Portrait', 'Landscape',]
 #phenology chart types
 phenology_types = ['Months', 'Decades']
 
-#vice county list - number & filename
-vc_list = [[1, 'West Cornwall'],
-         [2, 'East Cornwall'],
-         [3, 'South Devon'],
-         [4, 'North Devon'],
-         [5, 'South Somerset'],
-         [6, 'North Somerset'],
-         [7, 'North Wiltshire'],
-         [8, 'South Wiltshire'],
-         [9, 'Dorset'],
-         [10, 'Isle of Wight'],
-         [11, 'South Hampshire'],
-         [12, 'North Hampshire'],
-         [13, 'West Sussex'],
-         [14, 'East Sussex'],
-         [15, 'East Kent'],
-         [16, 'West Kent'],
-         [17, 'Surrey'],
-         [18, 'South Essex'],
-         [19, 'North Essex'],
-         [20, 'Hertfordshire'],
-         [21, 'Middlesex'],
-         [22, 'Berkshire'],
-         [23, 'Oxfordshire'],
-         [24, 'Buckinghamshire'],
-         [25, 'East Suffolk'],
-         [26, 'West Suffolk'],
-         [27, 'East Norfolk'],
-         [28, 'West Norfolk'],
-         [29, 'Cambridgeshire'],
-         [30, 'Bedfordshire'],
-         [31, 'Huntingdonshire'],
-         [32, 'Northamptonshire'],
-         [33, 'East Gloucestershire'],
-         [34, 'West Gloucestershire'],
-         [35, 'Monmouthshire'],
-         [36, 'Herefordshire'],
-         [37, 'Worcestershire'],
-         [38, 'Warwickshire'],
-         [39, 'Stafford'],
-         [40, 'Shropshire'],
-         [41, 'Glamorgan'],
-         [42, 'Brecon'],
-         [43, 'Radnorshire'],
-         [44, 'Carmarthenshire'],
-         [45, 'Pembrokeshire'],
-         [46, 'Cardiganshire'],
-         [47, 'Montgomeryshire'],
-         [48, 'Merionethshire'],
-         [49, 'Caernarvonshire'],
-         [50, 'Denbighshire'],
-         [51, 'Flintshire'],
-         [52, 'Anglesey'],
-         [53, 'South Lincolnshire'],
-         [54, 'North Lincolnshire'],
-         [55, 'Leicestershire'],
-         [56, 'Nottinghamshire'],
-         [57, 'Derbyshire'],
-         [58, 'Cheshire'],
-         [59, 'South Lancashire'],
-         [60, 'West Lancashire'],
-         [61, 'South East Yorkshire'],
-         [62, 'North East Yorkshire'],
-         [63, 'South West Yorkshire'],
-         [64, 'Mid West Yorkshire'],
-         [65, 'North West Yorkshire'],
-         [66, 'Durham'],
-         [67, 'South Northumberland'],
-         [68, 'North Northumberland'],
-         [69, 'Westmorland'],
-         [70, 'Cumberland'],
-         [71, 'Isle of Man'],
-         [72, 'Dumfrieshire'],
-         [73, 'Kirkcudbrightshire'],
-         [74, 'Wigtownshire'],
-         [75, 'Ayrshire'],
-         [76, 'Renfrewshire'],
-         [77, 'Lanarkshire'],
-         [78, 'Peebles'],
-         [79, 'Selkirk'],
-         [80, 'Roxburgh'],
-         [81, 'Berwickshire'],
-         [82, 'East Lothian'],
-         [83, 'Midlothian'],
-         [84, 'West Lothian'],
-         [85, 'Fifeshire'],
-         [86, 'Stirling'],
-         [87, 'West Perth'],
-         [88, 'Mid Perth'],
-         [89, 'East Perth'],
-         [90, 'Angus'],
-         [91, 'Kincardine'],
-         [92, 'South Aberdeen'],
-         [93, 'North Aberdeen'],
-         [94, 'Banff'],
-         [95, 'Moray'],
-         [96, 'East Inverness'],
-         [97, 'West Inverness'],
-         [98, 'Argyllshire'],
-         [99, 'Dunbarton'],
-         [100, 'Clyde Islands'],
-         [101, 'Kintyre'],
-         [102, 'South Ebudes'],
-         [103, 'Mid Ebudes'],
-         [104, 'North Ebudes'],
-         [105, 'West Ross'],
-         [106, 'East Ross'],
-         [107, 'East Sutherland'],
-         [108, 'West Sutherland'],
-         [109, 'Caithness'],
-         [110, 'Outer Hebrides'],
-         [111, 'Orkney'],
-         [112, 'Shetland']]
 
 #min, max, count
 gradation_ranges = [[1,1, 0],
@@ -275,52 +165,20 @@ class Run():
         self.builder.connect_signals(signals)
         self.dataset = None
         
+        #reset navigation
         self.pre_generate = (None, None)
         self.navigate_to = (None, None)
 
+        #hide tab headings
         self.builder.get_object('notebook1').set_show_tabs(False)
         self.builder.get_object('notebook2').set_show_tabs(False)
-        self.builder.get_object('notebook3').set_show_tabs(False)
+        self.builder.get_object('notebook4').set_show_tabs(False)
         
+        #setup the filter for the cover image selectors
+        initialize.setup_image_file_chooser(self.builder.get_object('filechooserbutton1'))
+        initialize.setup_image_file_chooser(self.builder.get_object('filechooserbutton5'))
 
-
-        #filter for the cover image filechooser
-        filter = gtk.FileFilter()
-        filter.set_name("Supported image files")
-        filter.add_pattern("*.png")
-        filter.add_pattern("*.jpg")
-        filter.add_pattern("*.jpeg")
-        filter.add_pattern("*.gif")
-        filter.add_mime_type("image/png")
-        filter.add_mime_type("image/jpg")
-        filter.add_mime_type("image/gif")
-        self.builder.get_object('filechooserbutton5').add_filter(filter)
-        self.builder.get_object('filechooserbutton5').set_filter(filter)
-
-        preview = gtk.Image()
-        self.builder.get_object('filechooserbutton5').set_preview_widget(preview)
-        self.builder.get_object('filechooserbutton5').connect("update-preview", self.update_preview_cb, preview)
-        self.builder.get_object('filechooserbutton5').set_use_preview_label(False)
-
-        filter = gtk.FileFilter()
-        filter.set_name("Supported image files")
-        filter.add_pattern("*.png")
-        filter.add_pattern("*.jpg")
-        filter.add_pattern("*.jpeg")
-        filter.add_pattern("*.gif")
-        filter.add_mime_type("image/png")
-        filter.add_mime_type("image/jpg")
-        filter.add_mime_type("image/gif")
-        self.builder.get_object('filechooserbutton1').add_filter(filter)
-        self.builder.get_object('filechooserbutton1').set_filter(filter)
-
-        preview = gtk.Image()
-        self.builder.get_object('filechooserbutton1').set_preview_widget(preview)
-        self.builder.get_object('filechooserbutton1').connect("update-preview", self.update_preview_cb, preview)
-        self.builder.get_object('filechooserbutton1').set_use_preview_label(False)
-
-
-        #navigation treeview        
+        #setup navigation treeview        
         treeview = self.builder.get_object('treeview5')
         treeview.set_rules_hint(False)
         treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
@@ -351,14 +209,14 @@ class Run():
         store.append(iter, ['Families', 1, 1, None])
         store.append(iter, ['Vice-counties', 1, 2, None])
         store.append(iter, ['Page Setup', 1, 3, None])
-        iter = store.append(None, ['Single Species', 2, 0, gtk.STOCK_SAVE])
+        iter = store.append(None, ['Single Species Map', 2, 0, gtk.STOCK_SAVE])
         store.append(iter, ['Species', 2, 1, None])
         store.append(iter, ['Vice-counties', 2, 2, None])
         store.append(iter, ['Page Setup', 2, 3, None])
         
         treeview.expand_all()
 
-        #date bands treeview
+        #setup the atlas date bands treeview
         store = gtk.TreeStore(str, str, str, int, int)
            
         treeview = self.builder.get_object('treeview6')
@@ -414,226 +272,51 @@ class Run():
         column.set_fixed_width(75)
         treeview.append_column(column)
        
-        #padding column
         column = gtk.TreeViewColumn('')  
         treeview.append_column(column)
         
         treeview.set_model(store)
+              
+        #setup the single species map species treeview
+        treeView = self.builder.get_object('treeview7')
+        treeView.set_rules_hint(True)
+        treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
-        #atlas paper orientation
-        atlas_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
+        rendererText = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Species", rendererText, text=0)
+        treeView.append_column(column)
         
-        for i in range(len(paper_orientation)):
-            atlas_orientation_liststore.append([paper_orientation[i]])
-
-        atlas_orientation_combo = self.builder.get_object('combobox8')
-        atlas_orientation_combo.set_model(atlas_orientation_liststore)
-        cell = gtk.CellRendererText()
-        atlas_orientation_combo.pack_start(cell, True)
-        atlas_orientation_combo.add_attribute(cell, 'text',0)
-
-
-        list_orientation_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(paper_orientation)):
-            list_orientation_liststore.append([paper_orientation[i]])
-
-        list_orientation_combo = self.builder.get_object('combobox9')
-        list_orientation_combo.set_model(list_orientation_liststore)
-        cell = gtk.CellRendererText()
-        list_orientation_combo.pack_start(cell, True)
-        list_orientation_combo.add_attribute(cell, 'text',0)
-
-
-        atlas_page_size_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(paper_size)):
-            atlas_page_size_liststore.append([paper_size[i]])
-
-        atlas_page_size_combo = self.builder.get_object('combobox10')
-        atlas_page_size_combo.set_model(atlas_page_size_liststore)
-        cell = gtk.CellRendererText()
-        atlas_page_size_combo.pack_start(cell, True)
-        atlas_page_size_combo.add_attribute(cell, 'text',0)
-
-
-        list_page_size_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(paper_size)):
-            list_page_size_liststore.append([paper_size[i]])
-
-        list_page_size_combo = self.builder.get_object('combobox11')
-        list_page_size_combo.set_model(list_page_size_liststore)
-        cell = gtk.CellRendererText()
-        list_page_size_combo.pack_start(cell, True)
-        list_page_size_combo.add_attribute(cell, 'text',0)
-
-
-        atlas_mapping_level_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(grid_resolution)):
-            atlas_mapping_level_liststore.append([grid_resolution[i]])
-
-        atlas_mapping_level_combo = self.builder.get_object('combobox3')
-        atlas_mapping_level_combo.set_model(atlas_mapping_level_liststore)
-        cell = gtk.CellRendererText()
-        atlas_mapping_level_combo.pack_start(cell, True)
-        atlas_mapping_level_combo.add_attribute(cell, 'text',0)
-
-        list_mapping_level_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(grid_resolution)):
-            list_mapping_level_liststore.append([grid_resolution[i]])
-
-        combo = self.builder.get_object('combobox5')
-        combo.set_model(list_mapping_level_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-        coverage_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(markers)):
-            coverage_liststore.append([markers[i]])
-
-        combo = self.builder.get_object('combobox6')
-        combo.set_model(coverage_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-        grid_lines_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(grid_resolution)):
-            grid_lines_liststore.append([grid_resolution[i]])
-
-        combo = self.builder.get_object('combobox1')
-        combo.set_model(grid_lines_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-
-        phenology_type_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(phenology_types)):
-            phenology_type_liststore.append([phenology_types[i]])
-
-        combo = self.builder.get_object('combobox12')
-        combo.set_model(phenology_type_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)        
-
-        species_density_background_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(backgrounds)):
-            species_density_background_liststore.append([backgrounds[i]])
-
-        combo = self.builder.get_object('combobox16')
-        combo.set_model(species_density_background_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-        species_density_style_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(markers)):
-            species_density_style_liststore.append([markers[i]])
-
-        combo = self.builder.get_object('combobox13')
-        combo.set_model(species_density_style_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-        species_density_unit_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(grid_resolution)):
-            species_density_unit_liststore.append([grid_resolution[i]])
-
-        combo = self.builder.get_object('combobox14')
-        combo.set_model(species_density_unit_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-        species_density_grid_lines_liststore = gtk.ListStore(gobject.TYPE_STRING)
-
-        for i in range(len(grid_resolution)):
-            species_density_grid_lines_liststore.append([grid_resolution[i]])
-
-        combo = self.builder.get_object('combobox15')
-        combo.set_model(species_density_grid_lines_liststore)
-        cell = gtk.CellRendererText()
-        combo.pack_start(cell, True)
-        combo.add_attribute(cell, 'text',0)
-
-        #family treeviews
-        #atlas
-        treeView = self.builder.get_object('treeview2')
-        treeView.set_rules_hint(True)
-        treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Family", rendererText, text=0)
-        treeView.append_column(column)
-
-        #list
-        treeView = self.builder.get_object('treeview3')
-        treeView.set_rules_hint(True)
-        treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Family", rendererText, text=0)
-        treeView.append_column(column)
-
-        #vc treeview
-        #atlas
-        store = gtk.ListStore(str, str)
-        for vc in vc_list:
-            store.append([str(vc[0]), vc[1]])
-
-        treeView = self.builder.get_object('treeview1')
-        treeView.set_rules_hint(True)
-        treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
-        treeView.set_model(store)
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("#", rendererText, text=0)
-        column.set_sort_column_id(0)
-        treeView.append_column(column)
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Vice-county", rendererText, text=1)
-        column.set_sort_column_id(1)
-        treeView.append_column(column)
-
-        #list
-        store = gtk.ListStore(str, str)
-        for vc in vc_list:
-            store.append([str(vc[0]), vc[1]])
-
-        treeView = self.builder.get_object('treeview4')
-        treeView.set_rules_hint(True)
-        treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
-        treeView.set_model(store)
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("#", rendererText, text=0)
-        column.set_sort_column_id(0)
-        treeView.append_column(column)
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Vice-county", rendererText, text=1)
-        column.set_sort_column_id(1)
-        treeView.append_column(column)
-
-        dialog = self.builder.get_object('window1')
-        dialog.show()
-
+        #setup combo boxes        
+        initialize.setup_combo_box(self.builder.get_object('combobox8'), paper_orientation)
+        initialize.setup_combo_box(self.builder.get_object('combobox9'), paper_orientation)
+        initialize.setup_combo_box(self.builder.get_object('combobox10'), paper_size)
+        initialize.setup_combo_box(self.builder.get_object('combobox11'), paper_size)
+        initialize.setup_combo_box(self.builder.get_object('combobox3'), grid_resolution)
+        initialize.setup_combo_box(self.builder.get_object('combobox5'), grid_resolution)
+        initialize.setup_combo_box(self.builder.get_object('combobox6'), markers)
+        initialize.setup_combo_box(self.builder.get_object('combobox1'), grid_resolution)
+        initialize.setup_combo_box(self.builder.get_object('combobox12'), phenology_types)
+        initialize.setup_combo_box(self.builder.get_object('combobox16'), backgrounds)
+        initialize.setup_combo_box(self.builder.get_object('combobox13'), markers)
+        initialize.setup_combo_box(self.builder.get_object('combobox14'), grid_resolution)
+        initialize.setup_combo_box(self.builder.get_object('combobox15'), grid_resolution)
+        
+        #setup vice-county selection treeviews
+        initialize.setup_vice_county_treeview(self.builder.get_object('treeview1'))
+        initialize.setup_vice_county_treeview(self.builder.get_object('treeview4'))
+        initialize.setup_vice_county_treeview(self.builder.get_object('treeview8'))
+        
+        #setup family selection treeviews
+        initialize.setup_family_treeview(self.builder.get_object('treeview2'))
+        initialize.setup_family_treeview(self.builder.get_object('treeview3'))
+        
+        #if we have a filename provided, try to open it
         if filename != None:
             self.open_dataset(None, filename)
+            
+        #show the main window
+        window = self.builder.get_object('window1')
+        window.show()
 
     def add_dateband(self, widget):
         model = self.builder.get_object('treeview6').get_model()
@@ -713,21 +396,11 @@ class Run():
                 self.builder.get_object('notebook2').set_current_page(sub_notebook_page)
             elif main_notebook_page == 1:
                 self.builder.get_object('notebook3').set_current_page(sub_notebook_page)
+            elif main_notebook_page == 2:
+                self.builder.get_object('notebook4').set_current_page(sub_notebook_page)
         except TypeError:
             pass
             
-
-    def update_preview_cb(self, file_chooser, preview):
-        filename = file_chooser.get_preview_filename()
-
-        try:
-            pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(filename, 256, 256)
-            preview.set_from_pixbuf(pixbuf)
-            have_preview = True
-        except:
-            have_preview = False
-        file_chooser.set_preview_widget_active(have_preview)
-        return
 
     def show_about(self, widget):
         """Show the about dialog."""
@@ -2560,7 +2233,7 @@ class Atlas(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',vc_list[int(vc)-1][1],'.shp']))
+            layers.append(''.join(['./vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -2745,7 +2418,7 @@ class Atlas(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',vc_list[int(vc)-1][1],'.shp']))
+            layers.append(''.join(['./vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
