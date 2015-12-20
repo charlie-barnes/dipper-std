@@ -17,6 +17,8 @@
 ### along with this program; if not, write to the Free Software
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import os
+
 #vice county list - number & filename
 vc_list = [[1, 'West Cornwall'],
          [2, 'East Cornwall'],
@@ -130,3 +132,45 @@ vc_list = [[1, 'West Cornwall'],
          [110, 'Outer Hebrides'],
          [111, 'Orkney'],
          [112, 'Shetland']]
+         
+
+#min, max, count
+gradation_ranges = [[1,1, 0],
+                    [2,2, 0],
+                    [3,3, 0],
+                    [4,5, 0],
+                    [6,10, 0],
+                    [11,15, 0],
+                    [16,20, 0],
+                    [21,35, 0],
+                    [36,50, 0],
+                    [51,75, 0],
+                    [76,100, 0],
+                    [101,250, 0],
+                    [251,500, 0],
+                    [501,1000, 0]]
+                    
+
+#grid resolution list
+grid_resolution = ['100km', '10km', '5km', '2km', '1km',]
+
+#paper sizes list
+paper_size = ['A4',]
+
+#paper orientation list
+paper_orientation = ['Portrait', 'Landscape',]
+
+#phenology chart types
+phenology_types = ['Months', 'Decades']
+
+#walk the markers directory searching for GIS markers
+markers = []
+
+for style in os.listdir('markers/'):
+    markers.append(style)
+
+#walk the backgrounds directory searching for GIS markers
+backgrounds = []
+
+for background in os.listdir('backgrounds/'):
+    backgrounds.append(background)                     
