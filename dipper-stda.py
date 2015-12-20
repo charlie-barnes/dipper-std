@@ -159,6 +159,8 @@ class Run():
                    'list_family_selection_change':self.list_family_selection_change,
                    'atlas_family_selection_change':self.atlas_family_selection_change,
                    'atlas_vice_county_selection_change':self.atlas_vice_county_selection_change,
+                   'single_species_vice_county_selection_change':self.single_species_vice_county_selection_change,
+                   'single_species_species_selection_change':self.single_species_species_selection_change,
                    'add_dateband':self.add_dateband,
                    'remove_dateband':self.remove_dateband,
                   }
@@ -172,6 +174,7 @@ class Run():
         #hide tab headings
         self.builder.get_object('notebook1').set_show_tabs(False)
         self.builder.get_object('notebook2').set_show_tabs(False)
+        self.builder.get_object('notebook3').set_show_tabs(False)
         self.builder.get_object('notebook4').set_show_tabs(False)
         
         #setup the filter for the cover image selectors
@@ -289,10 +292,13 @@ class Run():
         #setup combo boxes        
         initialize.setup_combo_box(self.builder.get_object('combobox8'), paper_orientation)
         initialize.setup_combo_box(self.builder.get_object('combobox9'), paper_orientation)
+        initialize.setup_combo_box(self.builder.get_object('combobox4'), paper_orientation)
         initialize.setup_combo_box(self.builder.get_object('combobox10'), paper_size)
         initialize.setup_combo_box(self.builder.get_object('combobox11'), paper_size)
+        initialize.setup_combo_box(self.builder.get_object('combobox7'), paper_size)
         initialize.setup_combo_box(self.builder.get_object('combobox3'), grid_resolution)
         initialize.setup_combo_box(self.builder.get_object('combobox5'), grid_resolution)
+        initialize.setup_combo_box(self.builder.get_object('combobox2'), grid_resolution)
         initialize.setup_combo_box(self.builder.get_object('combobox6'), markers)
         initialize.setup_combo_box(self.builder.get_object('combobox1'), grid_resolution)
         initialize.setup_combo_box(self.builder.get_object('combobox12'), phenology_types)
@@ -319,11 +325,13 @@ class Run():
         window.show()
 
     def add_dateband(self, widget):
+        '''Add a date band to the date band atlas treeview.'''
         model = self.builder.get_object('treeview6').get_model()
         model.append(None, ['squares', '   <span background="#797979">      </span>   ', '   <span background="#797979">      </span>   ', 1980, 2030])
         self.builder.get_object('button3').set_sensitive(True)
 
     def remove_dateband(self, widget):
+        '''Remove a date band to the date band atlas treeview.'''
         selection = self.builder.get_object('treeview6').get_selection()
         model, selected = selection.get_selected_rows()
 
@@ -433,6 +441,24 @@ class Run():
         else:
             self.builder.get_object('hbox5').show()
 
+    def single_species_vice_county_selection_change(self, selection):
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        if len(iters) > 0:    
+            self.builder.get_object('hbox11').hide()
+        else:
+            self.builder.get_object('hbox11').show()
+
+    def single_species_species_selection_change(self, selection):
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        if len(iters) > 0:    
+            self.builder.get_object('hbox9').hide()
+        else:
+            self.builder.get_object('hbox9').show()
+
     def list_family_selection_change(self, selection):
         model, selected = selection.get_selected_rows()
         iters = [model.get_iter(path) for path in selected]
@@ -528,9 +554,11 @@ class Run():
                 if self.dataset.use_vcs:
                     self.builder.get_object('label61').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
                     self.builder.get_object('label37').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
+                    self.builder.get_object('label38').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
                 else:
                     self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file - data will be grouped as one</i>')
                     self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file - selection will just be used to draw the maps</i>')
+                    self.builder.get_object('label38').set_markup('<i>Vice-county information is not present in the source file - selection will just be used to draw the maps</i>')
 
                 while gtk.events_pending():
                     gtk.main_iteration_do(True)
@@ -931,8 +959,7 @@ class Run():
         self.builder.get_object('combobox5').set_active(grid_resolution.index(self.dataset.config.get('List', 'distribution_unit')))
 
         #families
-        store = gtk.ListStore(str)
-        self.builder.get_object('treeview3').set_model(store)
+        store = self.builder.get_object('treeview3').get_model()
         selection = self.builder.get_object('treeview3').get_selection()
 
         selection.unselect_all()
@@ -974,6 +1001,49 @@ class Run():
 
         #paper orientation
         self.builder.get_object('combobox9').set_active(paper_orientation.index(self.dataset.config.get('List', 'orientation')))
+
+        #set up the single species map gui based on config settings
+        #title
+        self.builder.get_object('entry7').set_text(self.dataset.config.get('Species', 'title'))
+
+        #author
+        self.builder.get_object('entry6').set_text(self.dataset.config.get('Species', 'author'))
+
+        #distribution unit
+        self.builder.get_object('combobox2').set_active(grid_resolution.index(self.dataset.config.get('Species', 'distribution_unit')))
+
+        #vice county outline
+        self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')))
+
+        #vice county fill
+        self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')))
+
+        store = gtk.ListStore(str)
+        self.builder.get_object('treeview7').set_model(store)
+        selection = self.builder.get_object('treeview7').get_selection()
+
+        selection.unselect_all()
+        
+        if self.builder.get_object('treeview7').get_realized():
+            self.builder.get_object('treeview7').scroll_to_point(0,0)
+            
+        for species in self.dataset.species:
+            iter = store.append([species])
+
+            if species.strip().lower() in ''.join(self.dataset.config.get('Species', 'species').split()).lower().split(','):
+                selection.select_path(store.get_path((iter)))
+
+        model, selected = selection.get_selected_rows()
+        try:
+            self.builder.get_object('treeview7').scroll_to_cell(selected[0])
+        except IndexError:
+            pass
+
+        #paper size
+        self.builder.get_object('combobox7').set_active(paper_size.index(self.dataset.config.get('Species', 'paper_size')))
+
+        #paper orientation
+        self.builder.get_object('combobox4').set_active(paper_orientation.index(self.dataset.config.get('Species', 'orientation')))
 
 
     def update_config(self):
@@ -1293,6 +1363,7 @@ class Dataset(gobject.GObject):
         self.records = None
         self.taxa = None
         self.families = []
+        self.species = []
 
         self.listing = { }
 
@@ -1376,6 +1447,7 @@ class Dataset(gobject.GObject):
                                                      'introduction': '',
                                                      'distribution_unit': '2km',
                                                      'families': '',
+                                                     'species':'',
                                                      'families_update_title': 'True',
                                                      'vice-counties': '',
                                                      'vice-counties_fill': '#fff',
@@ -1415,6 +1487,7 @@ class Dataset(gobject.GObject):
 
             self.config.add_section('Atlas')
             self.config.add_section('List')
+            self.config.add_section('Species')
 
         #guess the mimetype of the file
         self.mime = mimetypes.guess_type(self.filename)[0]
@@ -1648,6 +1721,9 @@ class Read(gobject.GObject):
 
                         if family not in self.dataset.families:
                             self.dataset.families.append(family)
+                            
+                        if taxa not in self.dataset.species:
+                            self.dataset.species.append(taxa)
 
                         self.dataset.cursor.execute('INSERT INTO species_data \
                                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)',

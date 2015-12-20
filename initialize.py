@@ -46,6 +46,9 @@ def setup_vice_county_treeview(treeview):
 def setup_family_treeview(treeview):
     '''Create a model for a family treeview.'''
 
+    model = gtk.ListStore(str)
+    
+    treeview.set_model(model)       
     treeview.set_rules_hint(True)
     treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
