@@ -219,13 +219,13 @@ class Run():
         treeview.set_model(store)
               
         #setup the single species map species treeview
-        treeView = self.builder.get_object('treeview7')
-        treeView.set_rules_hint(True)
-        treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        treeview = self.builder.get_object('treeview7')
+        treeview.set_rules_hint(True)
+        treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
         rendererText = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Species", rendererText, text=0)
-        treeView.append_column(column)
+        treeview.append_column(column)
         
         #setup combo boxes        
         initialize.setup_combo_box(self.builder.get_object('combobox8'), cfg.paper_orientation)
@@ -315,6 +315,8 @@ class Run():
             self.generate_atlas(widget)
         elif path == '1':
             self.generate_list(widget)
+        elif path == '2':
+            self.generate_single_species_map(widget)
         
             
     def navigation_change(self, widget):
@@ -416,10 +418,13 @@ class Run():
 
         """
 
-        if self.builder.get_object('notebook1').get_current_page() == 0 and self.dataset.config.getboolean('Atlas', 'families_update_title'):
+        if self.builder.get_object('notebook1').get_current_page() == 0 and self.builder.get_object('checkbutton18').get_active():
             entry = self.builder.get_object('entry3')
-        elif self.builder.get_object('notebook1').get_current_page() == 1 and self.dataset.config.getboolean('List', 'families_update_title'):
+        elif self.builder.get_object('notebook1').get_current_page() == 1 and self.builder.get_object('checkbutton17').get_active():
             entry = self.builder.get_object('entry4')
+        elif self.builder.get_object('notebook1').get_current_page() == 2 and self.builder.get_object('checkbutton4').get_active():
+            entry = self.builder.get_object('entry7')
+            print "mark"
 
         try:
             model, selected = selection.get_selected_rows()
@@ -583,6 +588,79 @@ class Run():
                 pass
         gtk.main_quit()
         sys.exit()
+
+    def generate_single_species_map(self, widget):
+        """Process the data file and configuration."""
+        if self.dataset is not None:
+            self.update_config()
+
+            vbox = self.builder.get_object('vbox2') 
+            notebook = self.builder.get_object('notebook1')           
+
+            #we can't produce a map without any geographic entity!
+            if not len(self.dataset.config.get('Species', 'vice-counties'))>0:            
+                self.navigate_to = (2, 1)
+                self.builder.get_object('treeview5').get_selection().emit("changed")
+            #we can't produce a map without any families selected!
+            elif not len(self.dataset.config.get('Species', 'species'))>0:            
+                self.navigate_to = (2, 0)
+                self.builder.get_object('treeview5').get_selection().emit("changed")               
+            else:              
+
+                vbox.set_sensitive(False)
+
+                dialog = gtk.FileChooserDialog('Save As...',
+                                               None,
+                                               gtk.FILE_CHOOSER_ACTION_SAVE,
+                                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                                gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+                dialog.set_default_response(gtk.RESPONSE_OK)
+                dialog.set_do_overwrite_confirmation(True)
+
+                dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.filename)))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '_map.pdf']))
+
+                response = dialog.run()
+
+                output = dialog.get_filename()
+
+                dialog.destroy()
+
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+                watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+                self.builder.get_object('window1').window.set_cursor(watch)
+
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+                if response == gtk.RESPONSE_OK:
+
+                    #add the extension if it's missing
+                    if output[-4:] != '.pdf':
+                        output = ''.join([output, '.pdf'])
+
+                    #do the atlas
+                    spmapobj = singlespecies.SingleSpecies(self.dataset)
+                    spmapobj.save_in = output
+
+                    spmapobj.generate_base_map()
+
+                    spmapobj.generate()
+                    
+                    if sys.platform == 'linux2':
+                        call(["xdg-open", output])
+                    else:
+                        os.startfile(output)
+                    
+            selection = self.builder.get_object('treeview5').get_selection()
+            self.pre_generate = selection.get_selected()
+            
+            vbox.set_sensitive(True)
+            self.builder.get_object('window1').window.set_cursor(None)
+
+
 
     def generate_atlas(self, widget):
         """Process the data file and configuration."""
@@ -956,6 +1034,7 @@ class Run():
         #vice county fill
         self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')))
 
+        #species
         store = gtk.ListStore(str)
         self.builder.get_object('treeview7').set_model(store)
         selection = self.builder.get_object('treeview7').get_selection()
@@ -964,17 +1043,33 @@ class Run():
         
         if self.builder.get_object('treeview7').get_realized():
             self.builder.get_object('treeview7').scroll_to_point(0,0)
-            
+
         for species in self.dataset.species:
             iter = store.append([species])
-
-            if species.strip().lower() in ''.join(self.dataset.config.get('Species', 'species').split()).lower().split(','):
+            if species.strip() in ''.join(self.dataset.config.get('Species', 'species')).split(','):
                 selection.select_path(store.get_path((iter)))
 
         model, selected = selection.get_selected_rows()
         try:
             self.builder.get_object('treeview7').scroll_to_cell(selected[0])
         except IndexError:
+            pass
+
+        self.builder.get_object('checkbutton4').set_active(self.dataset.config.getboolean('Species', 'species_update_title'))
+        
+        #vcs
+        selection = self.builder.get_object('treeview8').get_selection()
+
+        selection.unselect_all()
+        
+        if self.builder.get_object('treeview8').get_realized():
+            self.builder.get_object('treeview8').scroll_to_point(0,0)
+            
+        try:
+            for vc in self.dataset.config.get('Species', 'vice-counties').split(','):
+                selection.select_path(int(float(vc))-1)
+            self.builder.get_object('treeview8').scroll_to_cell(int(float(self.dataset.config.get('Species', 'vice-counties').split(',')[0]))-1)
+        except ValueError:
             pass
 
         #paper size
@@ -1156,10 +1251,51 @@ class Run():
         #page setup
         self.dataset.config.set('List', 'paper_size', self.builder.get_object('combobox11').get_active_text())
         self.dataset.config.set('List', 'orientation', self.builder.get_object('combobox9').get_active_text())
+        
+
+        #single species map
+        self.dataset.config.set('Species', 'title', self.builder.get_object('entry7').get_text())
+        self.dataset.config.set('Species', 'author', self.builder.get_object('entry6').get_text())   
+        self.dataset.config.set('Species', 'distribution_unit', self.builder.get_object('combobox2').get_active_text())     
+
+
+        #grab a comma delimited list of species
+        selection = self.builder.get_object('treeview7').get_selection()
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        species = ''
+
+        for iter in iters:
+            species = ','.join([species, model.get_value(iter, 0)])
+
+        self.dataset.config.set('Species', 'species', species[1:])
+        
+        self.dataset.config.set('Species', 'species_update_title', str(self.builder.get_object('checkbutton4').get_active()))
+
+        #grab a comma delimited list of vcs
+        selection = self.builder.get_object('treeview8').get_selection()
+        model, selected = selection.get_selected_rows()
+        iters = [model.get_iter(path) for path in selected]
+
+        vcs = ''
+
+        for iter in iters:
+            vcs = ','.join([vcs, model.get_value(iter, 0)])
+
+        self.dataset.config.set('Species', 'vice-counties', vcs[1:])
+        self.dataset.config.set('Species', 'vice-counties_fill', str(self.builder.get_object('colorbutton3').get_color()))
+        self.dataset.config.set('Species', 'vice-counties_outline', str(self.builder.get_object('colorbutton2').get_color()))
+
+        #page setup
+        self.dataset.config.set('Species', 'paper_size', self.builder.get_object('combobox7').get_active_text())
+        self.dataset.config.set('Species', 'orientation', self.builder.get_object('combobox4').get_active_text())
+
 
     def switch_update_title(self, widget):
         self.dataset.config.set('Atlas', 'families_update_title', str(self.builder.get_object('checkbutton18').get_active()))
         self.dataset.config.set('List', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
+        self.dataset.config.set('Species', 'species_update_title', str(self.builder.get_object('checkbutton4').get_active()))
 
     def open_file(self, widget):
         '''Open a dataset file'''

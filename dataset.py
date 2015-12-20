@@ -156,6 +156,7 @@ class Dataset(gobject.GObject):
                                                      'species_accounts_show_phenology': 'True',
                                                      'species_accounts_phenology_colour': '#000',
                                                      'species_accounts_phenology_type': 'Months',
+                                                     'species_update_title': 'True',
                                                     })
 
             self.config.add_section('Atlas')
