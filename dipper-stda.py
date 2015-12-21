@@ -108,7 +108,7 @@ class Run():
         #reset navigation
         self.pre_generate = (None, None)
         self.navigate_to = (None, None)
-
+        
         #hide tab headings
         self.builder.get_object('notebook1').set_show_tabs(False)
         self.builder.get_object('notebook2').set_show_tabs(False)
@@ -354,7 +354,7 @@ class Run():
         """Show the about dialog."""
         dialog = gtk.AboutDialog()
         dialog.set_name('Atlas & Checklist Generator\n')
-        dialog.set_version(''.join(['dipper-stda ', __version__]))
+        dialog.set_version(''.join(['dipper-stda ', version.__version__]))
         dialog.set_authors(['Charlie Barnes'])
         dialog.set_website('https://github.com/charlie-barnes/dipper-stda')
         dialog.set_license("This is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the Licence, or (at your option) any later version.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA")
