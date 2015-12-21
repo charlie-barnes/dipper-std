@@ -905,7 +905,10 @@ class Run():
         self.builder.get_object('checkbutton20').set_active(self.dataset.config.getboolean('Atlas', 'species_density_map_background_visible'))
 
         #species density background
-        self.builder.get_object('combobox16').set_active(cfg.backgrounds.index(self.dataset.config.get('Atlas', 'species_density_map_background')))
+        try:
+            self.builder.get_object('combobox16').set_active(cfg.backgrounds.index(self.dataset.config.get('Atlas', 'species_density_map_background')))
+        except ValueError:
+            self.builder.get_object('combobox16').set_active(0)
 
         #species density style
         self.builder.get_object('combobox13').set_active(cfg.markers.index(self.dataset.config.get('Atlas', 'species_density_map_style')))
