@@ -32,6 +32,7 @@ from colour import Color
 import math
 import random
 import chart
+import os
 
 class Atlas(gobject.GObject):
 
