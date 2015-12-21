@@ -22,6 +22,7 @@ import gtk
 from datetime import datetime
 import pdf
 import version
+import os
 
 def repeat_to_length(string_to_expand, length):
    return (string_to_expand * ((length/len(string_to_expand))+1))[:length]
