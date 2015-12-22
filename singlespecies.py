@@ -57,7 +57,7 @@ class SingleSpecies(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Species', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
+            layers.append(''.join(['./gis/vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Species', 'distribution_unit') + ') AS grids \

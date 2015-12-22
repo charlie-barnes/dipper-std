@@ -54,7 +54,7 @@ class Atlas(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
+            layers.append(''.join(['./gis/vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -239,7 +239,7 @@ class Atlas(gobject.GObject):
 
         layers = []
         for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
+            layers.append(''.join(['./gis/vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
