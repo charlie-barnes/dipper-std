@@ -18,6 +18,7 @@
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import os
+import imghdr
 
 #vice county list - number & filename
 vc_list = [[1, 'West Cornwall'],
@@ -173,4 +174,5 @@ for style in os.listdir('markers/'):
 backgrounds = []
 
 for background in os.listdir('backgrounds/'):
-    backgrounds.append(background)                     
+    if imghdr.what(''.join(['backgrounds/', background])) is not None:
+        backgrounds.append(background)
