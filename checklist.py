@@ -49,7 +49,21 @@ class Checklist(gobject.GObject):
             
         families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('List', 'families').split(',')), '")'])
 
-        self.dataset.cursor.execute('select * from species_data')
+        self.dataset.cursor.execute('SELECT DISTINCT data.taxon \
+                                   FROM data \
+                                   JOIN species_data ON data.taxon = species_data.taxon \
+                                   WHERE ' + vcs_sql + ' ' + families_sql)
+
+        data = self.dataset.cursor.fetchall()
+        number_of_species = len(data)                                   
+
+        self.dataset.cursor.execute('SELECT DISTINCT species_data.family \
+                                   FROM data \
+                                   JOIN species_data ON data.taxon = species_data.taxon \
+                                   WHERE ' + vcs_sql + ' ' + families_sql)
+
+        data = self.dataset.cursor.fetchall()
+        number_of_families = len(data)                                     
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS squares, \
@@ -319,7 +333,7 @@ class Checklist(gobject.GObject):
         doc.doing_the_list = False
 
         if len(families) > 1:
-            family_text = ' '.join([str(len(families)), 'families and'])
+            family_text = ' '.join([str(number_of_families), 'families and'])
         else:
             family_text = ''
 
@@ -336,7 +350,7 @@ class Checklist(gobject.GObject):
         doc.set_y(doc.get_y()+10)
         doc.set_font('Helvetica', 'I', 10)
         doc.multi_cell(0, 5, ' '.join([family_text,
-                                       ' '.join([str(len(data)), taxa_text]),
+                                       ' '.join([str(number_of_species), taxa_text]),
                                        ' '.join(['listed from', str(record_count), record_text]),]),
                        0, 'J', False)
 
