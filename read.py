@@ -20,6 +20,7 @@
 import gobject
 import xlrd
 import os
+import gtk
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate

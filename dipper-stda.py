@@ -925,8 +925,11 @@ class Run():
             border_colour = ''.join(['   <span background="', row[2], '" >      </span>   '])
             store.append(None, [row[0], fill_colour, border_colour, row[3], row[4]])
 
-        #atlas mapping layers 
-        initialize.setup_mapping_layers_treeview(self.builder.get_object('alignment2'), json.loads(self.dataset.config.get('Atlas', 'mapping_layers')))        
+        #atlas mapping layers
+        try:
+            initialize.setup_mapping_layers_treeview(self.builder.get_object('alignment2'), json.loads(self.dataset.config.get('Atlas', 'mapping_layers')))
+        except ValueError:
+            initialize.setup_mapping_layers_treeview(self.builder.get_object('alignment2'))            
 
         #table of contents
         self.builder.get_object('checkbutton6').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_families'))

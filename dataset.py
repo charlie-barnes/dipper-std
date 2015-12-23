@@ -23,6 +23,7 @@ import sqlite3
 import mimetypes
 import ConfigParser
 import read
+from subprocess import call
 
 class Dataset(gobject.GObject):
 
