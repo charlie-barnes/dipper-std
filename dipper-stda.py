@@ -1424,7 +1424,7 @@ class Run():
         with open(output, 'wb') as configfile:
             self.dataset.config.write(configfile)
                               
-        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', config_file_txt]))
+        self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', os.path.basename(output)]))
 
 if __name__ == '__main__':
 
