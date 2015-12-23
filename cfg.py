@@ -167,12 +167,24 @@ phenology_types = ['Months', 'Decades']
 #walk the markers directory searching for GIS markers
 markers = []
 
-for style in os.listdir('markers/'):
+for style in os.listdir('markers'):
     markers.append(style)
 
 #walk the backgrounds directory searching for GIS markers
 backgrounds = []
 
-for background in os.listdir('backgrounds/'):
-    if imghdr.what(''.join(['backgrounds/', background])) is not None:
+for background in os.listdir('backgrounds'):
+    if imghdr.what(''.join(['backgrounds', os.path.sep, background])) is not None:
         backgrounds.append(background)
+
+#walk the gis directory searching for SHP layers
+gis = {}
+
+for category in os.listdir('gis'):
+    gis[category] = []
+    
+    for layer in os.listdir(''.join(['gis', os.path.sep, category])):
+        if layer[-4:] == '.shp' and layer[:-4] not in gis[category]:
+            gis[category].append(layer[:-4])
+
+

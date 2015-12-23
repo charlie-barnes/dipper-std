@@ -96,8 +96,6 @@ class Run():
                    'navigation_change':self.navigation_change,
                    'list_family_selection_change':self.list_family_selection_change,
                    'atlas_family_selection_change':self.atlas_family_selection_change,
-                   'atlas_vice_county_selection_change':self.atlas_vice_county_selection_change,
-                   'single_species_vice_county_selection_change':self.single_species_vice_county_selection_change,
                    'single_species_species_selection_change':self.single_species_species_selection_change,
                    'add_dateband':self.add_dateband,
                    'remove_dateband':self.remove_dateband,
@@ -145,7 +143,8 @@ class Run():
         store.append(iter, ['Table of Contents', 0, 4, None])
         store.append(iter, ['Species Density Map', 0, 5, None])
         iter = store.append(iter, ['Species Accounts', 0, 6, None])
-        store.append(iter, ['Date bands', 0, 7, None])
+        store.append(iter, ['Mapping', 0, 7, None])
+        store.append(iter, ['Date bands', 0, 8, None])
         iter = store.append(None, ['Checklist', 1, 0, gtk.STOCK_SAVE])
         store.append(iter, ['Families', 1, 1, None])
         store.append(iter, ['Vice-counties', 1, 2, None])
@@ -253,7 +252,10 @@ class Run():
         #setup family selection treeviews
         initialize.setup_family_treeview(self.builder.get_object('treeview2'))
         initialize.setup_family_treeview(self.builder.get_object('treeview3'))
-        
+
+        #setup gis mapping treeviews        
+        initialize.setup_mapping_layers_treeview(self.builder.get_object('alignment2'))
+                
         #if we have a filename provided, try to open it
         if filename != None:
             self.open_dataset(None, filename)
@@ -372,23 +374,6 @@ class Run():
         else:
             self.builder.get_object('hbox4').show()
 
-    def atlas_vice_county_selection_change(self, selection):
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-
-        if len(iters) > 0:    
-            self.builder.get_object('hbox5').hide()
-        else:
-            self.builder.get_object('hbox5').show()
-
-    def single_species_vice_county_selection_change(self, selection):
-        model, selected = selection.get_selected_rows()
-        iters = [model.get_iter(path) for path in selected]
-
-        if len(iters) > 0:    
-            self.builder.get_object('hbox11').hide()
-        else:
-            self.builder.get_object('hbox11').show()
 
     def single_species_species_selection_change(self, selection):
         model, selected = selection.get_selected_rows()
@@ -496,12 +481,18 @@ class Run():
                 
                 if self.dataset.use_vcs:
                     self.builder.get_object('label61').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
-                    self.builder.get_object('label37').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
-                    self.builder.get_object('label38').set_markup('<i>The selection is used to both filter the records and draw the map</i>')
+                    self.builder.get_object('label37').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
+                    self.builder.get_object('label38').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
+                    self.builder.get_object('treeview1').set_sensitive(True)
+                    self.builder.get_object('treeview4').set_sensitive(True)
+                    self.builder.get_object('treeview8').set_sensitive(True)
                 else:
-                    self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file - data will be grouped as one</i>')
-                    self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file - selection will just be used to draw the maps</i>')
-                    self.builder.get_object('label38').set_markup('<i>Vice-county information is not present in the source file - selection will just be used to draw the maps</i>')
+                    self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file</i>')
+                    self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file</i>')
+                    self.builder.get_object('label38').set_markup('<i>Vice-county information is not present in the source file</i>')
+                    self.builder.get_object('treeview1').set_sensitive(False)
+                    self.builder.get_object('treeview4').set_sensitive(False)
+                    self.builder.get_object('treeview8').set_sensitive(False)
 
                 while gtk.events_pending():
                     gtk.main_iteration_do(True)
@@ -880,12 +871,6 @@ class Run():
         #paper orientation
         self.builder.get_object('combobox8').set_active(cfg.paper_orientation.index(self.dataset.config.get('Atlas', 'orientation')))
 
-        #vice county outline
-        self.builder.get_object('colorbutton5').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')))
-
-        #vice county fill
-        self.builder.get_object('colorbutton10').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')))
-
         #coverage style
         self.builder.get_object('combobox6').set_active(cfg.markers.index(self.dataset.config.get('Atlas', 'coverage_style')))
 
@@ -939,6 +924,9 @@ class Run():
             fill_colour = ''.join(['   <span background="', row[1], '" >      </span>   '])
             border_colour = ''.join(['   <span background="', row[2], '" >      </span>   '])
             store.append(None, [row[0], fill_colour, border_colour, row[3], row[4]])
+
+        #atlas mapping layers 
+        initialize.setup_mapping_layers_treeview(self.builder.get_object('alignment2'), json.loads(self.dataset.config.get('Atlas', 'mapping_layers')))        
 
         #table of contents
         self.builder.get_object('checkbutton6').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_families'))
@@ -1030,12 +1018,6 @@ class Run():
 
         #distribution unit
         self.builder.get_object('combobox2').set_active(cfg.grid_resolution.index(self.dataset.config.get('Species', 'distribution_unit')))
-
-        #vice county outline
-        self.builder.get_object('colorbutton2').set_color(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')))
-
-        #vice county fill
-        self.builder.get_object('colorbutton3').set_color(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')))
 
         #species
         store = gtk.ListStore(str)
@@ -1130,8 +1112,6 @@ class Run():
             vcs = ','.join([vcs, model.get_value(iter, 0)])
 
         self.dataset.config.set('Atlas', 'vice-counties', vcs[1:])
-        self.dataset.config.set('Atlas', 'vice-counties_fill', str(self.builder.get_object('colorbutton10').get_color()))
-        self.dataset.config.set('Atlas', 'vice-counties_outline', str(self.builder.get_object('colorbutton5').get_color()))
 
         #atlas date bands
         date_bands = []
@@ -1142,6 +1122,24 @@ class Run():
             date_bands.append([row[0], fill_colour, border_colour,  row[3],  row[4]])
 
         self.dataset.config.set('Atlas', 'date_bands', json.dumps(date_bands))
+
+        #mapping layers
+        mapping_layers = []
+        
+        notebook = self.builder.get_object('alignment2').get_child()
+        
+        for page in range(0,notebook.get_n_pages()):
+            treeview = notebook.get_nth_page(page).get_child()
+
+            selection = treeview.get_selection()
+            model, selected = selection.get_selected_rows()
+            iters = [model.get_iter(path) for path in selected]
+            
+            for iter in iters:
+                category = notebook.get_tab_label(treeview.get_parent()).get_text()
+                mapping_layers.append([category, model.get_value(iter, 0)])
+        
+        self.dataset.config.set('Atlas', 'mapping_layers', json.dumps(mapping_layers))
 
         #coverage
         self.dataset.config.set('Atlas', 'coverage_visible', str(self.builder.get_object('checkbutton1').get_active()))
@@ -1287,8 +1285,6 @@ class Run():
             vcs = ','.join([vcs, model.get_value(iter, 0)])
 
         self.dataset.config.set('Species', 'vice-counties', vcs[1:])
-        self.dataset.config.set('Species', 'vice-counties_fill', str(self.builder.get_object('colorbutton3').get_color()))
-        self.dataset.config.set('Species', 'vice-counties_outline', str(self.builder.get_object('colorbutton2').get_color()))
 
         #page setup
         self.dataset.config.set('Species', 'paper_size', self.builder.get_object('combobox7').get_active_text())

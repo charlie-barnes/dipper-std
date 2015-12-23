@@ -123,8 +123,6 @@ class Dataset(gobject.GObject):
                                                      'species':'',
                                                      'families_update_title': 'True',
                                                      'vice-counties': '',
-                                                     'vice-counties_fill': '#fff',
-                                                     'vice-counties_outline': '#000',
                                                      'date_bands': '[["squares", "#000", "#000", 1980, 2050], ["circles", "#a9a9a9", "#000", 1600, 1980]]',
                                                      'date_band_overlay': 'False',
                                                      'coverage_visible': 'True',
@@ -157,6 +155,7 @@ class Dataset(gobject.GObject):
                                                      'species_accounts_phenology_colour': '#000',
                                                      'species_accounts_phenology_type': 'Months',
                                                      'species_update_title': 'True',
+                                                     'mapping_layers': '',
                                                     })
 
             self.config.add_section('Atlas')

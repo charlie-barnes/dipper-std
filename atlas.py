@@ -33,6 +33,7 @@ import math
 import random
 import chart
 import os
+import json
 
 class Atlas(gobject.GObject):
 
@@ -53,8 +54,8 @@ class Atlas(gobject.GObject):
         scalefactor = 0.01
 
         layers = []
-        for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./gis/vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
+        for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
+            layers.append(str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp'))
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -90,19 +91,22 @@ class Atlas(gobject.GObject):
         if self.dataset.config.getboolean('Atlas', 'species_density_map_background_visible'):
             background_map = Image.open(''.join(['./backgrounds/', self.dataset.config.get('Atlas', 'species_density_map_background')]), 'r')
 
-            region = background_map.crop((int(bounds_bottom_x/100), (1300000/100)-int(bounds_top_y/100), int(bounds_top_x/100)+1, ((1300000/100)-int(bounds_bottom_y/100))))
+            crop_left = int(math.ceil(bounds_bottom_x/100))
+            crop_upper = int(math.ceil((1300000/100)-(bounds_top_y/100)))
+            crop_right = int(math.ceil(bounds_top_x/100))
+            crop_lower = int(math.ceil((1300000/100)-(bounds_bottom_y/100)))
+
+            region = background_map.crop((crop_left, crop_upper, crop_right, crop_lower))
             region.save(temp_file, format='PNG')
 
             ###HACK: for some reason the crop of the background map isn't always the right
-            #size. height seems to be off by 1 pixel in some cases.
+            #size. seems to be off by 1 pixel in some cases.
             (region_width, region_height) = region.size
 
-            if region_height == (int(ydist*scalefactor)+1)-1:
-                hack_diff = 1
-            else:
-                hack_diff = 0
-
-            base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1), (int(ydist*scalefactor)+1)-hack_diff  ))
+            width_hack_diff = region_width-(int(xdist*scalefactor)+1)
+            height_hack_diff = region_height-(int(ydist*scalefactor)+1)
+            
+            base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1)+width_hack_diff, (int(ydist*scalefactor)+1)+height_hack_diff  ))
 
         if self.dataset.use_vcs:
             vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
@@ -141,7 +145,7 @@ class Atlas(gobject.GObject):
         high = Color(self.dataset.config.get('Atlas', 'species_density_map_high_colour'))
         self.grad_fills = list(low.range_to(high, self.increments))
         
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + '/' + self.dataset.config.get('Atlas', 'species_density_map_unit'))
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + os.path.sep + self.dataset.config.get('Atlas', 'species_density_map_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -230,7 +234,7 @@ class Atlas(gobject.GObject):
     def generate_base_map(self):
 
         #generate the base map
-        self.scalefactor = 0.0035
+        self.scalefactor = 0.01
 
         if self.dataset.use_vcs:
             vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
@@ -238,8 +242,8 @@ class Atlas(gobject.GObject):
             vcs_sql = ''
 
         layers = []
-        for vc in self.dataset.config.get('Atlas', 'vice-counties').split(','):
-            layers.append(''.join(['./gis/vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
+        for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
+            layers.append(str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp'))
 
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
@@ -260,45 +264,45 @@ class Atlas(gobject.GObject):
         self.bounds_top_y = 0
 
         # Read in the coverage grid ref shapefiles and extend the bounding box
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
-        for obj in r.shapeRecords():
+        #for obj in r.shapeRecords():
             #if the grid is in our coverage, extend the bounds to match
-            if obj.record[0] in grids:
-                if obj.shape.bbox[0] < self.bounds_bottom_x:
-                    self.bounds_bottom_x = obj.shape.bbox[0]
+        #    if obj.record[0] in grids:
+        #        if obj.shape.bbox[0] < self.bounds_bottom_x:
+        #            self.bounds_bottom_x = obj.shape.bbox[0]#
 
-                if obj.shape.bbox[1] < self.bounds_bottom_y:
-                    self.bounds_bottom_y = obj.shape.bbox[1]
+        #        if obj.shape.bbox[1] < self.bounds_bottom_y:
+        #            self.bounds_bottom_y = obj.shape.bbox[1]
 
-                if obj.shape.bbox[2] > self.bounds_top_x:
-                    self.bounds_top_x = obj.shape.bbox[2]
+        #        if obj.shape.bbox[2] > self.bounds_top_x:
+        #            self.bounds_top_x = obj.shape.bbox[2]
 
-                if obj.shape.bbox[3] > self.bounds_top_y:
-                    self.bounds_top_y = obj.shape.bbox[3]
+        #        if obj.shape.bbox[3] > self.bounds_top_y:
+        #            self.bounds_top_y = obj.shape.bbox[3]
 
 
         #loop through the date bands treeview
-        for row in self.dataset.builder.get_object('treeview6').get_model():
+        #for row in self.dataset.builder.get_object('treeview6').get_model():
             # Read in the date band 1 grid ref shapefiles and extend the bounding box
-            r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        #    r = shapefile.Reader('./markers/' + row[0] + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
             #loop through each object in the shapefile
-            for obj in r.shapeRecords():
+        #    for obj in r.shapeRecords():
                 #if the grid is in our coverage, extend the bounds to match
-                if obj.record[0] in grids:
-                    if obj.shape.bbox[0] < self.bounds_bottom_x:
-                        self.bounds_bottom_x = obj.shape.bbox[0]
+        #        if obj.record[0] in grids:
+        #            if obj.shape.bbox[0] < self.bounds_bottom_x:
+        #                self.bounds_bottom_x = obj.shape.bbox[0]
 
-                    if obj.shape.bbox[1] < self.bounds_bottom_y:
-                        self.bounds_bottom_y = obj.shape.bbox[1]
+        #            if obj.shape.bbox[1] < self.bounds_bottom_y:
+        #                self.bounds_bottom_y = obj.shape.bbox[1]
 
-                    if obj.shape.bbox[2] > self.bounds_top_x:
-                        self.bounds_top_x = obj.shape.bbox[2]
+        #            if obj.shape.bbox[2] > self.bounds_top_x:
+        #                self.bounds_top_x = obj.shape.bbox[2]
 
-                    if obj.shape.bbox[3] > self.bounds_top_y:
-                        self.bounds_top_y = obj.shape.bbox[3]            
+        #            if obj.shape.bbox[3] > self.bounds_top_y:
+        #                self.bounds_top_y = obj.shape.bbox[3]            
         
-        # Read in the vc shapefiles and extend the bounding box
+        # Read in the layer shapefiles and extend the bounding box
         for shpfile in layers:
             r = shapefile.Reader(shpfile)
 
@@ -326,14 +330,13 @@ class Atlas(gobject.GObject):
         for row in self.dataset.builder.get_object('treeview6').get_model():
             current_grids = []
                     
-            r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+            r = shapefile.Reader('./markers/' + row[0] + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
             #loop through each object in the shapefile
             for obj in r.shapeRecords():
                 if obj.record[0] in grids:
                     current_grids.append(obj)
             
             self.date_band_coverage.append(current_grids)
-
 
         #add each boundary shapefile
         for shpfile in layers:
@@ -358,7 +361,7 @@ class Atlas(gobject.GObject):
 
 
         #add the coverage
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -674,7 +677,7 @@ class Atlas(gobject.GObject):
                 
             #draw each band marker in turn and save out
             #we always show date band 1
-            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + '/' + self.dataset.config.get('Atlas', 'species_density_map_unit'))
+            r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + os.path.sep + self.dataset.config.get('Atlas', 'species_density_map_unit'))
             shapes = r.shapes()
             pixels = []
 
@@ -1202,7 +1205,7 @@ class Atlas(gobject.GObject):
                 fill_colour = row[1].split('"')[1]
                 border_colour = row[2].split('"')[1]
                 
-                r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Atlas', 'distribution_unit'))
+                r = shapefile.Reader('./markers/' + row[0] + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
                 shapes = r.shapes()
                 pixels = []
 

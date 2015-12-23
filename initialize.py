@@ -100,4 +100,54 @@ def update_preview(file_chooser, preview):
     except:
         have_preview = False
     file_chooser.set_preview_widget_active(have_preview)
-    return    
+    return
+    
+def setup_mapping_layers_treeview(container, config=None):
+    '''Create the mapping layers treeview, selecting config defaults if present'''
+
+    try:    
+        container.get_child().destroy()
+    except AttributeError:
+        pass
+
+    notebook = gtk.Notebook()
+
+    for category in cfg.gis.keys():      
+        store = gtk.ListStore(str)
+          
+        treeview = gtk.TreeView()
+        treeview.set_rules_hint(True)
+        treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        treeview.set_model(store)
+        treeview.set_headers_visible(False)
+        
+        selection = treeview.get_selection()
+                    
+        for layer in sorted(cfg.gis[category]):
+            iter = store.append([layer])
+            
+            try:
+                if [category, layer] in config:
+                    selection.select_iter(iter)
+            except TypeError:
+                pass
+
+        rendererText = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Layer", rendererText, text=0)
+        column.set_sort_column_id(0)
+        treeview.append_column(column)
+
+        model, selected = selection.get_selected_rows()
+        try:
+            treeview.scroll_to_cell(selected[0])
+        except IndexError:
+            pass
+        
+        label = gtk.Label(category)
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.set_shadow_type(gtk.SHADOW_NONE)
+        scrolled_window.add(treeview) 
+        notebook.append_page(scrolled_window, tab_label=label)
+
+    container.add(notebook)
+    notebook.show_all()
