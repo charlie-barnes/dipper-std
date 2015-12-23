@@ -120,7 +120,7 @@ class Atlas(gobject.GObject):
                                      GROUP BY grid_' + self.dataset.config.get('Atlas', 'species_density_map_unit'))
 
         data = self.dataset.cursor.fetchall()
-        #print data
+
         grids = []
 
         gridsdict = {}
