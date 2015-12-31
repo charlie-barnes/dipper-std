@@ -504,7 +504,7 @@ class Atlas(gobject.GObject):
         contrib_data = {}
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
-                                     WHERE ' + vcs_sql ' \
+                                     WHERE ' + vcs_sql + ' \
                                      FROM data')
 
         recorder_data = self.dataset.cursor.fetchall()
@@ -542,7 +542,7 @@ class Atlas(gobject.GObject):
                         contrib_data[name.strip()] = ''.join(initials)
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
-                                     WHERE ' + vcs_sql ' \
+                                     WHERE ' + vcs_sql + ' \
                                      FROM data')
 
         determiner_data = self.dataset.cursor.fetchall()
