@@ -129,8 +129,8 @@ class Chart(gtk.Window):
                     max_val = bar_info[1]
                 bar = bar_chart.Bar(*bar_info)
                 bar.set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
-                bar._label_object.set_property('size', 16)
-                bar._value_label_object.set_property('size', 16)
+                bar._label_object.set_property('size', 12)
+                bar._value_label_object.set_property('size', 12)
                 bar._label_object.set_property('weight', pango.WEIGHT_BOLD)
                 bar._value_label_object.set_property('weight', pango.WEIGHT_BOLD)
                 bar._label_object.set_property('color', gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
