@@ -1719,7 +1719,7 @@ class Atlas(gobject.GObject):
         doc.p_add_page()
         doc.set_font('Helvetica', '', 20)
         doc.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
-        doc.set_font('Helvetica', '', 12)
+        doc.set_font('Helvetica', '', 8)
 
         contrib_blurb = []
 
@@ -1730,10 +1730,10 @@ class Atlas(gobject.GObject):
         doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
         if len(self.dataset.config.get('Atlas', 'bibliography')) > 0:
-            doc.p_add_page()
             doc.section = ('Bibliography')
+            doc.p_add_page()
             doc.set_font('Helvetica', '', 20)
-            doc.multi_cell(0, 20, 'Bibliography', 0, 'J', False)
+            doc.multi_cell(0, 20, 'References', 0, 'J', False)
             doc.set_font('Helvetica', '', 12)
             doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography'), 0, 'J', False)
             

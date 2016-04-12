@@ -190,7 +190,7 @@ class PDF(FPDF):
         self.set_font('Helvetica','',8)
 
         #only show page numbers in the main body
-        if self.num_page_no() >= 4 and self.section != 'Contents' and self.section != 'Index' and self.section != 'Contributors' and self.section != '':
+        if self.num_page_no() >= 4 and self.section != 'Contents' and self.section != 'Index' and self.section != 'Contributors' self.section != 'References' and self.section != '':
             self.cell(0, 10, str(self.num_page_no()+self.toc_length), '', 0, 'C')
 
 
