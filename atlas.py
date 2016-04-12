@@ -1113,7 +1113,7 @@ class Atlas(gobject.GObject):
                 doc.set_x(10)
                 doc.set_y(260)
                 doc.cell(15)
-                doc.cell(10, 5, 'Monthly phenology chart', 0, 0, 'L', True)
+                doc.cell(10, 5, 'Records per month', 0, 0, 'L', True)
 
             #status
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
