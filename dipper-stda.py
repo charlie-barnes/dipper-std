@@ -814,6 +814,9 @@ class Run():
         #introduction
         self.builder.get_object('textview3').get_buffer().set_text(self.dataset.config.get('Atlas', 'introduction'))
 
+        #bibliography
+        self.builder.get_object('textview2').get_buffer().set_text(self.dataset.config.get('Atlas', 'bibliography'))
+
         #distribution unit
         self.builder.get_object('combobox3').set_active(cfg.grid_resolution.index(self.dataset.config.get('Atlas', 'distribution_unit')))
 
@@ -1087,8 +1090,13 @@ class Run():
         buffer = self.builder.get_object('textview3').get_buffer()
         startiter, enditer = buffer.get_bounds()
         introduction = buffer.get_text(startiter, enditer, True)
-
         self.dataset.config.set('Atlas', 'introduction', introduction)
+
+        buffer = self.builder.get_object('textview2').get_buffer()
+        startiter, enditer = buffer.get_bounds()
+        bibliography = buffer.get_text(startiter, enditer, True)
+        self.dataset.config.set('Atlas', 'bibliography', bibliography)
+
         self.dataset.config.set('Atlas', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
 
         #grab a comma delimited list of families
