@@ -906,7 +906,7 @@ class Atlas(gobject.GObject):
                     
                     self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                                 FROM data \
-                                                WHERE data.taxon = "' + item[0] + '" \
+                                                WHERE data.taxon = "' + random_species + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
                                                 AND data.year_to < ' + str(row[4]) + ' \
                                                 AND data.year_from >= ' + str(row[3]) + ' \
@@ -940,7 +940,7 @@ class Atlas(gobject.GObject):
                     
                     self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                                 FROM data \
-                                                WHERE data.taxon = "' + item[0] + '" \
+                                                WHERE data.taxon = "' + random_species + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
                                                 AND data.year_to < ' + str(row[4]) + ' \
                                                 AND data.year_from >= ' + str(row[3]) + ' \
