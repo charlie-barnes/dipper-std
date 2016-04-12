@@ -1441,7 +1441,7 @@ class Atlas(gobject.GObject):
             doc.set_line_width(0.1)
 
             if len(taxa_statistics[item[0]]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                doc.set_font('Helvetica', 'B', 10)
+                doc.set_font('Helvetica', '', 10)
                 doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join([taxa_statistics[item[0]]['description'], '\n\n']), 0, 'L', False)
                 doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
 
