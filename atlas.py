@@ -1730,11 +1730,11 @@ class Atlas(gobject.GObject):
         doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
         if len(self.dataset.config.get('Atlas', 'bibliography')) > 0:
-            doc.section = ('Bibliography')
+            doc.section = ('References')
             doc.p_add_page()
             doc.set_font('Helvetica', '', 20)
             doc.multi_cell(0, 20, 'References', 0, 'J', False)
-            doc.set_font('Helvetica', '', 12)
+            doc.set_font('Helvetica', '', 10)
             doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography'), 0, 'J', False)
             
         doc.section = ''
