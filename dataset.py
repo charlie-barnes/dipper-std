@@ -119,6 +119,7 @@ class Dataset(gobject.GObject):
                                                      'cover_image': '',
                                                      'inside_cover': '',
                                                      'introduction': '',
+                                                     'bibliography': '',
                                                      'distribution_unit': '2km',
                                                      'families': '',
                                                      'species':'',

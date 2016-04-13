@@ -869,7 +869,7 @@ class Atlas(gobject.GObject):
             doc.set_line_width(0.1)
 
             if len(taxa_statistics[random_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                doc.set_font('Helvetica', 'B', 10)
+                doc.set_font('Helvetica', '', 10)
                 doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join([taxa_statistics[random_species]['description'], '\n\n']), 0, 'L', False)
                 doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
 
@@ -908,7 +908,7 @@ class Atlas(gobject.GObject):
                     
                     self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                                 FROM data \
-                                                WHERE data.taxon = "' + item[0] + '" \
+                                                WHERE data.taxon = "' + random_species + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
                                                 AND data.year_to < ' + str(row[4]) + ' \
                                                 AND data.year_from >= ' + str(row[3]) + ' \
@@ -942,7 +942,7 @@ class Atlas(gobject.GObject):
                     
                     self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                                 FROM data \
-                                                WHERE data.taxon = "' + item[0] + '" \
+                                                WHERE data.taxon = "' + random_species + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
                                                 AND data.year_to < ' + str(row[4]) + ' \
                                                 AND data.year_from >= ' + str(row[3]) + ' \
@@ -1115,7 +1115,7 @@ class Atlas(gobject.GObject):
                 doc.set_x(10)
                 doc.set_y(260)
                 doc.cell(15)
-                doc.cell(10, 5, 'Monthly phenology chart', 0, 0, 'L', True)
+                doc.cell(10, 5, 'Records per month', 0, 0, 'L', True)
 
             #status
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
@@ -1443,7 +1443,7 @@ class Atlas(gobject.GObject):
             doc.set_line_width(0.1)
 
             if len(taxa_statistics[item[0]]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                doc.set_font('Helvetica', 'B', 10)
+                doc.set_font('Helvetica', '', 10)
                 doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join([taxa_statistics[item[0]]['description'], '\n\n']), 0, 'L', False)
                 doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
 
@@ -1721,7 +1721,7 @@ class Atlas(gobject.GObject):
         doc.p_add_page()
         doc.set_font('Helvetica', '', 20)
         doc.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
-        doc.set_font('Helvetica', '', 12)
+        doc.set_font('Helvetica', '', 8)
 
         contrib_blurb = []
 
@@ -1731,6 +1731,14 @@ class Atlas(gobject.GObject):
 
         doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
+        if len(self.dataset.config.get('Atlas', 'bibliography')) > 0:
+            doc.section = ('References')
+            doc.p_add_page()
+            doc.set_font('Helvetica', '', 20)
+            doc.multi_cell(0, 20, 'References', 0, 'J', False)
+            doc.set_font('Helvetica', '', 10)
+            doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography'), 0, 'J', False)
+            
         doc.section = ''
 
         doc.set_y(-30)
