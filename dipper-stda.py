@@ -99,6 +99,8 @@ class Run():
                    'single_species_species_selection_change':self.single_species_species_selection_change,
                    'add_dateband':self.add_dateband,
                    'remove_dateband':self.remove_dateband,
+                   'show_sql_parser':self.show_sql_parser,
+                   'show_rarity_dialog':self.show_rarity_dialog,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -1425,6 +1427,275 @@ class Run():
             self.dataset.config.write(configfile)
                               
         self.builder.get_object('label24').set_markup(''.join(['<b>Sheets:</b> ', self.dataset.sheet, '      <b>Settings:</b> ', os.path.basename(output)]))
+
+    def show_sql_parser(self, widget):
+        builder = gtk.Builder()
+        builder.add_from_file('./gui/sql_parser.glade')
+
+        signals = {
+                   'sql_parser_exit':self.sql_parser_exit,
+                   'sql_parser_copy':self.sql_parser_copy,
+                   'sql_parser_execute':self.sql_parser_execute,
+                  }
+        builder.connect_signals(signals)
+        
+        window = builder.get_object('window1')
+
+        window.show()
+
+  
+
+    def sql_parser_exit(self, window, event=None):
+        if window is not None:
+            window.destroy()
+
+    def sql_parser_copy(self, treeview):
+        """Copy the contents of the textview to the clipboard."""
+        
+        deselect = False
+        
+        clipboard = gtk.clipboard_get(gtk.gdk.SELECTION_CLIPBOARD)
+        treeselection = treeview.get_selection()
+        (model, paths) = treeselection.get_selected_rows()
+
+        if len(paths) < 1:
+            deselect = True
+            treeselection.select_all()
+            (model, paths) = treeselection.get_selected_rows()
+                    
+        text = []
+
+        ncolumns = range(model.get_n_columns())
+        columns = []
+
+        for column in treeview.get_columns():
+            columns.append(column.get_title())
+            
+        text.append('\t'.join(columns))
+
+        for path in paths:
+            line = []
+            for val in range(0, model.get_n_columns()):
+                string = model.get_value(model.get_iter(path), val)
+                if string is None:
+                    string = ''
+                line.append(string)
+            text.append('\t'.join(line))
+
+        clipboard.set_text('\n'.join(text))
+
+        if deselect:           
+            treeselection.unselect_all()
+
+    def sql_parser_execute(self, treeview):
+                                             
+        self.dataset.cursor.execute('''select * from data''')
+        itemlist = self.dataset.cursor.fetchall()
+
+
+        self.dataset.cursor.execute('''PRAGMA table_info(data)''')
+
+        colnames = [ i[1] for i in self.dataset.cursor.fetchall() ]
+        self.dataset.cursor.execute('''PRAGMA table_info(data)''')
+
+        coltypes = [ i[2] for i in self.dataset.cursor.fetchall() ]
+        for index, item in enumerate(coltypes):
+            if (item == 'TEXT'):
+                coltypes[index] = str
+            elif (item == 'NUMERIC'):
+                coltypes[index] = str
+
+        store = gtk.ListStore(*coltypes)
+        for act in itemlist:
+            store.append(act)
+
+        for index, item in enumerate(colnames):
+            rendererText = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(item, rendererText, text=index)
+            column.set_sort_column_id(index)
+            treeview.append_column(column)                                     
+
+        treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        treeview.set_model(store)
+
+
+
+
+    def show_rarity_dialog(self, widget):
+        builder = gtk.Builder()
+        builder.add_from_file('./gui/rarity_dialog.glade')
+
+        signals = {
+                   'rarity_dialog_exit':self.rarity_dialog_exit,
+                   'rarity_dialog_copy':self.rarity_dialog_copy,
+                   'rarity_dialog_execute':self.rarity_dialog_execute,
+                  }
+        builder.connect_signals(signals)
+        
+        window = builder.get_object('dialog1')
+        treeview = builder.get_object('treeview1')
+
+        treeview.set_headers_visible(True)
+                        
+        cell = gtk.CellRendererText()
+        column = gtk.TreeViewColumn('Taxon', cell, text=0)
+        column.set_resizable(True)
+        column.set_sort_column_id(0)
+        treeview.append_column(column)
+                        
+        cell = gtk.CellRendererText()
+        column = gtk.TreeViewColumn('Category', cell, text=1)
+        column.set_resizable(False)
+        column.set_sort_column_id(1)
+        treeview.append_column(column)
+                        
+        cell = gtk.CellRendererText()
+        column = gtk.TreeViewColumn('Sort Order', cell, text=2)
+        column.set_resizable(False)
+        column.set_visible(False)
+        column.set_sort_column_id(2)
+        treeview.append_column(column)
+
+        window.show()        
+
+    def rarity_dialog_exit(self, window, event=None):
+        if window is not None:
+            window.destroy()
+
+
+    def rarity_dialog_copy(self, treeview):
+        """Copy the contents of the textview to the clipboard."""
+        
+        deselect = False
+        
+        clipboard = gtk.clipboard_get(gtk.gdk.SELECTION_CLIPBOARD)
+        treeselection = treeview.get_selection()
+        (model, paths) = treeselection.get_selected_rows()
+
+        if len(paths) < 1:
+            deselect = True
+            treeselection.select_all()
+            (model, paths) = treeselection.get_selected_rows()
+                    
+        text = []
+
+        ncolumns = range(model.get_n_columns())
+        columns = []
+
+        for column in treeview.get_columns():
+            columns.append(column.get_title())
+            
+        text.append('\t'.join(columns))
+
+        for path in paths:
+            line = []
+            for val in range(0, model.get_n_columns()):
+                string = model.get_value(model.get_iter(path), val)
+                if string is None:
+                    string = ''
+                line.append(string)
+            text.append('\t'.join(line))
+
+        clipboard.set_text('\n'.join(text))
+
+        if deselect:           
+            treeselection.unselect_all()
+
+    def rarity_dialog_execute(self, treeview):    
+        scrolledwindow1 = treeview.get_parent()
+        dialog_vbox1 = scrolledwindow1.get_parent()
+        grid = dialog_vbox1.get_children()[0]
+        
+        category_1_label = grid.get_children()[5].get_text()
+        category_2_label = grid.get_children()[4].get_text()
+        category_3_label = grid.get_children()[3].get_text()
+        category_4_label = grid.get_children()[2].get_text()
+        category_5_label = grid.get_children()[1].get_text()
+
+        category_1_min = grid.get_children()[15].get_value()
+        category_2_min = grid.get_children()[13].get_value()
+        category_3_min = grid.get_children()[11].get_value()
+        category_4_min = grid.get_children()[9].get_value()
+        category_5_min = grid.get_children()[7].get_value()
+
+        category_1_max = grid.get_children()[14].get_value()
+        category_2_max = grid.get_children()[12].get_value()
+        category_3_max = grid.get_children()[10].get_value()
+        category_4_max = grid.get_children()[8].get_value()
+        category_5_max = grid.get_children()[6].get_value()   
+        
+        max_age = 1980
+                            
+        self.dataset.cursor.execute('SELECT COUNT(DISTINCT(grid_2km)) \
+                               FROM data \
+                               WHERE data.year >= ' + str(max_age))
+
+        data = self.dataset.cursor.fetchall()  
+        total_coverage = float(data[0][0])
+                   
+        data = self.dataset.cursor.fetchall()  
+
+        model = gtk.TreeStore(str, str, str)
+        
+        treeview.set_model(model)
+
+        
+        #grab the most widespread taxa from the last 30 years
+        self.dataset.cursor.execute('SELECT COUNT(DISTINCT(grid_2km)) AS count \
+                               FROM data \
+                               WHERE data.year >= ' + str(max_age) + ' \
+                               GROUP BY data.taxon \
+                               ORDER BY count DESC')
+            
+        data = self.dataset.cursor.fetchall()
+         
+        total_coverage = float(data[0][0])
+            
+        #get any taxa that haven't been recorded in n years
+        self.dataset.cursor.execute('SELECT data.taxon, MAX(data.year), species_data.sort_order \
+                               FROM data \
+                               JOIN species_data ON data.taxon = species_data.taxon \
+                               GROUP BY data.taxon, species_data.sort_order')
+                        
+        data = self.dataset.cursor.fetchall() 
+        
+        for taxon in data:
+            if taxon[1] < max_age:## move this to the SQL
+                model.append(None, [taxon[0], '[old]', taxon[2]])
+                   
+        #get the taxa that have been recorded in the last 30 years
+        self.dataset.cursor.execute('SELECT data.taxon, COUNT(DISTINCT(grid_2km)), species_data.sort_order \
+                               FROM data \
+                               JOIN species_data ON data.taxon = species_data.taxon \
+                               WHERE data.year >= ' + str(datetime.now().year-30) + ' \
+                               GROUP BY data.taxon, species_data.sort_order')
+                        
+        data = self.dataset.cursor.fetchall() 
+        
+                         
+        for taxon in data:
+            percent = (float(taxon[1])/total_coverage)*100
+
+            if percent > category_1_min and percent <= category_1_max:
+                status = category_1_label
+            elif percent > category_2_min and percent <= category_2_max:
+                status = category_2_label
+            elif percent > category_3_min and percent <= category_3_max:
+                status = category_3_label
+            elif percent > category_4_min and percent <= category_4_max:
+                status = category_4_label
+            elif percent > category_5_min and percent <= category_5_max:
+                status = category_5_label
+            else:
+                status = ''
+                
+            self.dataset.cursor.execute('UPDATE species_data SET local_status=? WHERE taxon=?', (status, taxon[0]))        
+            self.dataset.connection.commit()
+
+            model.append(None, [taxon[0], status, taxon[2]])                     
+
+        treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+
 
 if __name__ == '__main__':
 
