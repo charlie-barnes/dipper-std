@@ -226,11 +226,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Open...</property>
-<<<<<<< HEAD
-                <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
-=======
->>>>>>> origin/master
                 <property name="label" translatable="yes">Open...</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-open</property>
@@ -277,15 +273,10 @@
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
-<<<<<<< HEAD
                 <property name="tooltip_text" translatable="yes">Save Settings</property>
                 <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Save</property>
-=======
-                <property name="tooltip_text" translatable="yes">Save settings</property>
-                <property name="label" translatable="yes">Save Settings</property>
->>>>>>> origin/master
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-save</property>
                 <signal name="clicked" handler="save_configuration" swapped="no"/>
@@ -302,13 +293,9 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Load Settings...</property>
-<<<<<<< HEAD
                 <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Load...</property>
-=======
-                <property name="label" translatable="yes">Load Settings...</property>
->>>>>>> origin/master
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-open</property>
                 <signal name="clicked" handler="load_config" swapped="no"/>
@@ -640,7 +627,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label25">
+                              <object class="GtkLabel" id="label251">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
