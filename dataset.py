@@ -27,10 +27,9 @@ from subprocess import call
 
 class Dataset(gobject.GObject):
 
-    def __init__(self, filename):
+    def __init__(self):
         gobject.GObject.__init__(self)
 
-        self.filename = filename
         self.mime = None
         self.builder = None
 
@@ -114,7 +113,9 @@ class Dataset(gobject.GObject):
 
 
             #initiate config with defaults
-            self.config = ConfigParser.ConfigParser({'title': '',
+            self.config = ConfigParser.ConfigParser({'type': '',
+                                                     'source': '',
+                                                     'title': '',
                                                      'author': '',
                                                      'cover_image': '',
                                                      'inside_cover': '',
@@ -160,26 +161,29 @@ class Dataset(gobject.GObject):
                                                      'mapping_layers': '',
                                                     })
 
-            self.config.add_section('Atlas')
-            self.config.add_section('List')
-            self.config.add_section('Species')
-
+    def parse(self):
         #guess the mimetype of the file
-        self.mime = mimetypes.guess_type(self.filename)[0]
+        self.mime = mimetypes.guess_type(self.config.get('DEFAULT', 'source'))[0]
 
         if self.mime == 'application/vnd.ms-excel':
-            self.data_source = read.Read(self.filename, self)
+            self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self)
         else:
             temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
 
             try:
-                returncode = call(["ssconvert", self.filename, ''.join([temp_file, '.xls'])])
+                returncode = call(["ssconvert", self.config.get('DEFAULT', 'source'), ''.join([temp_file, '.xls'])])
 
                 if returncode == 0:
                     self.data_source = read.Read(''.join([temp_file, '.xls']), self)
             except OSError:
                 pass
-
+    
+    def set_type(self, type):
+        self.config.set('DEFAULT', 'type', type)
+        self.config.add_section(self.config.get('DEFAULT', 'type'))
+    
+    def set_source(self, filename):
+        self.config.set('DEFAULT', 'source', filename)
 
     def close(self):
         self.connection = None

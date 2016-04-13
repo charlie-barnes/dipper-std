@@ -41,13 +41,13 @@ class Checklist(gobject.GObject):
         taxon_list = []
 
         if self.dataset.use_vcs:
-            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('List', 'vice-counties'), ') AND'])
+            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Checklist', 'vice-counties'), ') AND'])
             vcs_sql_sel = 'data.vc'
         else:
             vcs_sql = ''
             vcs_sql_sel = '"00"'
             
-        families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('List', 'families').split(',')), '")'])
+        families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Checklist', 'families').split(',')), '")'])
 
         self.dataset.cursor.execute('SELECT DISTINCT data.taxon \
                                    FROM data \
@@ -66,7 +66,7 @@ class Checklist(gobject.GObject):
         number_of_families = len(data)                                     
 
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, \
-                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('List', 'distribution_unit') + ')) AS squares, \
+                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Checklist', 'distribution_unit') + ')) AS squares, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    ' + vcs_sql_sel + ' AS VC \
@@ -110,23 +110,23 @@ class Checklist(gobject.GObject):
                 taxa_statistics[row[0]]['vc'][str(row[7])]['year'] = str(row[6])
 
         #the pdf
-        doc = pdf.PDF(orientation=self.dataset.config.get('List', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('List', 'paper_size'))
-        doc.type = 'list'
+        doc = pdf.PDF(orientation=self.dataset.config.get('Checklist', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Checklist', 'paper_size'))
+        doc.type = 'Checklist'
         doc.do_header = False
         doc.dataset = self.dataset
 
         doc.col = 0
         doc.y0 = 0
-        doc.set_title(self.dataset.config.get('List', 'title'))
-        doc.set_author(self.dataset.config.get('List', 'author'))
+        doc.set_title(self.dataset.config.get('Checklist', 'title'))
+        doc.set_author(self.dataset.config.get('Checklist', 'author'))
         doc.set_creator(' '.join(['dipper-stda', version.__version__])) 
         doc.section = ''
 
         #title page
         doc.p_add_page()
 
-        if self.dataset.config.get('List', 'cover_image') is not None and os.path.isfile(self.dataset.config.get('List', 'cover_image')):
-            doc.image(self.dataset.config.get('List', 'cover_image'), 0, 0, doc.w, doc.h)
+        if self.dataset.config.get('Checklist', 'cover_image') is not None and os.path.isfile(self.dataset.config.get('Checklist', 'cover_image')):
+            doc.image(self.dataset.config.get('Checklist', 'cover_image'), 0, 0, doc.w, doc.h)
 
         doc.set_text_color(0)
         doc.set_fill_color(255, 255, 255)
@@ -142,10 +142,10 @@ class Checklist(gobject.GObject):
         doc.p_add_page()
         doc.do_header = True
         doc.set_font('Helvetica', '', 12)
-        doc.multi_cell(0, 6, self.dataset.config.get('List', 'inside_cover'), 0, 'J', False)
+        doc.multi_cell(0, 6, self.dataset.config.get('Checklist', 'inside_cover'), 0, 'J', False)
 
         #introduction
-        if len(self.dataset.config.get('List', 'introduction')) > 0:
+        if len(self.dataset.config.get('Checklist', 'introduction')) > 0:
             doc.section = ('Introduction')       
             doc.p_add_page() 
             doc.do_header = True
@@ -154,7 +154,7 @@ class Checklist(gobject.GObject):
             doc.cell(0, 20, 'Introduction', 0, 0, 'L', 0)
             doc.ln()
             doc.set_font('Helvetica', '', 12)
-            doc.multi_cell(0, 6, self.dataset.config.get('List', 'introduction'), 0, 0, 'L')
+            doc.multi_cell(0, 6, self.dataset.config.get('Checklist', 'introduction'), 0, 0, 'L')
             doc.ln()
         else:
             doc.section = (' '.join(['Family', data[0][1].upper()]))     
@@ -172,13 +172,13 @@ class Checklist(gobject.GObject):
         doc.set_font('Helvetica', '', 10)
         doc.set_line_width(0.0)
 
-        doc.set_x(doc.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('List', 'vice-counties').split(',')))))
+        doc.set_x(doc.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('Checklist', 'vice-counties').split(',')))))
 
         doc.cell(col_width, 5, '', '0', 0, 'C', 0)
         
         if self.dataset.use_vcs:
-            for vc in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
-                doc.vcs = self.dataset.config.get('List', 'vice-counties').split(',')
+            for vc in sorted(self.dataset.config.get('Checklist', 'vice-counties').split(',')):
+                doc.vcs = self.dataset.config.get('Checklist', 'vice-counties').split(',')
                 doc.cell((col_width*3), 5, ''.join(['VC',vc]), '0', 0, 'C', 0)
                 doc.cell(col_width/4, 5, '', '0', 0, 'C', 0)
         else:
@@ -189,13 +189,13 @@ class Checklist(gobject.GObject):
 
         doc.ln()
 
-        doc.set_x(doc.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('List', 'vice-counties').split(',')))))
+        doc.set_x(doc.w-(7+col_width+(((col_width*3)+(col_width/4))*len(self.dataset.config.get('Checklist', 'vice-counties').split(',')))))
         doc.set_font('Helvetica', '', 8)
         doc.cell(col_width, 5, '', '0', 0, 'C', 0)
 
         for vc in sorted(doc.vcs):
             #colum headings
-            doc.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
+            doc.cell(col_width, 5, ' '.join([self.dataset.config.get('Checklist', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
             doc.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
             doc.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
             doc.cell(col_width/4, 5, '', '0', 0, 'C', 0)
@@ -204,18 +204,18 @@ class Checklist(gobject.GObject):
         doc.set_font('Helvetica', '', 8)
         
         if self.dataset.use_vcs:
-            for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
+            for vckey in sorted(self.dataset.config.get('Checklist', 'vice-counties').split(',')):
                 #print vckey
     
-                col = self.dataset.config.get('List', 'vice-counties').split(',').index(vckey)+1
+                col = self.dataset.config.get('Checklist', 'vice-counties').split(',').index(vckey)+1
     
                 doc.cell(col_width/col, 5, '', '0', 0, 'C', 0)
-                doc.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
+                doc.cell(col_width, 5, ' '.join([self.dataset.config.get('Checklist', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
                 doc.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
                 doc.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)
         else:
             doc.cell(col_width/1, 5, '', '0', 0, 'C', 0)
-            doc.cell(col_width, 5, ' '.join([self.dataset.config.get('List', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
+            doc.cell(col_width, 5, ' '.join([self.dataset.config.get('Checklist', 'distribution_unit'), 'sqs']), '0', 0, 'C', 0)
             doc.cell(col_width, 5, 'Records', '0', 0, 'C', 0)
             doc.cell(col_width, 5, 'Last in', '0', 0, 'C', 0)                        
 
@@ -262,7 +262,7 @@ class Checklist(gobject.GObject):
             doc.set_font('Helvetica', '', 10)
 
             if self.dataset.use_vcs:
-                for vckey in sorted(self.dataset.config.get('List', 'vice-counties').split(',')):
+                for vckey in sorted(self.dataset.config.get('Checklist', 'vice-counties').split(',')):
                     #print vckey
     
                     doc.set_fill_color(230, 230, 230)

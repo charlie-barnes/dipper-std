@@ -51,16 +51,16 @@ class SingleSpecies(gobject.GObject):
         self.scalefactor = 0.0035
 
         if self.dataset.use_vcs:
-            vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Species', 'vice-counties'), ')'])
+            vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Single Species', 'vice-counties'), ')'])
         else:
             vcs_sql = ''
 
         layers = []
-        for vc in self.dataset.config.get('Species', 'vice-counties').split(','):
+        for vc in self.dataset.config.get('Single Species', 'vice-counties').split(','):
             layers.append(''.join(['./gis/vice-counties/',cfg.vc_list[int(vc)-1][1],'.shp']))
 
         #add the total coverage & calc first and date band 2 grid arrays
-        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Species', 'distribution_unit') + ') AS grids \
+        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Single Species', 'distribution_unit') + ') AS grids \
                                      FROM data \
                                     ' + vcs_sql)
 
@@ -78,7 +78,7 @@ class SingleSpecies(gobject.GObject):
         self.bounds_top_y = 0
 
         # Read in the coverage grid ref shapefiles and extend the bounding box
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Species', 'coverage_style') + '/' + self.dataset.config.get('Species', 'distribution_unit'))
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Single Species', 'coverage_style') + '/' + self.dataset.config.get('Single Species', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, extend the bounds to match
@@ -99,7 +99,7 @@ class SingleSpecies(gobject.GObject):
         #loop through the date bands treeview
         for row in self.dataset.builder.get_object('treeview6').get_model():
             # Read in the date band 1 grid ref shapefiles and extend the bounding box
-            r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Species', 'distribution_unit'))
+            r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Single Species', 'distribution_unit'))
             #loop through each object in the shapefile
             for obj in r.shapeRecords():
                 #if the grid is in our coverage, extend the bounds to match
@@ -144,7 +144,7 @@ class SingleSpecies(gobject.GObject):
         for row in self.dataset.builder.get_object('treeview6').get_model():
             current_grids = []
                     
-            r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Species', 'distribution_unit'))
+            r = shapefile.Reader('./markers/' + row[0] + '/' + self.dataset.config.get('Single Species', 'distribution_unit'))
             #loop through each object in the shapefile
             for obj in r.shapeRecords():
                 if obj.record[0] in grids:
@@ -167,16 +167,16 @@ class SingleSpecies(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).blue_float*255)) + ')')
+                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).blue_float*255)) + ')')
 
 
 
         #add the coverage
-        r = shapefile.Reader('./markers/' + self.dataset.config.get('Species', 'coverage_style') + '/' + self.dataset.config.get('Species', 'distribution_unit'))
+        r = shapefile.Reader('./markers/' + self.dataset.config.get('Single Species', 'coverage_style') + '/' + self.dataset.config.get('Single Species', 'distribution_unit'))
         #loop through each object in the shapefile
         for obj in r.shapeRecords():
             #if the grid is in our coverage, add it to the map
@@ -188,13 +188,13 @@ class SingleSpecies(gobject.GObject):
                     px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                     py = (self.bounds_top_y - y) * self.scalefactor
                     pixels.append((px,py))
-                if self.dataset.config.getboolean('Species', 'coverage_visible'):
-                    self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'coverage_colour')).blue_float*255)) + ')')
+                if self.dataset.config.getboolean('Single Species', 'coverage_visible'):
+                    self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'coverage_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'coverage_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'coverage_colour')).blue_float*255)) + ')')
 
 
         #add the grid lines
-        if self.dataset.config.getboolean('Species', 'grid_lines_visible'):
-            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Species', 'grid_lines_style'))
+        if self.dataset.config.getboolean('Single Species', 'grid_lines_visible'):
+            r = shapefile.Reader('./markers/squares/' + self.dataset.config.get('Single Species', 'grid_lines_style'))
             #loop through each object in the shapefile
             for obj in r.shapes():
                 pixels = []
@@ -203,7 +203,7 @@ class SingleSpecies(gobject.GObject):
                     px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
                     py = (self.bounds_top_y - y) * self.scalefactor
                     pixels.append((px,py))
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'grid_lines_colour')).blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'grid_lines_colour')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'grid_lines_colour')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'grid_lines_colour')).blue_float*255)) + ')')
 
         #re-add each boundary shapefile, but don't fill (otherwise we loose the nice definitive outline of the boundary from the grids/coverage)
         for shpfile in layers:
@@ -219,11 +219,11 @@ class SingleSpecies(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).blue_float*255)) + ')')
+                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Species', 'vice-counties_outline')).blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Single Species', 'vice-counties_outline')).blue_float*255)) + ')')
 
 
         #mask off everything outside the boundary area
@@ -256,14 +256,14 @@ class SingleSpecies(gobject.GObject):
     def generate(self):
 
         if self.dataset.use_vcs == True:
-            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Species', 'vice-counties'), ') AND'])
+            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Single Species', 'vice-counties'), ') AND'])
         else:
             vcs_sql = ''
             
-        species_sql = ''.join(['species_data.taxon = "', '","'.join(self.dataset.config.get('Species', 'species').split(',')), '"'])
+        species_sql = ''.join(['species_data.taxon = "', '","'.join(self.dataset.config.get('Single Species', 'Single Species').split(',')), '"'])
 
-        self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Species', 'distribution_unit') + ')), \
-                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Species', 'distribution_unit') + ')) AS squares, \
+        self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Single Species', 'distribution_unit') + ')), \
+                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Single Species', 'distribution_unit') + ')) AS squares, \
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    species_data.description, \
@@ -316,23 +316,23 @@ class SingleSpecies(gobject.GObject):
             toc_length = toc_length + 1
 
         #the pdf
-        doc = pdf.PDF(orientation=self.dataset.config.get('Species', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Species', 'paper_size'))
-        doc.type = 'species'
+        doc = pdf.PDF(orientation=self.dataset.config.get('Single Species', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Single Species', 'paper_size'))
+        doc.type = 'Single Species'
         doc.toc_length = toc_length
 
         doc.col = 0
         doc.y0 = 0
-        doc.set_title(self.dataset.config.get('Species', 'title'))
-        doc.set_author(self.dataset.config.get('Species', 'author'))
+        doc.set_title(self.dataset.config.get('Single Species', 'title'))
+        doc.set_author(self.dataset.config.get('Single Species', 'author'))
         doc.set_creator(' '.join(['dipper-stda', version.__version__])) 
         doc.section = ''
 
         families = []
         rownum = 0
 
-        if self.dataset.config.get('Species', 'paper_size') == 'A4' and self.dataset.config.get('Species', 'orientation') == 'Portrait':
+        if self.dataset.config.get('Single Species', 'paper_size') == 'A4' and self.dataset.config.get('Single Species', 'orientation') == 'Portrait':
             max_region_count = 2
-        elif self.dataset.config.get('Species', 'paper_size') == 'A4' and self.dataset.config.get('Species', 'orientation') == 'Landscape':
+        elif self.dataset.config.get('Single Species', 'paper_size') == 'A4' and self.dataset.config.get('Single Species', 'orientation') == 'Landscape':
             max_region_count = 1
                     
         region_count = 3
@@ -392,13 +392,13 @@ class SingleSpecies(gobject.GObject):
             doc.set_x(x_padding)
 
             status_text = ''
-            if self.dataset.config.getboolean('Species', 'species_accounts_show_status'):
+            if self.dataset.config.getboolean('Single Species', 'species_accounts_show_status'):
                 status_text = ''.join([designation])
 
             doc.multi_cell(((doc.w)-doc.l_margin-doc.r_margin), 5, status_text, 1, 'L', True)
 
             #compile list of last e.g. 10 records for use below
-            self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Species', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
+            self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Single Species', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
                                         FROM data \
                                         WHERE data.taxon = "' + item[0] + '" \
                                         ORDER BY data.year_to || data.month_to || data.day_to desc')
@@ -416,12 +416,12 @@ class SingleSpecies(gobject.GObject):
             all_grids = []
             
             #if we're overlaying the markers, we draw the date bands backwards (oldest first)
-            if self.dataset.config.getboolean('Species', 'date_band_overlay'):
+            if self.dataset.config.getboolean('Single Species', 'date_band_overlay'):
                 for row in treemodel_reversed:
                     fill_colour = row[1].split('"')[1]
                     border_colour = row[2].split('"')[1]
                     
-                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Species', 'distribution_unit') + ') AS grids \
+                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Single Species', 'distribution_unit') + ') AS grids \
                                                 FROM data \
                                                 WHERE data.taxon = "' + item[0] + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
@@ -459,7 +459,7 @@ class SingleSpecies(gobject.GObject):
                     fill_colour = row[1].split('"')[1]
                     border_colour = row[2].split('"')[1]
                     
-                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Species', 'distribution_unit') + ') AS grids \
+                    self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Single Species', 'distribution_unit') + ') AS grids \
                                                 FROM data \
                                                 WHERE data.taxon = "' + item[0] + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
@@ -523,7 +523,7 @@ class SingleSpecies(gobject.GObject):
             doc.set_line_width(0.1)
             doc.rect(x_padding, 10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3)
 
-            if self.dataset.config.getboolean('Species', 'species_accounts_show_statistics'):
+            if self.dataset.config.getboolean('Single Species', 'species_accounts_show_statistics'):
 
                 #from
                 doc.set_y(11+y_padding)
