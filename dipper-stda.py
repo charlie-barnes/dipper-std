@@ -105,6 +105,11 @@ class Run():
         self.builder.connect_signals(signals)
         self.dataset = None
         
+        self.builder.get_object('treeview5').get_selection().connect('changed', self.navigation_change)
+        self.builder.get_object('treeview3').get_selection().connect('changed', self.list_family_selection_change)
+        self.builder.get_object('treeview2').get_selection().connect('changed', self.atlas_family_selection_change)
+        self.builder.get_object('treeview7').get_selection().connect('changed', self.single_species_species_selection_change)
+        
         #reset navigation
         self.pre_generate = (None, None)
         self.navigate_to = (None, None)
