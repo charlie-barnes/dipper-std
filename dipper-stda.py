@@ -521,9 +521,9 @@ class Run():
                     gtk.main_iteration_do(True)
                 
                 try:
-                    self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - Atlas & Checklist Generator',]) )
+                    self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
                 except AttributeError:
-                    self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','Atlas & Checklist Generator']))
+                    self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
                     
                 self.builder.get_object('notebook1').set_sensitive(True)
 
@@ -1434,9 +1434,9 @@ class Run():
                     self.dataset.config.write(configfile)
                                           
         try:
-            self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - Atlas & Checklist Generator',]) )
+            self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
         except AttributeError:
-            self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','Atlas & Checklist Generator']))
+            self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
 
 
     def save_configuration_as(self, widget):
@@ -1471,9 +1471,9 @@ class Run():
                 self.dataset.config.write(configfile)
                                           
         try:
-            self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - Atlas & Checklist Generator',]) )
+            self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
         except AttributeError:
-            self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','Atlas & Checklist Generator']))
+            self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
             
             
     def show_sql_parser(self, widget):
