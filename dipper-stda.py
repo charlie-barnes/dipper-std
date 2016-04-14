@@ -1382,8 +1382,18 @@ class Run():
         dialog.destroy()
 
         if response == -5:
-            self.open_dataset(widget, filename=None, type=None, config=config_file)
-          
+            try:
+                self.open_dataset(widget, filename=None, type=None, config=config_file)
+            except IOError as e:             
+                self.builder.get_object('menuitem7').set_sensitive(False)
+                self.builder.get_object('menuitem8').set_sensitive(False)
+                self.builder.get_object('toolbutton5').set_sensitive(False)
+                self.builder.get_object('toolbutton3').set_sensitive(False)
+                md = gtk.MessageDialog(None,
+                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                    gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
+                md.run()
+                md.destroy()
 
 
 
