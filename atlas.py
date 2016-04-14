@@ -262,45 +262,6 @@ class Atlas(gobject.GObject):
         self.bounds_bottom_y = 1300000
         self.bounds_top_x = 0
         self.bounds_top_y = 0
-
-        # Read in the coverage grid ref shapefiles and extend the bounding box
-        #r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'coverage_style') + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
-        #loop through each object in the shapefile
-        #for obj in r.shapeRecords():
-            #if the grid is in our coverage, extend the bounds to match
-        #    if obj.record[0] in grids:
-        #        if obj.shape.bbox[0] < self.bounds_bottom_x:
-        #            self.bounds_bottom_x = obj.shape.bbox[0]#
-
-        #        if obj.shape.bbox[1] < self.bounds_bottom_y:
-        #            self.bounds_bottom_y = obj.shape.bbox[1]
-
-        #        if obj.shape.bbox[2] > self.bounds_top_x:
-        #            self.bounds_top_x = obj.shape.bbox[2]
-
-        #        if obj.shape.bbox[3] > self.bounds_top_y:
-        #            self.bounds_top_y = obj.shape.bbox[3]
-
-
-        #loop through the date bands treeview
-        #for row in self.dataset.builder.get_object('treeview6').get_model():
-            # Read in the date band 1 grid ref shapefiles and extend the bounding box
-        #    r = shapefile.Reader('./markers/' + row[0] + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
-            #loop through each object in the shapefile
-        #    for obj in r.shapeRecords():
-                #if the grid is in our coverage, extend the bounds to match
-        #        if obj.record[0] in grids:
-        #            if obj.shape.bbox[0] < self.bounds_bottom_x:
-        #                self.bounds_bottom_x = obj.shape.bbox[0]
-
-        #            if obj.shape.bbox[1] < self.bounds_bottom_y:
-        #                self.bounds_bottom_y = obj.shape.bbox[1]
-
-        #            if obj.shape.bbox[2] > self.bounds_top_x:
-        #                self.bounds_top_x = obj.shape.bbox[2]
-
-        #            if obj.shape.bbox[3] > self.bounds_top_y:
-        #                self.bounds_top_y = obj.shape.bbox[3]            
         
         # Read in the layer shapefiles and extend the bounding box
         for shpfile in layers:
@@ -319,7 +280,6 @@ class Atlas(gobject.GObject):
                 self.bounds_top_y = r.bbox[3]
 
         # Geographic x & y distance
-        #this was indented under the for above. this didn't seem right?
         self.xdist = self.bounds_top_x - self.bounds_bottom_x
         self.ydist = self.bounds_top_y - self.bounds_bottom_y
 
