@@ -55,6 +55,7 @@ class CellRendererClickablePixbuf(gtk.CellRendererPixbuf):
                     flags):
         self.emit('clicked', path)
 
+
 class CellRendererClickableText(gtk.CellRendererText):
 
     __gsignals__ = {'clicked': (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
@@ -1132,7 +1133,11 @@ class Run():
                 
                 for iter in iters:
                     category = notebook.get_tab_label(treeview.get_parent()).get_text()
-                    mapping_layers.append([category, model.get_value(iter, 0)])
+                    
+                    fill_colour = model.get_value(iter, 1).split('"')[1]
+                    border_colour = model.get_value(iter, 2).split('"')[1]
+                    
+                    mapping_layers.append([category, model.get_value(iter, 0), fill_colour, border_colour])
             
             self.dataset.config.set('Atlas', 'mapping_layers', json.dumps(mapping_layers))
 

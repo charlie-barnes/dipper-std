@@ -21,6 +21,20 @@ import gobject
 import gtk
 import cfg
 
+class CellRendererClickableText(gtk.CellRendererText):
+
+    __gsignals__ = {'clicked': (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                                (gobject.TYPE_STRING,))
+                   }
+
+    def __init__(self):
+        gtk.CellRendererText.__init__(self)
+        self.set_property('mode', gtk.CELL_RENDERER_MODE_ACTIVATABLE)
+
+    def do_activate(self, event, widget, path, background_area, cell_area,
+                    flags):
+        self.emit('clicked', path)
+
 def setup_vice_county_treeview(treeview):
     '''Create a model for a vice-county treeview and populate.'''
     
@@ -111,30 +125,63 @@ def setup_mapping_layers_treeview(container, config=None):
         pass
 
     notebook = gtk.Notebook()
-
+        
+    if config is not None:
+        sel_config = []
+        
+        for sel_config_opt in config:
+            sel_config.append([sel_config_opt['category'],sel_config_opt['layer']])
+    
+    #loop through each available category of mapping layers, adding the list for each one
     for category in cfg.gis.keys():      
-        store = gtk.ListStore(str)
+        store = gtk.ListStore(str, str, str)
           
         treeview = gtk.TreeView()
-        treeview.set_rules_hint(True)
-        treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        treeview.set_rules_hint(False)
+        selection= treeview.get_selection()
+        selection.set_mode(gtk.SELECTION_MULTIPLE)
         treeview.set_model(store)
-        treeview.set_headers_visible(False)
+        treeview.set_headers_visible(True)
         
         selection = treeview.get_selection()
                     
+        #add each avaialble layer BUT not if present in our config file
         for layer in sorted(cfg.gis[category]):
-            iter = store.append([layer])
             
             try:
-                if [category, layer] in config:
+                if [category, layer] not in sel_config:
+                    iter = store.append([layer,'   <span background="#f2f2f2">      </span>   ', '   <span background="#797979">      </span>   '])
+ 
+            except UnboundLocalError:
+                iter = store.append([layer,'   <span background="#f2f2f2">      </span>   ', '   <span background="#797979">      </span>   '])
+        
+        #loop through the config options if set and add our selected mapping layers
+        try:
+            for opts in config:
+                if opts['category'] == category:
+                    iter = store.append([opts['layer'],''.join(['   <span background="', opts['fill'],'">      </span>   ']), ''.join(['   <span background="', opts['border'],'">      </span>   '])   ])
                     selection.select_iter(iter)
-            except TypeError:
-                pass
+        except TypeError:
+            pass
 
+        store.set_sort_column_id(0,gtk.SORT_ASCENDING)  
+        
         rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Layer", rendererText, text=0)
+        column = gtk.TreeViewColumn("Area", rendererText, text=0)
+        column.set_property("expand", True)
         column.set_sort_column_id(0)
+        treeview.append_column(column)
+        
+        renderer = CellRendererClickableText()
+        renderer.connect("clicked", color_cell_edited, [store, 1, selection])
+        column = gtk.TreeViewColumn("Fill", renderer, markup=1)   
+        column.set_fixed_width(75) 
+        treeview.append_column(column)
+       
+        renderer = CellRendererClickableText()
+        renderer.connect("clicked", color_cell_edited, [store, 2, selection])
+        column = gtk.TreeViewColumn("Border", renderer, markup=2)  
+        column.set_fixed_width(75)
         treeview.append_column(column)
 
         model, selected = selection.get_selected_rows()
@@ -151,3 +198,23 @@ def setup_mapping_layers_treeview(container, config=None):
 
     container.add(notebook)
     notebook.show_all()
+
+
+
+def color_cell_edited(widget, path, userdata):
+    #hacky but it works        
+    selection = userdata[2]
+    
+    pre_colour = userdata[0][path][userdata[1]].split('"')
+    
+    if selection.path_is_selected(path):
+        dialog = gtk.ColorSelectionDialog('Pick a Colour')
+        dialog.colorsel.set_current_color(gtk.gdk.color_parse(pre_colour[1]))
+
+        response = dialog.run()
+        dialog.destroy()
+
+        if response == gtk.RESPONSE_OK:
+            color = dialog.colorsel.get_current_color()   
+            userdata[0][path][userdata[1]] = ''.join(['   <span background="', str(color), '">      </span>   '])
+         

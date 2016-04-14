@@ -54,8 +54,13 @@ class Atlas(gobject.GObject):
         scalefactor = 0.01
 
         layers = []
+        fills = {}
+        borders = {}
         for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
             layers.append(str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp'))
+            
+            fills[str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp')] = layer[2]
+            borders[str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp')] = layer[3]
 
         bounds_bottom_x = 700000
         bounds_bottom_y = 1300000
@@ -222,11 +227,11 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                        base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(borders[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(borders[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).blue_float*255)) + ')')
 
         self.density_map_filename = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
         base_map.save(self.density_map_filename, format='PNG')
@@ -242,9 +247,16 @@ class Atlas(gobject.GObject):
             vcs_sql = ''
 
         layers = []
+        fills = {}
+        borders = {}
+        
         for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
             layers.append(str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp'))
-
+            
+            fills[str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp')] = layer[2]
+            borders[str('gis'+os.path.sep+layer[0]+os.path.sep+layer[1]+'.shp')] = layer[3]
+            
+        
         #add the total coverage & calc first and date band 2 grid arrays
         self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                      FROM data \
@@ -312,11 +324,11 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fills[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fills[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fills[shpfile]).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(borders[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fills[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fills[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fills[shpfile]).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(borders[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).blue_float*255)) + ')')
 
 
 
@@ -364,11 +376,11 @@ class Atlas(gobject.GObject):
                     pixels.append((px,py))
                     #if we reach the start of new part, draw our polygon and clear pixels for the next
                     if counter in obj.parts:
-                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_fill')).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                        self.base_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fills[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fills[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fills[shpfile]).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(borders[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).blue_float*255)) + ')')
                         pixels = []
                     counter = counter + 1
                 #draw the final polygon (or the only, if we have just the one)
-                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'vice-counties_outline')).blue_float*255)) + ')')
+                self.base_map_draw.polygon(pixels, outline='rgb(' + str(int(gtk.gdk.color_parse(borders[shpfile]).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(borders[shpfile]).blue_float*255)) + ')')
 
 
         #mask off everything outside the boundary area
