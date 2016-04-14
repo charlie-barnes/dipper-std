@@ -98,6 +98,7 @@ class Run():
                    'remove_dateband':self.remove_dateband,
                    'show_sql_parser':self.show_sql_parser,
                    'show_rarity_dialog':self.show_rarity_dialog,
+                   'generate':self.generate,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -129,16 +130,28 @@ class Run():
         rendererText = gtk.CellRendererText()
         column = gtk.TreeViewColumn("nav page", rendererText, text=0)
         treeview.append_column(column)
+                        
+        store = gtk.TreeStore(str, int, int)
+        treeview.set_model(store)
+
+        #setup stats treeview        
+        treeview = self.builder.get_object('treeview11')
+        treeview.set_rules_hint(False)
+        treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
+
+        rendererText = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Property", rendererText, text=0)
+        treeview.append_column(column)
         
-        renderer_pix = CellRendererClickablePixbuf()
-        column = gtk.TreeViewColumn("icon", renderer_pix, stock_id=3)
-        treeview.append_column(column)        
-        renderer_pix.connect('clicked', self.generate_from_treeview)
+        rendererText = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Value", rendererText, text=1)
+        treeview.append_column(column)
+                
+        store = gtk.ListStore(str, str)
+        treeview.set_model(store)
         
-        treeselection = treeview.get_selection()
-        
-        store = gtk.TreeStore(str, int, int, str)
-        self.builder.get_object('treeview5').set_model(store)
+        for stat in ['Records', 'Species', 'Families', 'Earliest', 'Latest']:
+            store.append([stat, 0])
 
         #setup the atlas date bands treeview
         store = gtk.TreeStore(str, str, str, int, int)
@@ -296,7 +309,7 @@ class Run():
         if selection.path_is_selected(path):
             userdata[0][path][userdata[1]] = not widget.get_active()
 
-    def generate_from_treeview(self, widget, path):
+    def generate(self, widget):
         if self.dataset.config.get('DEFAULT', 'type') == 'Atlas':
             self.generate_atlas(widget)
         elif self.dataset.config.get('DEFAULT', 'type') == 'Checklist':
@@ -469,28 +482,28 @@ class Run():
         treeselection = self.builder.get_object('treeview5').get_selection()
         
         if self.dataset.config.get('DEFAULT', 'type') == 'Atlas':
-            iter = store.append(None, ['Atlas', 0, 0, gtk.STOCK_SAVE])
+            iter = store.append(None, ['Atlas', 0, 0])
             treeselection.select_iter(iter)
-            store.append(iter, ['Families', 0, 1, None])
-            store.append(iter, ['Vice-counties', 0, 2, None])
-            store.append(iter, ['Page setup', 0, 3, None])
-            store.append(iter, ['Table of contents', 0, 4, None])
-            store.append(iter, ['Species density map', 0, 5, None])
-            iter = store.append(iter, ['Species accounts', 0, 6, None])
-            store.append(iter, ['Map extents', 0, 7, None])
-            store.append(iter, ['Date bands', 0, 8, None])
+            store.append(iter, ['Families', 0, 1])
+            store.append(iter, ['Vice-counties', 0, 2])
+            store.append(iter, ['Page setup', 0, 3])
+            store.append(iter, ['Table of contents', 0, 4])
+            store.append(iter, ['Species density map', 0, 5])
+            iter = store.append(iter, ['Species accounts', 0, 6])
+            store.append(iter, ['Map extents', 0, 7])
+            store.append(iter, ['Date bands', 0, 8])
         elif self.dataset.config.get('DEFAULT', 'type') == 'Checklist':
-            iter = store.append(None, ['Checklist', 1, 0, gtk.STOCK_SAVE])
+            iter = store.append(None, ['Checklist', 1, 0])
             treeselection.select_iter(iter)
-            store.append(iter, ['Families', 1, 1, None])
-            store.append(iter, ['Vice-counties', 1, 2, None])
-            store.append(iter, ['Page setup', 1, 3, None])
+            store.append(iter, ['Families', 1, 1])
+            store.append(iter, ['Vice-counties', 1, 2])
+            store.append(iter, ['Page setup', 1, 3])
         elif self.dataset.config.get('DEFAULT', 'type') == 'Single Species':
-            iter = store.append(None, ['Single species map', 2, 0, gtk.STOCK_SAVE])
+            iter = store.append(None, ['Single species map', 2, 0])
             treeselection.select_iter(iter)
-            store.append(iter, ['Single species', 2, 1, None])
-            store.append(iter, ['Vice-counties', 2, 2, None])
-            store.append(iter, ['Page setup', 2, 3, None])
+            store.append(iter, ['Single species', 2, 1])
+            store.append(iter, ['Vice-counties', 2, 2])
+            store.append(iter, ['Page setup', 2, 3])
         
         self.builder.get_object('treeview5').expand_all()
        
