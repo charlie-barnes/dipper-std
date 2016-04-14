@@ -1418,7 +1418,7 @@ class Run():
             dialog.set_do_overwrite_confirmation(True)
 
             filter = gtk.FileFilter()
-            filter.set_name("Config files")
+            filter.set_name("dipper configuration files")
             filter.add_pattern("*.dcfg")
             dialog.add_filter(filter)
 
@@ -1455,7 +1455,7 @@ class Run():
         dialog.set_do_overwrite_confirmation(True)
 
         filter = gtk.FileFilter()
-        filter.set_name("Config files")
+        filter.set_name("dipper configuration files")
         filter.add_pattern("*.dcfg")
         dialog.add_filter(filter)
 
