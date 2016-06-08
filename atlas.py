@@ -1655,39 +1655,41 @@ class Atlas(gobject.GObject):
 
         #doc.section = ''
         #doc.stopPageNums()
-        doc.section = 'Index'
-        doc.p_add_page()
 
-        initial = ''
+        if self.dataset.config.getboolean('Atlas', 'toc_show_index'):
+            doc.section = 'Index'
+            doc.p_add_page()
 
-        doc.set_y(doc.y0+20)
-        for taxon in sorted(index, key=lambda taxon: taxon.lower()):
-            try:
-                if taxon[0].upper() != initial:
-                    if taxon[0].upper() != 'A':
-                        doc.ln(3)
-                    doc.set_font('Helvetica', 'B', 12)
-                    doc.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
-                    initial = taxon[0].upper()
+            initial = ''
 
-                if index[taxon][0] == 'species':
-                    pos = taxon.find(', ')
-                    #capitalize the first letter of the genus
-                    display_taxon = list(taxon)
-                    display_taxon[pos+2] = display_taxon[pos+2].upper()
-                    display_taxon = ''.join(display_taxon)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
-                elif index[taxon][0] == 'genus':
-                    doc.set_font('Helvetica', '', 12)
-                    doc.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0)
-                elif index[taxon][0] == 'common':
-                    doc.set_font('Helvetica', '', 12)
-                    doc.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
-            except IndexError:
-                pass
+            doc.set_y(doc.y0+20)
+            for taxon in sorted(index, key=lambda taxon: taxon.lower()):
+                try:
+                    if taxon[0].upper() != initial:
+                        if taxon[0].upper() != 'A':
+                            doc.ln(3)
+                        doc.set_font('Helvetica', 'B', 12)
+                        doc.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
+                        initial = taxon[0].upper()
 
-        doc.setcol(0)
+                    if index[taxon][0] == 'species':
+                        pos = taxon.find(', ')
+                        #capitalize the first letter of the genus
+                        display_taxon = list(taxon)
+                        display_taxon[pos+2] = display_taxon[pos+2].upper()
+                        display_taxon = ''.join(display_taxon)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+                    elif index[taxon][0] == 'genus':
+                        doc.set_font('Helvetica', '', 12)
+                        doc.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0)
+                    elif index[taxon][0] == 'common':
+                        doc.set_font('Helvetica', '', 12)
+                        doc.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+                except IndexError:
+                    pass
+
+            doc.setcol(0)
 
         doc.section = 'Contributors'
         doc.p_add_page()
