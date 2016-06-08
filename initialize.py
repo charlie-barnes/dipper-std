@@ -130,7 +130,7 @@ def setup_mapping_layers_treeview(container, config=None):
         sel_config = []
         
         for sel_config_opt in config:
-            sel_config.append([sel_config_opt['category'],sel_config_opt['layer']])
+            sel_config.append([sel_config_opt[0],sel_config_opt[1]])
     
     #loop through each available category of mapping layers, adding the list for each one
     for category in cfg.gis.keys():      
@@ -158,8 +158,8 @@ def setup_mapping_layers_treeview(container, config=None):
         #loop through the config options if set and add our selected mapping layers
         try:
             for opts in config:
-                if opts['category'] == category:
-                    iter = store.append([opts['layer'],''.join(['   <span background="', opts['fill'],'">      </span>   ']), ''.join(['   <span background="', opts['border'],'">      </span>   '])   ])
+                if opts[0] == category:
+                    iter = store.append([opts[1],''.join(['   <span background="', opts[2],'">      </span>   ']), ''.join(['   <span background="', opts[3],'">      </span>   '])   ])
                     selection.select_iter(iter)
         except TypeError:
             pass
