@@ -1699,7 +1699,12 @@ class Atlas(gobject.GObject):
 
         for name in sorted(contrib_data.keys()):
             if name != 'Unknown' and name != 'Unknown Unknown':
-                contrib_blurb.append(''.join([name, ' (', contrib_data[name], ')']))
+                #only show the abbreviation if we're showing the latest records
+                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                    contribname = ''.join([name, ' (', contrib_data[name], ')'])
+                else:
+                    contribname = name
+                contrib_blurb.append(name)
 
         doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
