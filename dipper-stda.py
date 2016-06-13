@@ -150,7 +150,7 @@ class Run():
         store = gtk.ListStore(str, str)
         treeview.set_model(store)
 
-        for stat in ['Records', 'Species', 'Families', 'Earliest', 'Latest']:
+        for stat in ['Records', 'Species', 'Families', 'Earliest', 'Latest', 'Recorders']:
             store.append([stat, 0])
 
         #setup the atlas date bands treeview
