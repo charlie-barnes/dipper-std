@@ -130,7 +130,7 @@ class Run():
         rendererText = gtk.CellRendererText()
         column = gtk.TreeViewColumn("nav page", rendererText, text=0)
         treeview.append_column(column)
-                        
+
         store = gtk.TreeStore(str, int, int)
         treeview.set_model(store)
 
@@ -149,7 +149,7 @@ class Run():
                 
         store = gtk.ListStore(str, str)
         treeview.set_model(store)
-        
+
         for stat in ['Records', 'Species', 'Families', 'Earliest', 'Latest']:
             store.append([stat, 0])
 
