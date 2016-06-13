@@ -1691,24 +1691,25 @@ class Atlas(gobject.GObject):
 
             doc.setcol(0)
 
-        doc.section = 'Contributors'
-        doc.p_add_page()
-        doc.set_font('Helvetica', '', 20)
-        doc.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
-        doc.set_font('Helvetica', '', 8)
-
-        contrib_blurb = []
-
-        for name in sorted(contrib_data.keys()):
-            if name != 'Unknown' and name != 'Unknown Unknown':
-                #only show the abbreviation if we're showing the latest records
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
-                    contribname = ''.join([name, ' (', contrib_data[name], ')'])
-                else:
-                    contribname = name
-                contrib_blurb.append(name)
-
-        doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
+        if self.dataset.config.getboolean('Atlas', 'toc_show_contributors'):
+            doc.section = 'Contributors'
+            doc.p_add_page()
+            doc.set_font('Helvetica', '', 20)
+            doc.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
+            doc.set_font('Helvetica', '', 8)
+    
+            contrib_blurb = []
+    
+            for name in sorted(contrib_data.keys()):
+                if name != 'Unknown' and name != 'Unknown Unknown':
+                    #only show the abbreviation if we're showing the latest records
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                        contribname = ''.join([name, ' (', contrib_data[name], ')'])
+                    else:
+                        contribname = name
+                    contrib_blurb.append(name)
+    
+            doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
         if len(self.dataset.config.get('Atlas', 'bibliography')) > 0:
             doc.section = ('References')

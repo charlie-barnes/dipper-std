@@ -935,6 +935,7 @@ class Run():
             self.builder.get_object('checkbutton9').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_species_names'))
             self.builder.get_object('checkbutton10').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_common_names'))
             self.builder.get_object('checkbutton1110').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_index'))
+            self.builder.get_object('checkbutton1111').set_active(self.dataset.config.getboolean('Atlas', 'toc_show_contributors'))
 
             #species accounts
             self.builder.get_object('checkbutton12').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'))
@@ -1207,6 +1208,7 @@ class Run():
             self.dataset.config.set('Atlas', 'toc_show_species_names', str(self.builder.get_object('checkbutton9').get_active()))
             self.dataset.config.set('Atlas', 'toc_show_common_names', str(self.builder.get_object('checkbutton10').get_active()))
             self.dataset.config.set('Atlas', 'toc_show_index', str(self.builder.get_object('checkbutton1110').get_active()))
+            self.dataset.config.set('Atlas', 'toc_show_contributors', str(self.builder.get_object('checkbutton1111').get_active()))
             
             #species accounts
             self.dataset.config.set('Atlas', 'species_accounts_show_descriptions', str(self.builder.get_object('checkbutton12').get_active()))
