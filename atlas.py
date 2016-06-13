@@ -586,6 +586,15 @@ class Atlas(gobject.GObject):
         doc.p_add_page()
         doc.set_font('Helvetica', '', 12)
         doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover'), 0, 'J', False)
+        doc.set_y(270)
+        doc.set_font('Helvetica', '', 8)
+                
+        for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
+            if layer[0] == 'vice-counties':
+                tyblurb = 'Vice-county boundaries provided by the National Biodiversity Network.'
+            
+        doc.multi_cell(0, 6, ' '.join([tyblurb, 'Contains Ordnance Survey data (C) Crown copyright and database right', ''.join([str(datetime.now().year), '.'])]), 0, 'J', False)
+        doc.set_font('Helvetica', '', 12)
 
         doc.do_header = True
 
@@ -1719,14 +1728,14 @@ class Atlas(gobject.GObject):
             doc.set_font('Helvetica', '', 10)
             doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography'), 0, 'J', False)
             
-        doc.section = ''
+        #doc.section = ''
 
-        doc.set_y(-30)
-        doc.set_font('Helvetica','',8)
+        #doc.set_y(-30)
+        #doc.set_font('Helvetica','',8)
 
-        if doc.num_page_no() >= 4 and doc.section != 'Contents':
-            doc.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-stda.', 0, 1, 'L')
-            doc.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
+        #if doc.num_page_no() >= 4 and doc.section != 'Contents':
+        #    doc.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-stda.', 0, 1, 'L')
+        #    doc.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
 
         #doc.p_add_page()
         doc.section = ''
