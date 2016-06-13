@@ -585,7 +585,7 @@ class Atlas(gobject.GObject):
         #inside cover
         doc.p_add_page()
         doc.set_font('Helvetica', '', 12)
-        doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover'), 0, 'J', False)
+        doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover').replace('\n<nl>\n','\n\n'), 0, 'J', False)
         doc.set_y(270)
         doc.set_font('Helvetica', '', 8)
                 
@@ -605,7 +605,7 @@ class Atlas(gobject.GObject):
             doc.set_font('Helvetica', '', 20)
             doc.multi_cell(0, 20, 'Introduction', 0, 'J', False)
             doc.set_font('Helvetica', '', 12)
-            doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction'), 0, 'J', False)
+            doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction').replace('\n<nl>\n','\n\n'), 0, 'J', False)
 
         #species density map
         if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
@@ -1726,7 +1726,7 @@ class Atlas(gobject.GObject):
             doc.set_font('Helvetica', '', 20)
             doc.multi_cell(0, 20, 'References', 0, 'J', False)
             doc.set_font('Helvetica', '', 10)
-            doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography'), 0, 'J', False)
+            doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography').replace('\n<nl>\n','\n\n'), 0, 'J', False)
             
         #doc.section = ''
 
