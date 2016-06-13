@@ -600,8 +600,8 @@ class Atlas(gobject.GObject):
 
         #introduction
         if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
-            doc.p_add_page()
             doc.section = ('Introduction')
+            doc.p_add_page()
             doc.set_font('Helvetica', '', 20)
             doc.multi_cell(0, 20, 'Introduction', 0, 'J', False)
             doc.set_font('Helvetica', '', 12)
@@ -1629,7 +1629,7 @@ class Atlas(gobject.GObject):
 
             region_count = region_count + 1
 
-        doc.section = ''
+        #doc.section = ''
         #doc.do_header = False
 
         index = genus_index.copy()
