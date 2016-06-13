@@ -805,13 +805,13 @@ class Run():
                 self.builder.get_object('filechooserbutton1').set_filename(self.dataset.config.get('Atlas', 'cover_image'))
 
             #inside cover
-            self.builder.get_object('textview1').get_buffer().set_text(self.dataset.config.get('Atlas', 'inside_cover'))
+            self.builder.get_object('textview1').get_buffer().set_text(self.dataset.config.get('Atlas', 'inside_cover').replace('\n<nl>\n','\n\n'))
 
             #introduction
-            self.builder.get_object('textview3').get_buffer().set_text(self.dataset.config.get('Atlas', 'introduction'))
+            self.builder.get_object('textview3').get_buffer().set_text(self.dataset.config.get('Atlas', 'introduction').replace('\n<nl>\n','\n\n'))
 
             #bibliography
-            self.builder.get_object('textview2').get_buffer().set_text(self.dataset.config.get('Atlas', 'bibliography'))
+            self.builder.get_object('textview2').get_buffer().set_text(self.dataset.config.get('Atlas', 'bibliography').replace('\n<nl>\n','\n\n'))
 
             #distribution unit
             self.builder.get_object('combobox3').set_active(cfg.grid_resolution.index(self.dataset.config.get('Atlas', 'distribution_unit')))
@@ -1085,17 +1085,17 @@ class Run():
             buffer = self.builder.get_object('textview1').get_buffer()
             startiter, enditer = buffer.get_bounds()
             inside_cover = buffer.get_text(startiter, enditer, True)
-            self.dataset.config.set('Atlas', 'inside_cover', inside_cover)
+            self.dataset.config.set('Atlas', 'inside_cover', inside_cover.replace('\n\n','\n<nl>\n'))
 
             buffer = self.builder.get_object('textview3').get_buffer()
             startiter, enditer = buffer.get_bounds()
             introduction = buffer.get_text(startiter, enditer, True)
-            self.dataset.config.set('Atlas', 'introduction', introduction)
+            self.dataset.config.set('Atlas', 'introduction', introduction.replace('\n\n','\n<nl>\n'))
 
             buffer = self.builder.get_object('textview2').get_buffer()
             startiter, enditer = buffer.get_bounds()
             bibliography = buffer.get_text(startiter, enditer, True)
-            self.dataset.config.set('Atlas', 'bibliography', bibliography)
+            self.dataset.config.set('Atlas', 'bibliography', bibliography.replace('\n\n','\n<nl>\n'))
 
             self.dataset.config.set('Atlas', 'distribution_unit', self.builder.get_object('combobox3').get_active_text())
 
