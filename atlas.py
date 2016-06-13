@@ -1638,29 +1638,29 @@ class Atlas(gobject.GObject):
 
         #index = sorted(index.iteritems())
 
-        doc.p_add_page()
+        #doc.p_add_page()
 
-        if len(families) > 1:
-            family_text = ' '.join([str(len(families)), 'families and'])
-        else:
-            family_text = ''
+        #if len(families) > 1:
+        #    family_text = ' '.join([str(len(families)), 'families and'])
+        #else:
+        #    family_text = ''
 
-        if len(data) > 1:
-            taxa_text = 'taxa'
-        else:
-            taxa_text = 'taxon'
+        #if len(data) > 1:
+        #    taxa_text = 'taxa'
+        #else:
+        #    taxa_text = 'taxon'
+        #
+        #if record_count > 1:
+        #    record_text = 'records.'
+        #else:
+        #    record_text = 'record'
 
-        if record_count > 1:
-            record_text = 'records.'
-        else:
-            record_text = 'record'
-
-        doc.set_y(19)
-        doc.set_font('Helvetica', 'I', 10)
-        doc.multi_cell(0, 5, ' '.join([family_text,
-                                       ' '.join([str(len(data)), taxa_text]),
-                                       ' '.join(['mapped from', str(record_count), record_text]),]),
-                       0, 'J', False)
+        #doc.set_y(19)
+        #doc.set_font('Helvetica', 'I', 10)
+        #doc.multi_cell(0, 5, ' '.join([family_text,
+        #                              ' '.join([str(len(data)), taxa_text]),
+        #                               ' '.join(['mapped from', str(record_count), record_text]),]),
+        #               0, 'J', False)
 
         #doc.section = ''
         #doc.stopPageNums()
