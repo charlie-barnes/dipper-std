@@ -1595,16 +1595,16 @@ class Atlas(gobject.GObject):
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
+                doc.multi_cell(20, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
 
                 #squares
                 doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding)
+                doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-17)+x_padding)
                 doc.set_font('Helvetica', '', 12)
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(18, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
+                doc.multi_cell(20, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
 
             taxon_parts = item[0].split(' ')
 
