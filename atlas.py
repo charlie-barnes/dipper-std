@@ -473,6 +473,7 @@ class Atlas(gobject.GObject):
             toc_length = toc_length + 1
 
         #contributors
+        
         contrib_data = {}
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
@@ -1077,13 +1078,15 @@ class Atlas(gobject.GObject):
 
                 doc.set_x(10)
                 doc.set_y(240)
-                doc.cell(130)
 
                 if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                    doc.cell(130)
                     doc.cell(10, 5, 'Species description and most recent records', 0, 0, 'L', True)
-                elif self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and not self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                elif self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and not self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):                
+                    doc.cell(130)
                     doc.cell(10, 5, 'Most recent records', 0, 0, 'L', True)
                 elif not self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                    doc.cell(150)                
                     doc.cell(10, 5, 'Species description', 0, 0, 'L', True)
 
             #phenology chart
