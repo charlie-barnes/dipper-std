@@ -149,6 +149,8 @@ class Dataset(gobject.GObject):
                                                      'toc_show_families': 'True',
                                                      'toc_show_species_names': 'False',
                                                      'toc_show_common_names': 'False',
+                                                     'toc_show_index': 'True',
+                                                     'toc_show_contributors': 'True',
                                                      'species_accounts_show_descriptions': 'True',
                                                      'species_accounts_show_latest': 'True',
                                                      'species_accounts_latest_format': '%l (VC%v) %g %d (%r %i)',
