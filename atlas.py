@@ -478,6 +478,7 @@ class Atlas(gobject.GObject):
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
                                      FROM data \
+                                     JOIN species_data ON data.taxon = species_data.taxon \
                                      WHERE ' + vcs_sql + ' ' + families_sql)
 
         recorder_data = self.dataset.cursor.fetchall()
@@ -516,6 +517,7 @@ class Atlas(gobject.GObject):
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
                                      FROM data \
+                                     JOIN species_data ON data.taxon = species_data.taxon \
                                      WHERE ' + vcs_sql + ' ' + families_sql)
 
         determiner_data = self.dataset.cursor.fetchall()
