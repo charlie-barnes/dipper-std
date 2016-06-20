@@ -1054,7 +1054,7 @@ class Atlas(gobject.GObject):
             doc.set_x(1+x_padding +15)
             doc.set_y(11+y_padding -50)
             doc.cell(1)
-            doc.cell(10, 5, 'Species name', 0, 0, 'L', True)
+            doc.cell(10, 5, 'Scientific name', 0, 0, 'L', True)
 
             #common name
             doc.line(doc.w-doc.l_margin-30,
