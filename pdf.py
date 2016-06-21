@@ -105,7 +105,7 @@ class PDF(FPDF):
             self.cell(PageCellSize, self.font_size+2, str(int(t['p'])), 0, 1, 'R')
 
         if self.toc_page_break_count%2 != 0:
-            self.section = 'Contents'
+            self.section = ''
             self.toc_page_break_count = self.toc_page_break_count + 1
             self.p_add_page()
 
@@ -139,11 +139,11 @@ class PDF(FPDF):
             self.set_font('Helvetica', '', 8)
             self.set_text_color(0, 0, 0)
             self.set_line_width(0.1)
-
-            if self.page_no()%2 == 0:
+            
+            if (self.section <> 'Contents' and self.page_no()%2 == 0) or (self.section == 'Contents' and self.toc_page_break_count%2 == 0):
                 self.cell(0, 5, self.section, 'B', 0, 'L', 0) # even page header
                 self.cell(0, 5, self.title.replace('\n', ' - '), 'B', 1, 'R', 0) # even page header
-            else:
+            elif (self.section <> 'Contents' and self.page_no()%2 == 1) or (self.section == 'Contents' and self.toc_page_break_count%2 == 1):
                 self.cell(0, 5, self.section, 'B', 1, 'R', 0) #odd page header
 
             if self.type == 'list' and self.doing_the_list == True:
