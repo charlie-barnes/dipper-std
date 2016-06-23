@@ -347,6 +347,18 @@
                 <property name="border_width">6</property>
                 <property name="spacing">10</property>
                 <child>
+                  <object class="GtkComboBox" id="combobox17">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <signal name="changed" handler="switch_sheet" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkScrolledWindow" id="scrolledwindow9">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -369,7 +381,7 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
@@ -392,6 +404,9 @@
                             <property name="height_request">50</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <child internal-child="selection">
+                              <object class="GtkTreeSelection" id="treeview-selection2"/>
+                            </child>
                           </object>
                         </child>
                       </object>
@@ -408,7 +423,7 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
               </object>
@@ -711,7 +726,7 @@
                                     <property name="can_focus">True</property>
                                     <property name="headers_visible">False</property>
                                     <child internal-child="selection">
-                                      <object class="GtkTreeSelection" id="treeview-selection2"/>
+                                      <object class="GtkTreeSelection" id="treeview-selection10"/>
                                     </child>
                                   </object>
                                 </child>
@@ -1018,7 +1033,7 @@
                                 <property name="x_options">GTK_FILL</property>
                                 <property name="y_options">GTK_FILL</property>
                               </packing>
-                            </child>                            
+                            </child>
                           </object>
                         </child>
                         <child type="label">
@@ -1148,7 +1163,7 @@
                                 <property name="x_options">GTK_FILL</property>
                                 <property name="y_options">GTK_FILL</property>
                               </packing>
-                            </child>                            
+                            </child>
                           </object>
                         </child>
                         <child type="label">
