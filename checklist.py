@@ -40,6 +40,11 @@ class Checklist(gobject.GObject):
         taxa_statistics = {}
         taxon_list = []
 
+        if len(self.dataset.config.get('Checklist', 'vice-counties')) > 0:
+            self.dataset.use_vcs = True
+        else:
+            self.dataset.use_vcs = False
+        
         if self.dataset.use_vcs:
             vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Checklist', 'vice-counties'), ') AND'])
             vcs_sql_sel = 'data.vc'
