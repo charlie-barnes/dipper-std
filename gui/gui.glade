@@ -220,9 +220,9 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">New...</property>
+                <property name="tooltip_text" translatable="yes">Create a new document</property>
                 <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">New...</property>
+                <property name="label" translatable="yes">New</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-new</property>
                 <signal name="clicked" handler="new_file" swapped="no"/>
@@ -237,7 +237,7 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Open...</property>
+                <property name="tooltip_text" translatable="yes">Open a settings file</property>
                 <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Open</property>
@@ -256,7 +256,7 @@
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Save Settings</property>
+                <property name="tooltip_text" translatable="yes">Save settings</property>
                 <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Save</property>
@@ -286,11 +286,12 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Create the document</property>
                 <property name="use_action_appearance">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Generate</property>
                 <property name="use_underline">True</property>
-                <property name="stock_id">gtk-execute</property>
+                <property name="stock_id">gtk-file</property>
                 <signal name="clicked" handler="generate" swapped="no"/>
               </object>
               <packing>
