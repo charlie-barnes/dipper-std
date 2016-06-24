@@ -99,6 +99,7 @@ class Run():
                    'show_sql_parser':self.show_sql_parser,
                    'show_rarity_dialog':self.show_rarity_dialog,
                    'generate':self.generate,
+                   'switch_sheet':self.switch_sheet,
                   }
         self.builder.connect_signals(signals)
         self.dataset = None
@@ -1315,6 +1316,9 @@ class Run():
             self.dataset.config.set('Checklist', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
         elif self.dataset.config.get('DEFAULT', 'type') == 'Single Species':
             self.dataset.config.set('Single Species', 'species_update_title', str(self.builder.get_object('checkbutton4').get_active()))
+
+    def switch_sheet(self, widget):
+        pass
 
     def new_file_set(self, widget):
         '''Set the widget sensitivity to true'''
