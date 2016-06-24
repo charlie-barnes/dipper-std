@@ -41,7 +41,8 @@ class PDF(FPDF):
         self.vcs = []
         self.toc_page_num = 2
         self.dataset = None
-        self.orientation = orientation
+        self.orientation = orientation        
+        self.orientation_changes = [0]
 
     def p_add_page(self):
         #if(self.numbering):
@@ -71,10 +72,11 @@ class PDF(FPDF):
 
         self.set_font('Helvetica', '', 20)
         self.multi_cell(0, 20, 'Contents', 0, 'J', False)
-        #self.set_font(tocfont, 'B', labelSize)
-        #self.cell(0, 5, label, 0, 1, 'C')
-        #self.ln(10)
 
+        used_pages = []
+
+        link_abscissa = {}
+    
         for t in self.toc:
 
             #Offset
@@ -91,7 +93,14 @@ class PDF(FPDF):
             txxt = t['t']
             self.set_font(tocfont, weight, entrySize)
             strsize = self.get_string_width(txxt)
-            self.cell(strsize+2, self.font_size+2, txxt)
+                           
+            self.cell(strsize+2, self.font_size+2, txxt, 0, 0, '', False)
+
+            #store the TOC links & position for later use
+            if self.page_no() not in link_abscissa.keys():
+                link_abscissa[self.page_no()] = []
+                
+            link_abscissa[self.page_no()].append([int(t['p']), self.y])
 
             #Filling dots
             self.set_font(tocfont, '', entrySize)
@@ -130,9 +139,23 @@ class PDF(FPDF):
 
         #Put toc pages at insert point
         i = 0
+        
         while i < ntoc:
             self.pages[location + i] = last[i]
+                        
+            #loop through all the TOC links for this page and add them
+            try:
+                for linkdata in link_abscissa[tocstart+i]:
+                    self.page = location + i
+                    link = self.add_link()
+                    self.set_link(link, y=0, page=linkdata[0])
+                    self.link(x=self.l_margin, y=linkdata[1], w=self.w-self.r_margin, h=self.font_size+2, link=link)
+            except KeyError:
+                pass
+            
             i = i + 1
+
+        self.page = n
 
     def header(self):
         if self.do_header:
@@ -192,7 +215,7 @@ class PDF(FPDF):
         #only show page numbers in the main body
         #if self.num_page_no() >= 4 and self.section != 'Contents' and self.section != 'Index' and self.section != 'Contributors' and self.section != 'References' and self.section != 'Introduction' and self.section != '':
         
-        if self.num_page_no() >= 5 and self.section != 'Contents' and self.section != '' and self.num_page_no() < 24 :
+        if self.num_page_no() >= 5 and self.section != 'Contents' and self.section != '' and self.section != 'Index' and self.section != 'Contributors' and self.section != 'References' and self.section != 'Introduction':
             self.cell(0, 10, str(self.num_page_no()+self.toc_length), '', 0, 'C')
 
 

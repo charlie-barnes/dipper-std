@@ -45,9 +45,8 @@ class Atlas(gobject.GObject):
         self.base_map = None
         self.density_map_filename = None
         self.date_band_coverage = []
-        self.increments = 14               
-        
-        
+        self.increments = 14
+            
     def generate_density_map(self):
 
         #generate the base map
@@ -411,6 +410,11 @@ class Atlas(gobject.GObject):
         self.base_map.paste(mask, (0,0), mask)
 
     def generate(self):
+            
+        if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
+            self.dataset.use_vcs = True
+        else:
+            self.dataset.use_vcs = False
 
         if self.dataset.use_vcs == True:
             vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ') AND'])
@@ -459,6 +463,7 @@ class Atlas(gobject.GObject):
 
             taxa_statistics[stats[0]]['dist_count'] = stats[7]
 
+        #calculate the toc length
         families = []
         species = []
         for item in data:
@@ -467,13 +472,20 @@ class Atlas(gobject.GObject):
             if taxa_statistics[item[0]]['family'] not in families:
                 families.append(taxa_statistics[item[0]]['family'])
 
-        toc_length = int(math.ceil(float(len(families))/43.0))
+        toc_listing = 0
+        
+        if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') or self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+            toc_listing = toc_listing + len(species)
+
+        if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
+            toc_listing = toc_listing + len(families)
+
+        toc_length = int(math.ceil(float(toc_listing)/43.0))
 
         if toc_length%2 != 0:
             toc_length = toc_length + 1
 
-        #contributors
-        
+        #contributors        
         contrib_data = {}
 
         self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
@@ -524,36 +536,36 @@ class Atlas(gobject.GObject):
     
         for determiner in determiner_data:
             try:
-              names = determiner[0].split(',')
-              for name in names:
-                  if name.strip() not in contrib_data.keys():
-                      parts = name.strip().split()
+                names = determiner[0].split(',')
+                for name in names:
+                    if name.strip() not in contrib_data.keys():
+                        parts = name.strip().split()
   
-                      initials = []
+                        initials = []
+
+                        if len(name) > 0:
+                            if parts[0].strip() == 'Mr':
+                                initials.append('Mr')
+                            elif parts[0].strip() == 'Mrs':
+                                initials.append('Mrs')
+                            elif parts[0].strip() == 'Dr':
+                                initials.append('Dr')
   
-                      if len(name) > 0:
-                          if parts[0].strip() == 'Mr':
-                              initials.append('Mr')
-                          elif parts[0].strip() == 'Mrs':
-                              initials.append('Mrs')
-                          elif parts[0].strip() == 'Dr':
-                              initials.append('Dr')
+                            for qwert in parts[len(initials):]:
+                                initials.append(qwert[0:1])
   
-                          for qwert in parts[len(initials):]:
-                              initials.append(qwert[0:1])
+                            working_part = len(parts)-1
+                            check_val = 1
   
-                          working_part = len(parts)-1
-                          check_val = 1
+                            while ''.join(initials) in contrib_data.values():
+                                if check_val <= len(parts[working_part]):
+                                    initials[working_part] = parts[working_part][0:check_val]
+                                    check_val = check_val + 1
+                                elif check_val > len(parts[working_part]):
+                                    working_part = working_part - 1
+                                    check_val = 1
   
-                          while ''.join(initials) in contrib_data.values():
-                              if check_val <= len(parts[working_part]):
-                                  initials[working_part] = parts[working_part][0:check_val]
-                                  check_val = check_val + 1
-                              elif check_val > len(parts[working_part]):
-                                  working_part = working_part - 1
-                                  check_val = 1
-  
-                          contrib_data[name.strip()] = ''.join(initials)
+                            contrib_data[name.strip()] = ''.join(initials)
             except AttributeError:
                 pass
 
@@ -1637,6 +1649,12 @@ class Atlas(gobject.GObject):
         #doc.section = ''
         #doc.do_header = False
 
+        doc.section = ' '
+        doc.p_add_page()
+
+        #toc
+        doc.insertTOC(3)
+        
         index = genus_index.copy()
         index.update(species_index)
         index.update(common_name_index)
@@ -1686,6 +1704,9 @@ class Atlas(gobject.GObject):
                         doc.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
                         initial = taxon[0].upper()
 
+                    link = doc.add_link()
+                    doc.set_link(link, y=0, page=index[taxon][1])
+                    
                     if index[taxon][0] == 'species':
                         pos = taxon.find(', ')
                         #capitalize the first letter of the genus
@@ -1693,13 +1714,13 @@ class Atlas(gobject.GObject):
                         display_taxon[pos+2] = display_taxon[pos+2].upper()
                         display_taxon = ''.join(display_taxon)
                         doc.set_font('Helvetica', '', 12)
-                        doc.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+                        doc.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0, link)
                     elif index[taxon][0] == 'genus':
                         doc.set_font('Helvetica', '', 12)
-                        doc.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0)
+                        doc.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0, link)
                     elif index[taxon][0] == 'common':
                         doc.set_font('Helvetica', '', 12)
-                        doc.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0)
+                        doc.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0, link)
                 except IndexError:
                     pass
 
@@ -1743,10 +1764,6 @@ class Atlas(gobject.GObject):
         #    doc.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
 
         #doc.p_add_page()
-        doc.section = ''
-
-        #toc
-        doc.insertTOC(3)
 
         #output
         try:
