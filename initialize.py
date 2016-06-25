@@ -72,6 +72,7 @@ def setup_family_treeview(treeview):
 
 def setup_combo_box(combobox, data):
     '''Create a model for a combobox using data.'''
+    combobox.clear()
     
     model = gtk.ListStore(gobject.TYPE_STRING)
 
@@ -81,7 +82,7 @@ def setup_combo_box(combobox, data):
     combobox.set_model(model)
     cell = gtk.CellRendererText()
     combobox.pack_start(cell, True)
-    combobox.add_attribute(cell, 'text',0)
+    combobox.add_attribute(cell, 'text', 0)
 
 def setup_image_file_chooser(filechooserbutton):
     '''Create filter and preview widget for image file chooser buttons.'''

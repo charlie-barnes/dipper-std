@@ -33,10 +33,16 @@ class Dataset(gobject.GObject):
         self.mime = None
         self.builder = None
 
-        self.records = None
-        self.taxa = None
+        self.records = 0
+        #self.taxa = None
         self.families = []
         self.species = []
+        self.latest = 0
+        self.earliest = 3000
+        self.recorders = 0
+        self.determiners = 0
+        self.vicecounties = []
+        self.available_sheets = []
 
         self.listing = { }
 
@@ -161,7 +167,10 @@ class Dataset(gobject.GObject):
                                                      'species_accounts_phenology_type': 'Months',
                                                      'species_update_title': 'True',
                                                      'mapping_layers': '',
+                                                     'sheets': '-- all sheets --',
                                                     })
+                                                    
+            self.config.filename = None
 
     def parse(self):
         #guess the mimetype of the file

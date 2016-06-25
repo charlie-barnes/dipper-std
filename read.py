@@ -21,6 +21,7 @@ import gobject
 import xlrd
 import os
 import gtk
+import json
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
@@ -39,64 +40,30 @@ class Read(gobject.GObject):
 
         book = xlrd.open_workbook(self.filename)
 
-        #if more than one sheet is in the workbook, display sheet selection
-        #dialog
-        has_data = False
-        ignore_sheets = 0
-        for name in book.sheet_names():
-            if name[:2] == '--' and name [-2:] == '--':
-                ignore_sheets = ignore_sheets + 1
-
-            # do we have a data sheet?
-            if name == '--data--':
-                has_data = True
-
-        if (book.nsheets)-ignore_sheets > 1:
-            builder = gtk.Builder()
-            builder.add_from_file('./gui/select_dialog.glade')
-            builder.get_object('label68').set_text('Sheet:')
-            builder.get_object('dialog').set_title('Select sheet')
-            dialog = builder.get_object('dialog')
-
-            combobox = gtk.combo_box_new_text()
-
-            for name in book.sheet_names():
-                if not name[:2] == '--' and not name [-2:] == '--':
-                    combobox.append_text(name)
-
-            combobox.set_active(0)
-            combobox.show()
-            builder.get_object('hbox5').add(combobox)
-
-            response = dialog.run()
-
-            if response == 1:
-                sheets = (book.sheet_by_name(combobox.get_active_text()),)
-            elif response == 2:
-                sheets = []
-                for name in book.sheet_names():
-                    if not name[:2] == '--' and not name [-2:] == '--':
-                        sheets.append(book.sheet_by_name(name))
-            else:
-                dialog.destroy()
-                return -1
-
-            dialog.destroy()
-
-        else:
-            sheets = (book.sheet_by_index(0),)
-
-        
-
         text = ''.join(['Opening <b>', os.path.basename(self.filename) ,'</b>', ' from ', '<b>', os.path.dirname(os.path.abspath(self.filename)), '</b>'])
 
         temp_taxa_list = []
 
+        #do we have a data sheet?
+        for name in book.sheet_names():
+            if name == '--data--':
+                has_data = True
+                
+            if name[:2] != '--' and name [-2:] != '--':
+                self.dataset.available_sheets.append(name)
+
+        #load the data from the config'd sheets
+        if self.dataset.config.get('DEFAULT', 'sheets') != '-- all sheets --':
+            sheets = [(book.sheet_by_name(self.dataset.config.get('DEFAULT', 'sheets')))]
+        else:
+            sheets = []
+            for sheet in self.dataset.available_sheets:
+                sheets.append(book.sheet_by_name(sheet))
 
         try:
             #loop through the selected sheets of the workbook
             for sheet in sheets:
-                self.dataset.sheet = ' + '.join([self.dataset.sheet, sheet.name])
+                #self.dataset.sheet = ' + '.join([self.dataset.sheet, sheet.name])
                 
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
@@ -115,7 +82,8 @@ class Read(gobject.GObject):
                     elif sheet.cell(0, col_index).value.lower() in ['vc', 'vice-county', 'vice county']:
                         vc_position = col_index
 
-                rownum = 0
+                rec_names = []
+                det_names = []
 
                 #loop through each row, skipping the header (first) row
                 for row_index in range(1, sheet.nrows):
@@ -128,11 +96,24 @@ class Read(gobject.GObject):
                     #we can allow null determiners
                     try:
                         determiner = sheet.cell(row_index, determiner_position).value
+
+                        if determiner not in det_names:
+                            det_names.append(determiner)
                     except UnboundLocalError:
                         determiner = None
                     
                     vaguedate = VagueDate(date)
                     decade, year, month, day, decade_from, year_from, month_from, day_from, decade_to, year_to, month_to, day_to = vaguedate.decade, vaguedate.year, vaguedate.month,  vaguedate.day, vaguedate.decade_from, vaguedate.year_from, vaguedate.month_from,  vaguedate.day_from, vaguedate.decade_to, vaguedate.year_to, vaguedate.month_to,  vaguedate.day_to
+
+                    #stats
+                    if year > self.dataset.latest:
+                        self.dataset.latest = year
+                        
+                    if year < self.dataset.earliest:
+                        self.dataset.earliest = year
+
+                    if recorder not in rec_names:
+                        rec_names.append(recorder)
 
                     reference = Coordinate(str(grid_reference))
 
@@ -149,6 +130,9 @@ class Read(gobject.GObject):
                     #we can allow null vcs 
                     try:
                         vc = sheet.cell(row_index, vc_position).value
+
+                        if vc not in self.dataset.vicecounties:
+                            self.dataset.vicecounties.append(vc)
                         self.dataset.use_vcs = True
                     except UnboundLocalError:
                         vc = None
@@ -173,7 +157,10 @@ class Read(gobject.GObject):
                                                      determiner,
                                                      vc])
 
-                    rownum = rownum + 1
+                    self.dataset.records = self.dataset.records + 1
+
+                self.dataset.recorders = len(rec_names)
+                self.dataset.determiners = len(det_names)
 
             self.dataset.sheet = self.dataset.sheet[3:]
             

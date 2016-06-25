@@ -151,9 +151,6 @@ class Run():
         store = gtk.ListStore(str, str)
         treeview.set_model(store)
 
-        for stat in ['Records', 'Species', 'Families', 'Earliest', 'Latest', 'Recorders']:
-            store.append([stat, 0])
-
         #setup the atlas date bands treeview
         store = gtk.TreeStore(str, str, str, int, int)
            
@@ -470,8 +467,13 @@ class Run():
 
         #if we are opening a cfg file
         if config is not None:
-            self.dataset.config.read([config])
-            self.dataset.config.filename = config
+            try:
+                config[0].get('DEFAULT', 'type')
+                self.dataset.config.filename = config[1]
+                self.dataset.config = config[0]
+            except AttributeError:
+                self.dataset.config.read([config])
+                self.dataset.config.filename = config
         else:
             self.dataset.set_type(type)
             self.dataset.set_source(filename)
@@ -548,6 +550,24 @@ class Run():
                 self.builder.get_object('menuitem8').set_sensitive(True)
                 self.builder.get_object('toolbutton5').set_sensitive(True)
                 self.builder.get_object('toolbutton3').set_sensitive(True)
+                
+                #populate the stats panel
+                treeview = self.builder.get_object('treeview11')
+                store = treeview.get_model()
+                store.clear()
+
+                for stat in [['Records', self.dataset.records], ['Species', len(self.dataset.species)], ['Families',  len(self.dataset.families)], ['Earliest', self.dataset.earliest], ['Latest', self.dataset.latest], ['Recorders', self.dataset.recorders], ['Determiners', self.dataset.determiners], ['Vice-counties', len(self.dataset.vicecounties)]]:
+                    store.append(stat)
+                
+                #populate the sheet combobox                
+                initialize.setup_combo_box(self.builder.get_object('combobox17'), ['-- all sheets --'] + self.dataset.available_sheets)
+                
+                try:
+                    self.builder.get_object('combobox17').set_active(self.dataset.available_sheets.index(self.dataset.config.get('DEFAULT', 'sheets'))+1)
+                except ValueError:
+                    self.builder.get_object('combobox17').set_active(0)
+                
+            
         except AttributeError as e:
             self.builder.get_object('menuitem7').set_sensitive(False)
             self.builder.get_object('menuitem8').set_sensitive(False)
@@ -800,7 +820,7 @@ class Run():
             self.builder.get_object('entry2').set_text(self.dataset.config.get('Atlas', 'author'))
 
             #cover image
-            if self.dataset.config.get('Atlas', 'cover_image') == '':
+            if self.dataset.config.get('Atlas', 'cover_image') == '' or self.dataset.config.get('Atlas', 'cover_image') == None:
                 self.unselect_image(self.builder.get_object('filechooserbutton1'))
             else:
                 self.builder.get_object('filechooserbutton1').set_filename(self.dataset.config.get('Atlas', 'cover_image'))
@@ -1318,7 +1338,14 @@ class Run():
             self.dataset.config.set('Single Species', 'species_update_title', str(self.builder.get_object('checkbutton4').get_active()))
 
     def switch_sheet(self, widget):
-        pass
+        index = widget.get_active()
+        store = widget.get_model()
+
+        if self.dataset.config.get('DEFAULT', 'sheets') != store[index][0]:
+            self.dataset.config.set('DEFAULT', 'sheets', store[index][0])
+
+            #self.open_dataset(widget, filename=None, type=None, config=config_file)
+            self.open_dataset(widget, self.dataset.config.get('DEFAULT', 'source'), self.dataset.config.get('DEFAULT', 'type'), [self.dataset.config, self.dataset.config.filename])
 
     def new_file_set(self, widget):
         '''Set the widget sensitivity to true'''
@@ -1432,7 +1459,7 @@ class Run():
             #write the config file
             with open(self.dataset.config.filename, 'wb') as configfile:
                 self.dataset.config.write(configfile)
-        except AttributeError:
+        except TypeError:
             dialog = gtk.FileChooserDialog('Save...',
                                            None,
                                            gtk.FILE_CHOOSER_ACTION_SAVE,
