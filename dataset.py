@@ -34,8 +34,14 @@ class Dataset(gobject.GObject):
         self.builder = None
 
         self.records = 0
-        #self.taxa = None
-        self.families = []
+        self.taxa = {}
+        self.kingdoms = []
+        self.phyla = {}
+        self.classes = {}
+        self.orders = {}
+        self.families = {}
+        self.genera = {}
+        self.specie = {}
         self.species = []
         self.latest = 0
         self.earliest = 3000
@@ -106,13 +112,18 @@ class Dataset(gobject.GObject):
             #create the table to store the species data
             self.cursor.execute('CREATE TABLE species_data \
                                  (taxon TEXT, \
-                                  family TEXT, \
                                   sort_order NUMERIC, \
                                   nbn_key TEXT, \
                                   national_status TEXT, \
                                   local_status TEXT, \
                                   description TEXT, \
-                                  common_name TEXT)')
+                                  common_name TEXT , \
+                                  kingdom TEXT, \
+                                  phylum TEXT, \
+                                  class_ TEXT, \
+                                  order_ TEXT, \
+                                  family TEXT, \
+                                  genus TEXT)')
 
             self.cursor.execute('CREATE INDEX index_sp_taxon \
                                  ON species_data (taxon)')

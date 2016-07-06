@@ -60,14 +60,14 @@ def setup_vice_county_treeview(treeview):
 def setup_family_treeview(treeview):
     '''Create a model for a family treeview.'''
 
-    model = gtk.ListStore(str)
+    model = gtk.TreeStore(str, str)
     
     treeview.set_model(model)       
     treeview.set_rules_hint(True)
     treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
     rendererText = gtk.CellRendererText()
-    column = gtk.TreeViewColumn("Family", rendererText, text=0)
+    column = gtk.TreeViewColumn("name", rendererText, text=0)
     treeview.append_column(column)
 
 def setup_combo_box(combobox, data):

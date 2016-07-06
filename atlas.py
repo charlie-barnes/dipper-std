@@ -420,9 +420,14 @@ class Atlas(gobject.GObject):
             vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ') AND'])
         else:
             vcs_sql = ''
-            
-        families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Atlas', 'families').split(',')), '")'])
 
+        restriction_sql = ''
+
+        for restriction in json.loads(self.dataset.config.get('Atlas', 'families')):
+            restriction_sql = ' or '.join([restriction_sql, ''.join(['species_data.' , restriction[0] , ' = "' , restriction[1] + '"'])])
+
+        restriction_sql = restriction_sql[4:]
+        
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS squares, \
                                    COUNT(data.taxon) AS records, \
@@ -431,7 +436,7 @@ class Atlas(gobject.GObject):
                                    species_data.common_name \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' ' + families_sql + ' \
+                                   WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, species_data.description, species_data.common_name \
                                    ORDER BY species_data.sort_order, species_data.family, data.taxon')
         
@@ -491,7 +496,7 @@ class Atlas(gobject.GObject):
         self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
                                      FROM data \
                                      JOIN species_data ON data.taxon = species_data.taxon \
-                                     WHERE ' + vcs_sql + ' ' + families_sql)
+                                     WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
 
         recorder_data = self.dataset.cursor.fetchall()
 
@@ -530,7 +535,7 @@ class Atlas(gobject.GObject):
         self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
                                      FROM data \
                                      JOIN species_data ON data.taxon = species_data.taxon \
-                                     WHERE ' + vcs_sql + ' ' + families_sql)
+                                     WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
 
         determiner_data = self.dataset.cursor.fetchall()
     

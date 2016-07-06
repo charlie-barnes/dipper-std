@@ -173,6 +173,14 @@ class Read(gobject.GObject):
 
                     if sheet.cell(0, col_index).value.lower() in ['taxon', 'taxon name']:
                         taxon_position = col_index
+                    elif sheet.cell(0, col_index).value.lower() in ['kingdom']:
+                        kingdom_position = col_index
+                    elif sheet.cell(0, col_index).value.lower() in ['phylum']:
+                        phylum_position = col_index
+                    elif sheet.cell(0, col_index).value.lower() in ['class']:
+                        class_position = col_index
+                    elif sheet.cell(0, col_index).value.lower() in ['order']:
+                        order_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ['family']:
                         family_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ['sort order']:
@@ -190,7 +198,28 @@ class Read(gobject.GObject):
                 for row_index in range(1, sheet.nrows):
 
                     taxa = sheet.cell(row_index, taxon_position).value
+                    genus = taxa.split()[0]
                     if taxa in temp_taxa_list:
+                        try:
+                            kingdom = sheet.cell(row_index, kingdom_position).value
+                        except UnboundLocalError:
+                            kingdom = ''
+                            
+                        try:
+                            phylum = sheet.cell(row_index, phylum_position).value
+                        except UnboundLocalError:
+                            phylum = ''
+                            
+                        try:
+                            class_ = sheet.cell(row_index, class_position).value
+                        except UnboundLocalError:
+                            class_ = ''
+                            
+                        try:
+                            order = sheet.cell(row_index, order_position).value
+                        except UnboundLocalError:
+                            order = ''
+                            
                         try:
                             family = sheet.cell(row_index, family_position).value
                         except UnboundLocalError:
@@ -221,22 +250,54 @@ class Read(gobject.GObject):
                         except UnboundLocalError:
                             common_name = ''
 
-                        if family not in self.dataset.families:
-                            self.dataset.families.append(family)
+                        if kingdom not in self.dataset.kingdoms:
+                            self.dataset.kingdoms.append(kingdom)
+                            self.dataset.phyla[kingdom] = []
+
+                        if phylum not in self.dataset.phyla[kingdom]:
+                            self.dataset.phyla[kingdom].append(phylum)
+                            self.dataset.classes[phylum] = []
+
+                        if class_ not in self.dataset.classes[phylum]:
+                            self.dataset.classes[phylum].append(class_)
+                            self.dataset.orders[class_] = []
+
+                        if order not in self.dataset.orders[class_]:
+                            self.dataset.orders[class_].append(order)
+                            self.dataset.families[order] = []
+
+                        if family not in self.dataset.families[order]:
+                            self.dataset.families[order].append(family)
+                            self.dataset.genera[family] = []
+
+                        if genus not in self.dataset.genera[family]:
+                            self.dataset.genera[family].append(genus)
+                            self.dataset.specie[genus] = []
+
+                        if taxa not in self.dataset.specie[genus]:
+                            self.dataset.specie[genus].append(taxa)
+
+                        if taxa not in self.dataset.taxa.keys():
+                            self.dataset.taxa[taxa] = {'kingdom': kingdom, 'phylum': phylum, 'class': class_, 'order': order, 'family': family}
                             
                         if taxa not in self.dataset.species:
                             self.dataset.species.append(taxa)
 
                         self.dataset.cursor.execute('INSERT INTO species_data \
-                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                                      [taxa,
-                                                     family,
                                                      sort_order,
                                                      nbn_key,
                                                      national_status,
                                                      None,
                                                      description,
-                                                     common_name])
+                                                     common_name,
+                                                     kingdom,
+                                                     phylum,
+                                                     class_,
+                                                     order,
+                                                     family,
+                                                     genus])
 
             else:
                 #if we dont have species data sheet, just create the data using distinct taxa
@@ -250,6 +311,10 @@ class Read(gobject.GObject):
                     self.dataset.cursor.execute('INSERT INTO species_data \
                                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                                                 [row[0],
+                                                None,
+                                                None,
+                                                None,
+                                                None,
                                                 None,
                                                 None,
                                                 None,

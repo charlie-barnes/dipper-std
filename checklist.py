@@ -23,6 +23,7 @@ from datetime import datetime
 import pdf
 import version
 import os
+import json
 
 def repeat_to_length(string_to_expand, length):
    return (string_to_expand * ((length/len(string_to_expand))+1))[:length]
@@ -51,13 +52,19 @@ class Checklist(gobject.GObject):
         else:
             vcs_sql = ''
             vcs_sql_sel = '"00"'
-            
-        families_sql = ''.join(['species_data.family IN ("', '","'.join(self.dataset.config.get('Checklist', 'families').split(',')), '")'])
+
+
+        restriction_sql = ''                    
+                    
+        for restriction in json.loads(self.dataset.config.get('Checklist', 'families')):
+            restriction_sql = ' or '.join([restriction_sql, ''.join(['species_data.' , restriction[0] , ' = "' , restriction[1] + '"'])])
+
+        restriction_sql = restriction_sql[4:]
 
         self.dataset.cursor.execute('SELECT DISTINCT data.taxon \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' ' + families_sql)
+                                   WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
 
         data = self.dataset.cursor.fetchall()
         number_of_species = len(data)                                   
@@ -65,7 +72,7 @@ class Checklist(gobject.GObject):
         self.dataset.cursor.execute('SELECT DISTINCT species_data.family \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' ' + families_sql)
+                                   WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
 
         data = self.dataset.cursor.fetchall()
         number_of_families = len(data)                                     
@@ -77,7 +84,7 @@ class Checklist(gobject.GObject):
                                    ' + vcs_sql_sel + ' AS VC \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' ' + families_sql + ' \
+                                   WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
                                    GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, data.vc \
                                    ORDER BY species_data.sort_order, species_data.family, data.taxon')
 

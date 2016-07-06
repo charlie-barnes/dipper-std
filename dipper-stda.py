@@ -736,7 +736,7 @@ class Run():
                         os.startfile(output)
                     
             selection = self.builder.get_object('treeview5').get_selection()
-            self.pre_generate = selection.get_selected()
+            #self.pre_generate = selection.get_selected()
             
             vbox.set_sensitive(True)
             self.builder.get_object('window1').window.set_cursor(None)
@@ -846,21 +846,84 @@ class Run():
             #grid line visible
             self.builder.get_object('checkbutton2').set_active(self.dataset.config.getboolean('Atlas', 'grid_lines_visible'))
 
-            #families
-            store = gtk.ListStore(str)
-            self.builder.get_object('treeview2').set_model(store)
+            #taxa
+            selected_taxa = json.loads(self.dataset.config.get('Atlas', 'families'))
+            
+            store = self.builder.get_object('treeview2').get_model()
+            store.clear()
             selection = self.builder.get_object('treeview2').get_selection()
 
             selection.unselect_all()
             
             if self.builder.get_object('treeview2').get_realized():
                 self.builder.get_object('treeview2').scroll_to_point(0,0)
-                
-            for family in self.dataset.families:
-                iter = store.append([family])
 
-                if family.strip().lower() in ''.join(self.dataset.config.get('Atlas', 'families').split()).lower().split(','):
-                    selection.select_path(store.get_path((iter)))
+            selected_taxa_iter = []
+
+            for kingdom in self.dataset.kingdoms:
+                if kingdom == '':
+                    kiter = None
+                else:
+                    kiter = store.append(None, [kingdom, 'kingdom'])
+                                
+                    if ['kingdom', kingdom] in selected_taxa:
+                        selected_taxa_iter.append([None, kiter])
+                
+                for phylum in self.dataset.phyla[kingdom]:
+                    if phylum == '':
+                        piter = kiter
+                    else:                        
+                        piter = store.append(kiter, [phylum, 'phylum'])
+                                
+                        if ['phylum', phylum] in selected_taxa:
+                            selected_taxa_iter.append([kiter, piter])
+                
+                    for class_ in self.dataset.classes[phylum]:
+                        if class_ == '':
+                            citer = piter
+                        else:
+                            citer = store.append(piter, [class_, 'class_'])
+                                
+                            if ['class_', class_] in selected_taxa:
+                                selected_taxa_iter.append([piter, citer])
+                
+                        for order in self.dataset.orders[class_]:
+                            if order == '':
+                                oiter = citer
+                            else:
+                                oiter = store.append(citer, [order, 'order_'])
+                                
+                                if ['order_', order] in selected_taxa:
+                                    selected_taxa_iter.append([citer, oiter])
+                
+                            for family in self.dataset.families[order]:
+                                if family == '':
+                                    fiter = oiter
+                                else:
+                                    fiter = store.append(oiter, [family, 'family'])
+                                
+                                    if ['family', family] in selected_taxa:
+                                        selected_taxa_iter.append([oiter, fiter])
+
+                                for genus in self.dataset.genera[family]:
+                                    if genus == '':
+                                        giter = fiter
+                                    else:
+                                        giter = store.append(fiter, [genus, 'genus'])
+                                
+                                        if ['genus', genus] in selected_taxa:
+                                            selected_taxa_iter.append([fiter, giter])
+                
+                                    for species in self.dataset.specie[genus]:
+                                        iter = store.append(giter, [species, 'taxon'])
+                                
+                                        if ['taxon', species] in selected_taxa:
+                                            selected_taxa_iter.append([giter, iter])
+
+            for parent, child in selected_taxa_iter:
+                if parent is not None:
+                    self.builder.get_object('treeview2').expand_to_path(store.get_path(parent))
+                selection.select_iter(child)
 
             model, selected = selection.get_selected_rows()
             try:
@@ -991,27 +1054,84 @@ class Run():
             #distribution unit
             self.builder.get_object('combobox5').set_active(cfg.grid_resolution.index(self.dataset.config.get('Checklist', 'distribution_unit')))
 
-            #families
-            store = self.builder.get_object('treeview3').get_model()
-            selection = self.builder.get_object('treeview3').get_selection()
+            #taxa
+            selected_taxa = json.loads(self.dataset.config.get('Checklist', 'families'))
 
+            store = self.builder.get_object('treeview3').get_model()
+            store.clear()
+            selection = self.builder.get_object('treeview3').get_selection()
             selection.unselect_all()
             
             if self.builder.get_object('treeview3').get_realized():
                 self.builder.get_object('treeview3').scroll_to_point(0,0)
+
+            selected_taxa_iter = []
+
+            for kingdom in self.dataset.kingdoms:
+                if kingdom == '':
+                    kiter = None
+                else:
+                    kiter = store.append(None, [kingdom, 'kingdom'])
+                                
+                    if ['kingdom', kingdom] in selected_taxa:
+                        selected_taxa_iter.append([None, kiter])
                 
-            for family in self.dataset.families:
-                iter = store.append([family])
+                for phylum in self.dataset.phyla[kingdom]:
+                    if phylum == '':
+                        piter = kiter
+                    else:                        
+                        piter = store.append(kiter, [phylum, 'phylum'])
+                                
+                        if ['phylum', phylum] in selected_taxa:
+                            selected_taxa_iter.append([kiter, piter])
+                
+                    for class_ in self.dataset.classes[phylum]:
+                        if class_ == '':
+                            citer = piter
+                        else:
+                            citer = store.append(piter, [class_, 'class_'])
+                                
+                            if ['class_', class_] in selected_taxa:
+                                selected_taxa_iter.append([piter, citer])
+                
+                        for order in self.dataset.orders[class_]:
+                            if order == '':
+                                oiter = citer
+                            else:
+                                oiter = store.append(citer, [order, 'order_'])
+                                
+                                if ['order_', order] in selected_taxa:
+                                    selected_taxa_iter.append([citer, oiter])
+                
+                            for family in self.dataset.families[order]:
+                                if family == '':
+                                    fiter = oiter
+                                else:
+                                    fiter = store.append(oiter, [family, 'family'])
+                                
+                                    if ['family', family] in selected_taxa:
+                                        selected_taxa_iter.append([oiter, fiter])
 
-                if family.strip().lower() in ''.join(self.dataset.config.get('Checklist', 'families').split()).lower().split(','):
-                    selection.select_path(store.get_path((iter)))
+                                for genus in self.dataset.genera[family]:
+                                    if genus == '':
+                                        giter = fiter
+                                    else:
+                                        giter = store.append(fiter, [genus, 'genus'])
+                                
+                                        if ['genus', genus] in selected_taxa:
+                                            selected_taxa_iter.append([fiter, giter])
+                
+                                    for species in self.dataset.specie[genus]:
+                                        iter = store.append(giter, [species, 'taxon'])
+                                
+                                        if ['taxon', species] in selected_taxa:
+                                            selected_taxa_iter.append([giter, iter])
 
-            model, selected = selection.get_selected_rows()
-            try:
-                self.builder.get_object('treeview3').scroll_to_cell(selected[0])
-            except IndexError:
-                pass
-
+            for parent, child in selected_taxa_iter:
+                if parent is not None:
+                    self.builder.get_object('treeview3').expand_to_path(store.get_path(parent))
+                selection.select_iter(child)
+                
             self.dataset.config.set('Checklist', 'families_update_title', str(self.builder.get_object('checkbutton17').get_active()))
 
             #vcs
@@ -1125,12 +1245,12 @@ class Run():
             model, selected = selection.get_selected_rows()
             iters = [model.get_iter(path) for path in selected]
 
-            families = ''
+            families = []
 
             for iter in iters:
-                families = ','.join([families, model.get_value(iter, 0)])
+                families.append([model.get_value(iter, 1), model.get_value(iter, 0)])
 
-            self.dataset.config.set('Atlas', 'families', families[1:])
+            self.dataset.config.set('Atlas', 'families', json.dumps(families))
             self.dataset.config.set('Atlas', 'families_update_title', str(self.builder.get_object('checkbutton18').get_active()))
 
             #grab a comma delimited list of vcs
@@ -1268,12 +1388,12 @@ class Run():
             model, selected = selection.get_selected_rows()
             iters = [model.get_iter(path) for path in selected]
 
-            families = ''
+            families = []
 
             for iter in iters:
-                families = ','.join([families, model.get_value(iter, 0)])
+                families.append([model.get_value(iter, 1), model.get_value(iter, 0)])
 
-            self.dataset.config.set('Checklist', 'families', families[1:])
+            self.dataset.config.set('Checklist', 'families', json.dumps(families))
 
             #grab a comma delimited list of vcs
             selection = self.builder.get_object('treeview4').get_selection()
