@@ -23,6 +23,7 @@ import sqlite3
 import mimetypes
 import ConfigParser
 import read
+import pyodbc
 from subprocess import call
 
 class Dataset(gobject.GObject):
@@ -47,6 +48,7 @@ class Dataset(gobject.GObject):
         self.earliest = 3000
         self.recorders = 0
         self.determiners = 0
+        self.occupied_squares = {'100km':[],'10km':[],'5km':[], '2km':[], '1km':[],'100m':[],'10m':[],'1m':[]}
         self.vicecounties = []
         self.available_sheets = []
 
@@ -104,7 +106,8 @@ class Dataset(gobject.GObject):
                                   day_to NUMERIC, \
                                   recorder TEXT, \
                                   determiner TEXT, \
-                                  vc NUMERIC)')
+                                  vc NUMERIC, \
+                                  voucher TEXT)')
 
             self.cursor.execute('CREATE INDEX index_taxon \
                                  ON data (taxon)')
@@ -176,6 +179,8 @@ class Dataset(gobject.GObject):
                                                      'species_accounts_show_phenology': 'True',
                                                      'species_accounts_phenology_colour': '#000',
                                                      'species_accounts_phenology_type': 'Months',
+                                                     'species_accounts_voucher_status': 'True',
+                                                     'species_accounts_explanation_species': '',
                                                      'species_update_title': 'True',
                                                      'mapping_layers': '',
                                                      'sheets': '-- all sheets --',
@@ -189,6 +194,17 @@ class Dataset(gobject.GObject):
 
         if self.mime == 'application/vnd.ms-excel':
             self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self)
+        elif self.mime == 'application/vnd.ms-access' or self.mime == 'application/msaccess':
+            
+            DBfile = self.config.get('DEFAULT', 'source')
+            conn = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ='+DBfile)
+            cursor = conn.cursor()
+            
+            exit()
+            #temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
+            #self.data_source = read.Read(''.join([temp_file, '.xls']), self)
+            
+            
         else:
             temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
 

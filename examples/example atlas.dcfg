@@ -1,6 +1,8 @@
 [DEFAULT]
 sheets = Sheet2
 species_accounts_show_latest = True
+species_accounts_voucher_status = True
+species_accounts_explanation_species = 
 vice-counties = 
 bibliography = 
 title = 
@@ -58,7 +60,7 @@ inside_cover =
 introduction = 
 bibliography = 
 distribution_unit = 2km
-families = [["class_", "Insecta"], ["genus", "Pyropterus"], ["genus", "Thanasimus"], ["taxon", "Thanasimus formicarius"]]
+families = [["class_", "Insecta"]]
 vice-counties = 53,54
 date_bands = [["squares", "#000", "#000", 1980, 2050], ["circles", "#a9a9a9", "#000", 1600, 1980]]
 mapping_layers = [["vice-counties", "North Lincolnshire", "#f2f2f2", "#797979"], ["vice-counties", "South Lincolnshire", "#f2f2f2", "#797979"]]
@@ -93,5 +95,7 @@ species_accounts_show_status = True
 species_accounts_show_phenology = True
 species_accounts_phenology_type = Months
 species_accounts_phenology_colour = #000
-species_accounts_latest_format = %l (VC%v) %g %d (%r %i)
+species_accounts_latest_format = %l %g %d
+species_accounts_voucher_status = True
+species_accounts_explanation_species = Rutpela maculata
 

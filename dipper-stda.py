@@ -487,7 +487,7 @@ class Run():
         if self.dataset.config.get('DEFAULT', 'type') == 'Atlas':
             iter = store.append(None, ['Atlas', 0, 0])
             treeselection.select_iter(iter)
-            store.append(iter, ['Families', 0, 1])
+            store.append(iter, ['Taxa', 0, 1])
             store.append(iter, ['Vice-counties', 0, 2])
             store.append(iter, ['Page setup', 0, 3])
             store.append(iter, ['Table of contents', 0, 4])
@@ -498,13 +498,13 @@ class Run():
         elif self.dataset.config.get('DEFAULT', 'type') == 'Checklist':
             iter = store.append(None, ['Checklist', 1, 0])
             treeselection.select_iter(iter)
-            store.append(iter, ['Families', 1, 1])
+            store.append(iter, ['Taxa', 1, 1])
             store.append(iter, ['Vice-counties', 1, 2])
             store.append(iter, ['Page setup', 1, 3])
         elif self.dataset.config.get('DEFAULT', 'type') == 'Single Species':
             iter = store.append(None, ['Single species map', 2, 0])
             treeselection.select_iter(iter)
-            store.append(iter, ['Single species', 2, 1])
+            store.append(iter, ['Taxa', 2, 1])
             store.append(iter, ['Vice-counties', 2, 2])
             store.append(iter, ['Page setup', 2, 3])
         
@@ -556,7 +556,7 @@ class Run():
                 store = treeview.get_model()
                 store.clear()
 
-                for stat in [['Records', self.dataset.records], ['Species', len(self.dataset.species)], ['Families',  len(self.dataset.families)], ['Earliest', self.dataset.earliest], ['Latest', self.dataset.latest], ['Recorders', self.dataset.recorders], ['Determiners', self.dataset.determiners], ['Vice-counties', len(self.dataset.vicecounties)]]:
+                for stat in [['Records', self.dataset.records], ['Species', len(self.dataset.species)], ['Families',  len(self.dataset.families)], ['Earliest', self.dataset.earliest], ['Latest', self.dataset.latest], ['Recorders', self.dataset.recorders], ['Determiners', self.dataset.determiners], ['Vice-counties', len(self.dataset.vicecounties)], ['Recorded 100km squares', len(self.dataset.occupied_squares['100km'])], ['Recorded 10km squares', len(self.dataset.occupied_squares['10km'])], ['Recorded 5km squares', len(self.dataset.occupied_squares['5km'])], ['Recorded 2km squares', len(self.dataset.occupied_squares['2km'])], ['Recorded 1km squares', len(self.dataset.occupied_squares['1km'])], ['Recorded 100m squares', len(self.dataset.occupied_squares['100m'])], ['Recorded 10m squares', len(self.dataset.occupied_squares['10m'])], ['Recorded 1m squares', len(self.dataset.occupied_squares['1m'])]   ]:
                     store.append(stat)
                 
                 #populate the sheet combobox                
@@ -1029,7 +1029,36 @@ class Run():
             self.builder.get_object('checkbutton15').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'))
             self.builder.get_object('combobox12').set_active(cfg.phenology_types.index(self.dataset.config.get('Atlas', 'species_accounts_phenology_type')))
             self.builder.get_object('colorbutton11').set_color(gtk.gdk.color_parse(self.dataset.config.get('Atlas', 'species_accounts_phenology_colour')))
-            self.builder.get_object('entry5').set_text(self.dataset.config.get('Atlas', 'species_accounts_latest_format'))
+            self.builder.get_object('combobox-entry3').set_text(self.dataset.config.get('Atlas', 'species_accounts_latest_format'))
+            self.builder.get_object('checkbutton5').set_active(self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'))
+
+            #setup species account latest format combobox
+            combobox = self.builder.get_object('combobox19')
+            combobox.clear()
+
+            model = gtk.ListStore(gobject.TYPE_STRING)
+
+            for i in ['%l (VC%v) %g %d (%r %i)', '%l %g %d', '%l (VC%v) %g %d: %r %i']:
+                model.append([i])
+
+            cell = gtk.CellRendererText()
+            combobox.pack_start(cell, True)
+            combobox.add_attribute(cell, 'text', 0)
+            
+            combobox.set_model(model)
+            
+            #setup species explanation map species entry
+            model = gtk.ListStore(gobject.TYPE_STRING)
+
+            for i in sorted(self.dataset.species):
+                model.append([i])
+            
+            completion = gtk.EntryCompletion()
+            completion.set_model(model)
+            completion.set_text_column(0)
+            
+            self.builder.get_object('entry5').set_completion(completion)
+            self.builder.get_object('entry5').set_text(self.dataset.config.get('Atlas', 'species_accounts_explanation_species'))
 
         elif self.dataset.config.get('DEFAULT', 'type') == 'Checklist':
             #set up the list gui based on config settings
@@ -1359,7 +1388,9 @@ class Run():
             self.dataset.config.set('Atlas', 'species_accounts_show_phenology', str(self.builder.get_object('checkbutton15').get_active()))
             self.dataset.config.set('Atlas', 'species_accounts_phenology_type', str(self.builder.get_object('combobox12').get_active_text()))
             self.dataset.config.set('Atlas', 'species_accounts_phenology_colour', str(self.builder.get_object('colorbutton11').get_color()))
-            self.dataset.config.set('Atlas', 'species_accounts_latest_format', self.builder.get_object('entry5').get_text())
+            self.dataset.config.set('Atlas', 'species_accounts_latest_format', self.builder.get_object('combobox-entry3').get_text())
+            self.dataset.config.set('Atlas', 'species_accounts_voucher_status', str(self.builder.get_object('checkbutton5').get_active()))
+            self.dataset.config.set('Atlas', 'species_accounts_explanation_species', self.builder.get_object('entry5').get_text())
 
         elif self.dataset.config.get('DEFAULT', 'type') == 'Checklist':
             #list
@@ -1470,6 +1501,12 @@ class Run():
     def new_file_set(self, widget):
         '''Set the widget sensitivity to true'''
         widget.set_sensitive(True)
+        
+    def change_type(self, widget):
+        '''Set the data source type'''
+        print self, widget
+        if widget.get_active()[3] == 0:
+            widget.get_children()[3].visible = False
     
     def new_file(self, widget):
         '''Create a new file'''
@@ -1480,6 +1517,7 @@ class Run():
           
         signals = {
                    'new_file_set':self.new_file_set,
+                   'change_type':self.change_type,
                   }
         builder.connect_signals(signals)
 
@@ -1488,9 +1526,21 @@ class Run():
         cell = gtk.CellRendererText()
         combobox.pack_start(cell)
         combobox.add_attribute(cell, 'text', 0)
-        combobox.set_model(liststore)        
+        combobox.set_model(liststore)         
         
         for option in ['Atlas', 'Checklist', 'Single Species']:
+            liststore.append([option])
+
+        combobox.set_active(0) 
+
+        combobox = builder.get_object('combobox2')
+        liststore = gtk.ListStore(str)
+        cell = gtk.CellRendererText()
+        combobox.pack_start(cell)
+        combobox.add_attribute(cell, 'text', 0)
+        combobox.set_model(liststore)        
+        
+        for option in ['File', 'MapMate', 'Recorder 6']:
             liststore.append([option])
 
         combobox.set_active(0)
@@ -1502,6 +1552,8 @@ class Run():
         filter.set_name("Supported data files")
         filter.add_pattern("*.xls")
         filter.add_mime_type("application/vnd.ms-excel")
+        filter.add_pattern("*.mdb")
+        filter.add_mime_type("application/x-msaccess")
         filechooserbutton.add_filter(filter)
         filechooserbutton.set_filter(filter)
                 

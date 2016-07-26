@@ -490,6 +490,20 @@ class Atlas(gobject.GObject):
         if toc_length%2 != 0:
             toc_length = toc_length + 1
 
+        #grab the voucher status of each taxa
+        self.dataset.cursor.execute('SELECT DISTINCT data.taxon, GROUP_CONCAT(DISTINCT data.voucher) AS voucherlocation \
+                                     FROM data \
+                                     JOIN species_data ON data.taxon = species_data.taxon \
+                                     WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
+                                     GROUP BY data.taxon')
+        
+        vdata = self.dataset.cursor.fetchall()
+
+        for vtaxon in vdata:
+            taxa_statistics[vtaxon[0]]['voucher'] = vtaxon[1]
+
+        
+
         #contributors        
         contrib_data = {}
 
@@ -725,16 +739,22 @@ class Atlas(gobject.GObject):
             #package' and then choose one at randomn for the explanation, then
             #loop through for the rest. The only difference is the extra Y padding?
             #the explanation map#######################
-            random_species = random.choice(list(taxa_statistics.keys()))
 
-            designation = taxa_statistics[random_species]['national_designation']
+            selected_explanation_species = self.dataset.config.get('Atlas', 'species_accounts_explanation_species')
+
+            #if for some reason the explanation species isn't in our species to map, use the first one by default
+            if selected_explanation_species not in list(taxa_statistics.keys()):
+                selected_explanation_species = sorted(list(taxa_statistics.keys()))[0]
+
+            designation = taxa_statistics[selected_explanation_species]['national_designation']
+            
             if (designation == '') or (designation == 'None'):
                 designation = ' '
 
-            if (taxa_statistics[random_species]['common_name'] == '') or (taxa_statistics[random_species]['common_name'] == 'None'):
+            if (taxa_statistics[selected_explanation_species]['common_name'] == '') or (taxa_statistics[selected_explanation_species]['common_name'] == 'None'):
                 common_name = ''
             else:
-                common_name = taxa_statistics[random_species]['common_name']
+                common_name = taxa_statistics[selected_explanation_species]['common_name']
 
             doc.section = ('Introduction')
             doc.p_add_page()
@@ -744,7 +764,7 @@ class Atlas(gobject.GObject):
             y_padding = 39#######extra Y padding to centralize
             y_padding = (5 + (((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding) + ((((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75))/2
             x_padding = doc.l_margin
-
+                
             #taxon heading
             doc.set_y(y_padding)
             doc.set_x(x_padding)
@@ -752,7 +772,7 @@ class Atlas(gobject.GObject):
             doc.set_fill_color(59, 59, 59)
             doc.set_line_width(0.1)
             doc.set_font('Helvetica', 'BI', 12)
-            doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, random_species, 'TLB', 0, 'L', True)
+            doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, ''.join([selected_explanation_species]), 'TLB', 0, 'L', True)
             doc.set_font('Helvetica', 'B', 12)
             doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
             doc.set_x(x_padding)
@@ -766,7 +786,7 @@ class Atlas(gobject.GObject):
             #compile list of last e.g. 10 records for use below
             self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
                                         FROM data \
-                                        WHERE data.taxon = "' + random_species + '" \
+                                        WHERE data.taxon = "' + selected_explanation_species + '" \
                                         ORDER BY data.year_to || data.month_to || data.day_to desc')
 
             indiv_taxon_data = self.dataset.cursor.fetchall()
@@ -774,7 +794,10 @@ class Atlas(gobject.GObject):
             max_species_records_length = 900
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                max_species_records_length = max_species_records_length - len(taxa_statistics[random_species]['description'])
+                max_species_records_length = max_species_records_length - len(taxa_statistics[selected_explanation_species]['description'])
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[item[0]]['voucher'])]))
 
             remaining_records = 0
 
@@ -863,26 +886,44 @@ class Atlas(gobject.GObject):
 
             #taxon blurb
             doc.set_y(y_padding+12)
-            doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
             doc.set_font('Helvetica', '', 10)
             doc.set_text_color(0)
             doc.set_fill_color(255, 255, 255)
             doc.set_line_width(0.1)
+    
+            add_pad = False
 
-            if len(taxa_statistics[random_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                doc.set_font('Helvetica', '', 10)
-                doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join([taxa_statistics[random_species]['description'], '\n\n']), 0, 'L', False)
+            if len(taxa_statistics[selected_explanation_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                 doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                doc.set_font('Helvetica', '', 10)
+                doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, taxa_statistics[selected_explanation_species]['description'], 0, 'L', False)
+                add_pad = True
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                
+                if add_pad:
+                    doc.ln()
+                    
+                doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                doc.set_font('Helvetica', '', 10)
                 doc.set_font('Helvetica', '', 10)
                 doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+                add_pad = True
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                
+                if add_pad:
+                    doc.ln()
+                    
+                doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                doc.set_font('Helvetica', 'I', 10)                    
+                doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Vouchers: ', str(taxa_statistics[selected_explanation_species]['voucher'])]), 0, 'L', False)
 
             y_for_explanation = doc.get_y()
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-                chartobj = chart.Chart(self.dataset, random_species, self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
+                chartobj = chart.Chart(self.dataset, selected_explanation_species, self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
                 if chartobj.temp_filename != None:
                     doc.image(chartobj.temp_filename, x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75, 'PNG')
                 doc.rect(x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
@@ -909,7 +950,7 @@ class Atlas(gobject.GObject):
                     
                     self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                                 FROM data \
-                                                WHERE data.taxon = "' + random_species + '" \
+                                                WHERE data.taxon = "' + selected_explanation_species + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
                                                 AND data.year_to < ' + str(row[4]) + ' \
                                                 AND data.year_from >= ' + str(row[3]) + ' \
@@ -943,7 +984,7 @@ class Atlas(gobject.GObject):
                     
                     self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
                                                 FROM data \
-                                                WHERE data.taxon = "' + random_species + '" \
+                                                WHERE data.taxon = "' + selected_explanation_species + '" \
                                                 AND data.year_to >= ' + str(row[3]) + '\
                                                 AND data.year_to < ' + str(row[4]) + ' \
                                                 AND data.year_from >= ' + str(row[3]) + ' \
@@ -1018,10 +1059,10 @@ class Atlas(gobject.GObject):
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
 
-                if str(taxa_statistics[random_species]['earliest']) == 'Unknown':
+                if str(taxa_statistics[selected_explanation_species]['earliest']) == 'Unknown':
                     val = '?'
                 else:
-                    val = str(taxa_statistics[random_species]['earliest'])
+                    val = str(taxa_statistics[selected_explanation_species]['earliest'])
                 doc.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
 
                 #to
@@ -1032,10 +1073,10 @@ class Atlas(gobject.GObject):
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
 
-                if str(taxa_statistics[random_species]['latest']) == 'Unknown':
+                if str(taxa_statistics[selected_explanation_species]['latest']) == 'Unknown':
                     val = '?'
                 else:
-                    val = str(taxa_statistics[random_species]['latest'])
+                    val = str(taxa_statistics[selected_explanation_species]['latest'])
                 doc.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
 
                 #records
@@ -1045,18 +1086,16 @@ class Atlas(gobject.GObject):
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(18, 5, ''.join(['R ', str(taxa_statistics[random_species]['count'])]), 0, 'L', False)
+                doc.multi_cell(20, 5, ''.join(['R ', str(taxa_statistics[selected_explanation_species]['count'])]), 0, 'L', False)
 
                 #squares
                 doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding)
+                doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-37)+x_padding)
                 doc.set_font('Helvetica', '', 12)
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(18, 5, ''.join(['S ', str(taxa_statistics[random_species]['dist_count'])]), 0, 'R', False)
-
-
+                doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/float(len(self.dataset.occupied_squares[self.dataset.config.get('Atlas', 'distribution_unit')])))*100, 1)) , '%)']), 0, 'R', False)
 
             #### the explanations
             doc.set_font('Helvetica', '', 9)
@@ -1353,6 +1392,9 @@ class Atlas(gobject.GObject):
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
                 max_species_records_length = max_species_records_length - len(taxa_statistics[item[0]]['description'])
 
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[item[0]]['voucher'])]))
+
             remaining_records = 0
 
             #there has to be a better way?
@@ -1439,20 +1481,37 @@ class Atlas(gobject.GObject):
 
             #taxon blurb
             doc.set_y(y_padding+12)
-            doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
             doc.set_font('Helvetica', '', 10)
             doc.set_text_color(0)
             doc.set_fill_color(255, 255, 255)
             doc.set_line_width(0.1)
+            
+            add_pad = False
 
             if len(taxa_statistics[item[0]]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                doc.set_font('Helvetica', '', 10)
-                doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join([taxa_statistics[item[0]]['description'], '\n\n']), 0, 'L', False)
                 doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                doc.set_font('Helvetica', '', 10)
+                doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, taxa_statistics[item[0]]['description'], 0, 'L', False)
+                add_pad = True
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
-                doc.set_font('Helvetica', '', 10)
+                
+                if add_pad:
+                    doc.ln()
+                    
+                doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                doc.set_font('Helvetica', '', 10)                    
                 doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+                add_pad = True
+
+            if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                
+                if add_pad:
+                    doc.ln()
+                    
+                doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                doc.set_font('Helvetica', 'I', 10)                    
+                doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Vouchers: ', str(taxa_statistics[item[0]]['voucher'])]), 0, 'L', False)
 
             #chart
             if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
@@ -1621,12 +1680,12 @@ class Atlas(gobject.GObject):
 
                 #squares
                 doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-17)+x_padding)
+                doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-37)+x_padding)
                 doc.set_font('Helvetica', '', 12)
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(20, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
+                doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[item[0]]['dist_count'])/float(len(self.dataset.occupied_squares[self.dataset.config.get('Atlas', 'distribution_unit')])))*100, 1)) , '%)']), 0, 'R', False)
 
             taxon_parts = item[0].split(' ')
 

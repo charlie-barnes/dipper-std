@@ -81,6 +81,8 @@ class Read(gobject.GObject):
                         determiner_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ['vc', 'vice-county', 'vice county']:
                         vc_position = col_index
+                    elif sheet.cell(0, col_index).value.lower() in ['voucher', 'voucher status']:
+                        voucher_position = col_index
 
                 rec_names = []
                 det_names = []
@@ -92,7 +94,8 @@ class Read(gobject.GObject):
                     grid_reference = sheet.cell(row_index, grid_reference_position).value
                     date = sheet.cell(row_index, date_position).value
                     recorder = sheet.cell(row_index, recorder_position).value
-                    
+                    voucher = sheet.cell(row_index, voucher_position).value
+
                     #we can allow null determiners
                     try:
                         determiner = sheet.cell(row_index, determiner_position).value
@@ -127,6 +130,30 @@ class Read(gobject.GObject):
                     grid_10m = reference.os_10m
                     grid_1m = reference.os_1m
 
+                    if grid_100km not in self.dataset.occupied_squares['100km']:
+                        self.dataset.occupied_squares['100km'].append(grid_100km)
+
+                    if grid_10km not in self.dataset.occupied_squares['10km']:
+                        self.dataset.occupied_squares['10km'].append(grid_10km)
+
+                    if grid_5km not in self.dataset.occupied_squares['1km']:
+                        self.dataset.occupied_squares['1km'].append(grid_1km)
+
+                    if grid_2km not in self.dataset.occupied_squares['5km']:
+                        self.dataset.occupied_squares['5km'].append(grid_5km)
+
+                    if grid_1km not in self.dataset.occupied_squares['2km']:
+                        self.dataset.occupied_squares['2km'].append(grid_2km)
+
+                    if grid_100m not in self.dataset.occupied_squares['100m']:
+                        self.dataset.occupied_squares['100m'].append(grid_100m)
+
+                    if grid_10m not in self.dataset.occupied_squares['10m']:
+                        self.dataset.occupied_squares['10m'].append(grid_10m)
+
+                    if grid_1m not in self.dataset.occupied_squares['1m']:
+                        self.dataset.occupied_squares['1m'].append(grid_1m)
+
                     #we can allow null vcs 
                     try:
                         vc = sheet.cell(row_index, vc_position).value
@@ -143,7 +170,7 @@ class Read(gobject.GObject):
                     if len(taxa) > 0:
                         temp_taxa_list.append(taxa)
                         self.dataset.cursor.execute('INSERT INTO data \
-                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                                      [taxa,
                                                      location,
                                                      grid_reference,
@@ -155,7 +182,8 @@ class Read(gobject.GObject):
                                                      decade_to, year_to, month_to, day_to,
                                                      recorder,
                                                      determiner,
-                                                     vc])
+                                                     vc,
+                                                     voucher])
 
                     self.dataset.records = self.dataset.records + 1
 
