@@ -806,7 +806,7 @@ class Atlas(gobject.GObject):
                 max_species_records_length = max_species_records_length - len(taxa_statistics[selected_explanation_species]['description'])
 
             if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
-                max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[item[0]]['voucher'])]))
+                max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[selected_explanation_species]['voucher'])]))
 
             remaining_records = 0
 
