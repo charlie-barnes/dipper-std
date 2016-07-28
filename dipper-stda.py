@@ -536,10 +536,10 @@ class Run():
 
                 while gtk.events_pending():
                     gtk.main_iteration_do(True)
-                
+
                 try:
                     self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
-                except TypeError:
+                except AttributeError:
                     self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
                     
                 self.builder.get_object('notebook1').set_sensitive(True)
