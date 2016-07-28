@@ -21,6 +21,7 @@ import gtk
 from pygtk_chart import bar_chart
 import pango
 import tempfile
+import json
 
 class Chart(gtk.Window):
 
@@ -156,10 +157,30 @@ class Chart(gtk.Window):
 
 
     def __set_data__(self):
+    
         #create the sql for the sql_filters
+        if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
+            self.dataset.use_vcs = True
+        else:
+            self.dataset.use_vcs = False
+
+        if self.dataset.use_vcs == True:
+            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ') AND'])
+        else:
+            vcs_sql = ''
+
+        restriction_sql = ''
+
+        for restriction in json.loads(self.dataset.config.get('Atlas', 'families')):
+            restriction_sql = ' or '.join([restriction_sql, ''.join(['species_data.' , restriction[0] , ' = "' , restriction[1] + '"'])])
+
+        restriction_sql = restriction_sql[4:]
+        
         self.dataset.cursor.execute('SELECT COUNT(DISTINCT(data.month)) \
                                    FROM data \
+                                   JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE data.taxon = "' + self.item + '" \
+                                   AND ' + vcs_sql + ' (' + restriction_sql + ') \
                                    AND data.month IS NOT NULL')
 
         data = self.dataset.cursor.fetchall()
@@ -167,7 +188,9 @@ class Chart(gtk.Window):
 
         self.dataset.cursor.execute('SELECT COUNT(DISTINCT(data.decade)) \
                                    FROM data \
+                                   JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE data.taxon = "' + self.item + '" \
+                                   AND ' + vcs_sql + ' (' + restriction_sql + ') \
                                    AND data.decade IS NOT NULL')
 
         data = self.dataset.cursor.fetchall()
@@ -180,7 +203,9 @@ class Chart(gtk.Window):
 
             self.dataset.cursor.execute('SELECT data.month, COUNT(data.taxon) \
                                    FROM data \
+                                   JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE data.taxon = "' + self.item + '" \
+                                   AND ' + vcs_sql + ' (' + restriction_sql + ') \
                                    AND data.month IS NOT NULL \
                                    GROUP BY data.month')
 
@@ -216,8 +241,10 @@ class Chart(gtk.Window):
 
             self.dataset.cursor.execute('SELECT data.decade, COUNT(data.taxon) \
                                          FROM data \
+                                         JOIN species_data ON data.taxon = species_data.taxon \
                                          WHERE data.taxon = "' + self.item + '" \
                                          AND data.decade IS NOT NULL \
+                                         AND ' + vcs_sql + ' (' + restriction_sql + ') \
                                          GROUP BY data.decade \
                                          ORDER BY data.decade')
 
