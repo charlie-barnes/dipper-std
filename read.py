@@ -197,7 +197,7 @@ class Read(gobject.GObject):
                         recorder_position = col_index
                     elif sheet.cell(0, col_index).value.lower().strip() in ['determiner', 'determiners']:
                         determiner_position = col_index
-                    elif sheet.cell(0, col_index).value.lower().strip() in ['vc', 'vice-county', 'vice county']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['vc', 'vice-county', 'vice county', 'vicecounty']:
                         vc_position = col_index
                     elif sheet.cell(0, col_index).value.lower().strip() in ['voucher', 'voucher status']:
                         voucher_position = col_index
