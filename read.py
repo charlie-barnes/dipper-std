@@ -22,6 +22,7 @@ import xlrd
 import os
 import gtk
 import json
+import datetime
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
@@ -92,9 +93,24 @@ class Read(gobject.GObject):
                     taxa = sheet.cell(row_index, taxon_position).value
                     location = sheet.cell(row_index, location_position).value
                     grid_reference = sheet.cell(row_index, grid_reference_position).value
+                            
                     date = sheet.cell(row_index, date_position).value
+                    
+                    #check to see if we have an excel date integer - if so convert to a date string
+                    try:
+                        date+0
+                        tupledate = xlrd.xldate_as_tuple(date, book.datemode)
+                        pdate = datetime.datetime(tupledate[0],tupledate[1],tupledate[2])
+                        date = pdate.strftime("%d-%m-%Y")
+                    except TypeError:
+                        pass
+                     
                     recorder = sheet.cell(row_index, recorder_position).value
-                    voucher = sheet.cell(row_index, voucher_position).value
+                    
+                    try:
+                        voucher = sheet.cell(row_index, voucher_position).value
+                    except UnboundLocalError:
+                        voucher = None
 
                     #we can allow null determiners
                     try:
@@ -227,6 +243,7 @@ class Read(gobject.GObject):
 
                     taxa = sheet.cell(row_index, taxon_position).value
                     genus = taxa.split()[0]
+                    
                     if taxa in temp_taxa_list:
                         try:
                             kingdom = sheet.cell(row_index, kingdom_position).value
