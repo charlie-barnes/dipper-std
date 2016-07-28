@@ -539,7 +539,7 @@ class Run():
                 
                 try:
                     self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
-                except AttributeError:
+                except TypeError:
                     self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
                     
                 self.builder.get_object('notebook1').set_sensitive(True)
@@ -847,7 +847,10 @@ class Run():
             self.builder.get_object('checkbutton2').set_active(self.dataset.config.getboolean('Atlas', 'grid_lines_visible'))
 
             #taxa
-            selected_taxa = json.loads(self.dataset.config.get('Atlas', 'families'))
+            try:
+                selected_taxa = json.loads(self.dataset.config.get('Atlas', 'families'))
+            except ValueError:
+                selected_taxa = []
             
             store = self.builder.get_object('treeview2').get_model()
             store.clear()
@@ -859,66 +862,85 @@ class Run():
                 self.builder.get_object('treeview2').scroll_to_point(0,0)
 
             selected_taxa_iter = []
+            
+            
+            
+            
+            
+            
+            
+            for kingdom in self.dataset.kingdoms.keys():
+                parent_iter = None
+                this_iter = store.append(parent_iter, [kingdom, 'kingdom'])
+                            
+                if ['kingdom', kingdom] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
+            
+            for phylum in self.dataset.phyla.keys():
+                try:
+                    parent_iter = self.dataset.kingdoms[self.dataset.phyla[phylum][0]][1]
+                except KeyError:
+                    parent_iter = None
+                    
+                this_iter = store.append(parent_iter, [class_, 'class_'])
+                
+                if ['phylum', phylum] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
+        
+            for class_ in self.dataset.classes.keys():
+                try:
+                    parent_iter = self.dataset.phyla[self.dataset.classes[class_][0]][1]
+                except KeyError:
+                    parent_iter = None
+                    
+                this_iter = store.append(parent_iter, [class_, 'class_'])
+                    
+                if ['class_', class_] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
 
-            for kingdom in self.dataset.kingdoms:
-                if kingdom == '':
-                    kiter = None
-                else:
-                    kiter = store.append(None, [kingdom, 'kingdom'])
-                                
-                    if ['kingdom', kingdom] in selected_taxa:
-                        selected_taxa_iter.append([None, kiter])
+            for order in self.dataset.orders.keys():
+                try:
+                    parent_iter = self.dataset.classes[self.dataset.orders[order][0]][1]
+                except KeyError:
+                    parent_iter = None
+                    
+                this_iter = store.append(parent_iter, [order, 'order'])
                 
-                for phylum in self.dataset.phyla[kingdom]:
-                    if phylum == '':
-                        piter = kiter
-                    else:                        
-                        piter = store.append(kiter, [phylum, 'phylum'])
-                                
-                        if ['phylum', phylum] in selected_taxa:
-                            selected_taxa_iter.append([kiter, piter])
-                
-                    for class_ in self.dataset.classes[phylum]:
-                        if class_ == '':
-                            citer = piter
-                        else:
-                            citer = store.append(piter, [class_, 'class_'])
-                                
-                            if ['class_', class_] in selected_taxa:
-                                selected_taxa_iter.append([piter, citer])
-                
-                        for order in self.dataset.orders[class_]:
-                            if order == '':
-                                oiter = citer
-                            else:
-                                oiter = store.append(citer, [order, 'order_'])
-                                
-                                if ['order_', order] in selected_taxa:
-                                    selected_taxa_iter.append([citer, oiter])
-                
-                            for family in self.dataset.families[order]:
-                                if family == '':
-                                    fiter = oiter
-                                else:
-                                    fiter = store.append(oiter, [family, 'family'])
-                                
-                                    if ['family', family] in selected_taxa:
-                                        selected_taxa_iter.append([oiter, fiter])
+                if ['order_', order] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
 
-                                for genus in self.dataset.genera[family]:
-                                    if genus == '':
-                                        giter = fiter
-                                    else:
-                                        giter = store.append(fiter, [genus, 'genus'])
-                                
-                                        if ['genus', genus] in selected_taxa:
-                                            selected_taxa_iter.append([fiter, giter])
-                
-                                    for species in self.dataset.specie[genus]:
-                                        iter = store.append(giter, [species, 'taxon'])
-                                
-                                        if ['taxon', species] in selected_taxa:
-                                            selected_taxa_iter.append([giter, iter])
+            for family in self.dataset.families.keys():
+                try:
+                    parent_iter = self.dataset.orders[self.dataset.families[family][0]][1]
+                except KeyError:
+                    parent_iter = None
+                    
+                this_iter = store.append(parent_iter, [family, 'family'])
+            
+                if ['family', family] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
+    
+            for genus in self.dataset.genera.keys():
+                try:
+                    parent_iter = self.dataset.families[self.dataset.genera[genus][0]][1]
+                except KeyError:
+                    parent_iter = None
+                    
+                this_iter = store.append(parent_iter, [genus, 'genus'])
+        
+                if ['genus', genus] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
+  
+            for species in self.dataset.specie.keys():
+                try:
+                    parent_iter = self.dataset.genera[self.dataset.specie[species][0]][1]
+                except KeyError:
+                    parent_iter = None
+                    
+                this_iter = store.append(parent_iter, [species, 'taxon'])
+
+                if ['taxon', species] in selected_taxa:
+                    selected_taxa_iter.append([parent_iter, this_iter])
 
             for parent, child in selected_taxa_iter:
                 if parent is not None:

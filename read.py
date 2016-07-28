@@ -49,6 +49,8 @@ class Read(gobject.GObject):
         for name in book.sheet_names():
             if name == '--data--':
                 has_data = True
+            else:
+                has_data = False
                 
             if name[:2] != '--' and name [-2:] != '--':
                 self.dataset.available_sheets.append(name)
@@ -68,21 +70,21 @@ class Read(gobject.GObject):
                 
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
-                    if sheet.cell(0, col_index).value.lower() in ['taxon name', 'taxon', 'recommended taxon name']:
+                    if sheet.cell(0, col_index).value.lower().strip() in ['taxon name', 'taxon', 'recommended taxon name', 'species']:
                         taxon_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference']:
                         grid_reference_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['date', 'sample date']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['date', 'sample date']:
                         date_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['location', 'site']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['location', 'site', 'site name']:
                         location_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['recorder', 'recorders']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['recorder', 'recorders']:
                         recorder_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['determiner', 'determiners']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['determiner', 'determiners']:
                         determiner_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['vc', 'vice-county', 'vice county']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['vc', 'vice-county', 'vice county']:
                         vc_position = col_index
-                    elif sheet.cell(0, col_index).value.lower() in ['voucher', 'voucher status']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['voucher', 'voucher status']:
                         voucher_position = col_index
 
                 rec_names = []
@@ -295,32 +297,31 @@ class Read(gobject.GObject):
                         except UnboundLocalError:
                             common_name = ''
 
-                        if kingdom not in self.dataset.kingdoms:
-                            self.dataset.kingdoms.append(kingdom)
-                            self.dataset.phyla[kingdom] = []
 
-                        if phylum not in self.dataset.phyla[kingdom]:
-                            self.dataset.phyla[kingdom].append(phylum)
-                            self.dataset.classes[phylum] = []
 
-                        if class_ not in self.dataset.classes[phylum]:
-                            self.dataset.classes[phylum].append(class_)
-                            self.dataset.orders[class_] = []
 
-                        if order not in self.dataset.orders[class_]:
-                            self.dataset.orders[class_].append(order)
-                            self.dataset.families[order] = []
+                        if kingdom not in self.dataset.kingdoms.keys():
+                            self.dataset.kingdoms[kingdom] = ['', None]
 
-                        if family not in self.dataset.families[order]:
-                            self.dataset.families[order].append(family)
-                            self.dataset.genera[family] = []
+                        if phylum not in self.dataset.phyla.keys():
+                            self.dataset.phyla[phylum] = [kingdom, None]
+                            
+                        if class_ not in self.dataset.classes.keys():
+                            self.dataset.orders[class_] = [phylum, None]
 
-                        if genus not in self.dataset.genera[family]:
-                            self.dataset.genera[family].append(genus)
-                            self.dataset.specie[genus] = []
+                        if order not in self.dataset.orders.keys():
+                            self.dataset.families[order] = [class_, None]
 
-                        if taxa not in self.dataset.specie[genus]:
-                            self.dataset.specie[genus].append(taxa)
+                        if family not in self.dataset.families.keys():
+                            self.dataset.genera[family] = [order, None]
+
+                        if genus not in self.dataset.genera.keys():
+                            self.dataset.specie[genus] = [family, None]
+
+                        if taxa not in self.dataset.specie.keys():
+                            self.dataset.specie[taxa] = [genus, None]
+
+
 
                         if taxa not in self.dataset.taxa.keys():
                             self.dataset.taxa[taxa] = {'kingdom': kingdom, 'phylum': phylum, 'class': class_, 'order': order, 'family': family}
@@ -354,7 +355,7 @@ class Read(gobject.GObject):
 
                 for row in data:
                     self.dataset.cursor.execute('INSERT INTO species_data \
-                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                                 [row[0],
                                                 None,
                                                 None,
@@ -366,7 +367,16 @@ class Read(gobject.GObject):
                                                 None,
                                                 None,
                                                 None,
+                                                None,
                                                 None])
+                                                
+
+                for row_index in range(1, sheet.nrows):
+
+                    taxa = sheet.cell(row_index, taxon_position).value      
+
+                    if taxa not in self.dataset.specie.keys():
+                        self.dataset.specie[taxa] = [None, None]                                          
 
 
             return True

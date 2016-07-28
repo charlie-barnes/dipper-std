@@ -36,7 +36,7 @@ class Dataset(gobject.GObject):
 
         self.records = 0
         self.taxa = {}
-        self.kingdoms = []
+        self.kingdoms = {}
         self.phyla = {}
         self.classes = {}
         self.orders = {}
