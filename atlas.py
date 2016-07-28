@@ -791,7 +791,9 @@ class Atlas(gobject.GObject):
             #compile list of last e.g. 10 records for use below
             self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
                                         FROM data \
+                                        JOIN species_data ON data.taxon = species_data.taxon \
                                         WHERE data.taxon = "' + selected_explanation_species + '" \
+                                        AND ' + vcs_sql + ' (' + restriction_sql + ') \
                                         ORDER BY data.year_to || data.month_to || data.day_to desc')
 
             indiv_taxon_data = self.dataset.cursor.fetchall()
@@ -1387,7 +1389,9 @@ class Atlas(gobject.GObject):
             #compile list of last e.g. 10 records for use below
             self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
                                         FROM data \
+                                        JOIN species_data ON data.taxon = species_data.taxon \
                                         WHERE data.taxon = "' + item[0] + '" \
+                                        AND ' + vcs_sql + ' (' + restriction_sql + ') \
                                         ORDER BY data.year_to || data.month_to || data.day_to desc')
 
             indiv_taxon_data = self.dataset.cursor.fetchall()
