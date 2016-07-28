@@ -118,6 +118,8 @@ class Atlas(gobject.GObject):
             vcs_sql = ''
 
         #add the total coverage & calc first and date band 2 grid arrays
+        #this purposely doesn't include a taxon restriction as we may want to split up an atlas into volumes.
+        #this should probably be a user option
         self.dataset.cursor.execute('SELECT grid_' + self.dataset.config.get('Atlas', 'species_density_map_unit') + ' AS grids, COUNT(DISTINCT taxon) as species \
                                      FROM data \
                                      ' + vcs_sql + ' \
@@ -1813,6 +1815,7 @@ class Atlas(gobject.GObject):
                     #only show the abbreviation if we're showing the latest records
                     if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
                         contribname = ''.join([name, ' (', contrib_data[name], ')'])
+                        print "mark" ########this isn't working
                     else:
                         contribname = name
                     contrib_blurb.append(name)
