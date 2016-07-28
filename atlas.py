@@ -453,7 +453,12 @@ class Atlas(gobject.GObject):
             taxa_statistics[stats[0]]['national_designation'] = str(stats[2])
             taxa_statistics[stats[0]]['local_designation'] = str(stats[3])
             taxa_statistics[stats[0]]['count'] = str(stats[4])
-            taxa_statistics[stats[0]]['description'] = str(stats[11])
+            
+            if stats[11] == None:
+                taxa_statistics[stats[0]]['description'] = ''
+            else:            
+                taxa_statistics[stats[0]]['description'] = str(stats[11])
+                
             taxa_statistics[stats[0]]['common_name'] = str(stats[12])
 
             if stats[5] == None:
