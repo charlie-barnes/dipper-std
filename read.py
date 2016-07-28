@@ -292,12 +292,12 @@ class Read(gobject.GObject):
                         #check to see if vc is a number
                         vc = sheet.cell(row_index, vc_position).value
                         try:
+                            vc+0
+                        except TypeError:
                             try:
                                 vc = vcname2number[vc]
                             except KeyError:
                                 vc = 'Unknown'
-                        except TypeError:
-                            pass
                             
                         if vc not in self.dataset.vicecounties:
                             self.dataset.vicecounties.append(vc)
@@ -372,26 +372,41 @@ class Read(gobject.GObject):
                     if taxa in temp_taxa_list:
                         try:
                             kingdom = sheet.cell(row_index, kingdom_position).value
+                                                        
+                            if kingdom not in self.dataset.kingdoms.keys():
+                                self.dataset.kingdoms[kingdom] = ['', None]
                         except UnboundLocalError:
                             kingdom = ''
                             
                         try:
-                            phylum = sheet.cell(row_index, phylum_position).value
+                            phylum = sheet.cell(row_index, phylum_position).value                            
+
+                            if phylum not in self.dataset.phyla.keys():
+                                self.dataset.phyla[phylum] = [kingdom, None]
                         except UnboundLocalError:
                             phylum = ''
                             
                         try:
                             class_ = sheet.cell(row_index, class_position).value
+                            
+                            if class_ not in self.dataset.classes.keys():
+                                self.dataset.classes[class_] = [phylum, None]
                         except UnboundLocalError:
                             class_ = ''
                             
                         try:
                             order = sheet.cell(row_index, order_position).value
+                            
+                            if order not in self.dataset.orders.keys():
+                                self.dataset.orders[order] = [class_, None]                                
                         except UnboundLocalError:
                             order = ''
                             
                         try:
                             family = sheet.cell(row_index, family_position).value
+                            
+                            if family not in self.dataset.families.keys():
+                                self.dataset.families[family] = [order, None]
                         except UnboundLocalError:
                             family = ''
 
@@ -420,32 +435,12 @@ class Read(gobject.GObject):
                         except UnboundLocalError:
                             common_name = ''
 
-
-
-
-                        if kingdom not in self.dataset.kingdoms.keys():
-                            self.dataset.kingdoms[kingdom] = ['', None]
-
-                        if phylum not in self.dataset.phyla.keys():
-                            self.dataset.phyla[phylum] = [kingdom, None]
-                            
-                        if class_ not in self.dataset.classes.keys():
-                            self.dataset.orders[class_] = [phylum, None]
-
-                        if order not in self.dataset.orders.keys():
-                            self.dataset.families[order] = [class_, None]
-
-                        if family not in self.dataset.families.keys():
-                            self.dataset.genera[family] = [order, None]
-
                         if genus not in self.dataset.genera.keys():
-                            self.dataset.specie[genus] = [family, None]
+                            self.dataset.genera[genus] = [family, None]
 
                         if taxa not in self.dataset.specie.keys():
                             self.dataset.specie[taxa] = [genus, None]
-
-
-
+                        ### some duplication here - clean it up
                         if taxa not in self.dataset.taxa.keys():
                             self.dataset.taxa[taxa] = {'kingdom': kingdom, 'phylum': phylum, 'class': class_, 'order': order, 'family': family}
                             

@@ -871,7 +871,9 @@ class Run():
             
             for kingdom in self.dataset.kingdoms.keys():
                 parent_iter = None
+                
                 this_iter = store.append(parent_iter, [kingdom, 'kingdom'])
+                self.dataset.kingdoms[kingdom][1] = this_iter
                             
                 if ['kingdom', kingdom] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
@@ -882,7 +884,8 @@ class Run():
                 except KeyError:
                     parent_iter = None
                     
-                this_iter = store.append(parent_iter, [class_, 'class_'])
+                this_iter = store.append(parent_iter, [phylum, 'phylum'])
+                self.dataset.phyla[phylum][1] = this_iter
                 
                 if ['phylum', phylum] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
@@ -892,20 +895,23 @@ class Run():
                     parent_iter = self.dataset.phyla[self.dataset.classes[class_][0]][1]
                 except KeyError:
                     parent_iter = None
-                    
+
                 this_iter = store.append(parent_iter, [class_, 'class_'])
-                    
+                self.dataset.classes[class_][1] = this_iter
+
                 if ['class_', class_] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
 
             for order in self.dataset.orders.keys():
+
                 try:
                     parent_iter = self.dataset.classes[self.dataset.orders[order][0]][1]
                 except KeyError:
                     parent_iter = None
                     
                 this_iter = store.append(parent_iter, [order, 'order'])
-                
+                self.dataset.orders[order][1] = this_iter
+
                 if ['order_', order] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
 
@@ -916,6 +922,7 @@ class Run():
                     parent_iter = None
                     
                 this_iter = store.append(parent_iter, [family, 'family'])
+                self.dataset.families[family][1] = this_iter
             
                 if ['family', family] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
@@ -927,6 +934,7 @@ class Run():
                     parent_iter = None
                     
                 this_iter = store.append(parent_iter, [genus, 'genus'])
+                self.dataset.genera[genus][1] = this_iter
         
                 if ['genus', genus] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
@@ -938,6 +946,7 @@ class Run():
                     parent_iter = None
                     
                 this_iter = store.append(parent_iter, [species, 'taxon'])
+                self.dataset.specie[species][1] = this_iter
 
                 if ['taxon', species] in selected_taxa:
                     selected_taxa_iter.append([parent_iter, this_iter])
