@@ -27,6 +27,121 @@ import datetime
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
 
+vcname2number = {
+'West Cornwall with Scilly':1,
+'East Cornwall':2,
+'South Devon':3,
+'North Devon':4,
+'South Somerset':5,
+'North Somerset':6,
+'North Wiltshire':7,
+'South Wiltshire':8,
+'Dorset':9,
+'Isle of Wight':10,
+'South Hampshire':11,
+'North Hampshire':12,
+'West Sussex':13,
+'East Sussex':14,
+'East Kent':15,
+'West Kent':16,
+'Surrey':17,
+'South Essex':18,
+'North Essex':19,
+'Hertfordshire':20,
+'Middlesex':21,
+'Berkshire':22,
+'Oxfordshire':23,
+'Buckinghamshire':24,
+'East Suffolk':25,
+'West Suffolk':26,
+'East Norfolk':27,
+'West Norfolk':28,
+'Cambridgeshire':29,
+'Bedfordshire':30,
+'Huntingdonshire':31,
+'Northamptonshire':32,
+'East Gloucestershire':33,
+'West Gloucestershire':34,
+'Monmouthshire':35,
+'Herefordshire':36,
+'Worcestershire':37,
+'Warwickshire':38,
+'Staffordshire':39,
+'Shropshire':40,
+'Glamorganshire':41,
+'Breconshire':42,
+'Radnorshire':43,
+'Carmarthenshire':44,
+'Pembrokeshire':45,
+'Cardiganshire':46,
+'Montgomeryshire':47,
+'Merionethshire':48,
+'Caernarvonshire':49,
+'Denbighshire':50,
+'Flintshire':51,
+'Anglesey':52,
+'South Lincolnshire':53,
+'North Lincolnshire':54,
+'Leicestershire (with Rutland)':55,
+'Leicestershire':55,
+'Nottinghamshire':56,
+'Derbyshire':57,
+'Cheshire':58,
+'South Lancashire':59,
+'West Lancashire':60,
+'South-east Yorkshire':61,
+'North-east Yorkshire':62,
+'South-west Yorkshire':63,
+'Mid-west Yorkshire':64,
+'North-west Yorkshire':65,
+'County Durham':66,
+'South Northumberland':67,
+'North Northumberland':68,
+'Westmorland (with Furness)':69,
+'Cumberland':70,
+'Isle of Man':71,
+'Dumfriesshire':72,
+'Kirkcudbrightshire':73,
+'Wigtownshire':74,
+'Ayrshire':75,
+'Renfrewshire':76,
+'Lanarkshire':77,
+'Peeblesshire':78,
+'Selkirkshire':79,
+'Roxburghshire':80,
+'Berwickshire':81,
+'East Lothian':82,
+'Midlothian':83,
+'West Lothian':84,
+'Fifeshire':85,
+'Stirlingshire':86,
+'West Perthshire':87,
+'Mid Perthshire':88,
+'East Perthshire':89,
+'Angus':90,
+'Kincardineshire':91,
+'South Aberdeenshire':92,
+'North Aberdeenshire':93,
+'Banffshire':94,
+'Moray':95,
+'East Inverness-shire':96,
+'West Inverness-shire':97,
+'Argyllshire':98,
+'Dunbartonshire':99,
+'Clyde Isles':100,
+'Kintyre':101,
+'South Ebudes':102,
+'Mid Ebudes':103,
+'North Ebudes':104,
+'West Ross & Cromarty':105,
+'East Ross & Cromarty':106,
+'East Sutherland':107,
+'West Sutherland':108,
+'Caithness':109,
+'Outer Hebrides':110,
+'Orkney':111,
+'Shetland':112}
+
 class Read(gobject.GObject):
 
     def __init__(self, filename, dataset):
@@ -174,8 +289,16 @@ class Read(gobject.GObject):
 
                     #we can allow null vcs 
                     try:
+                        #check to see if vc is a number
                         vc = sheet.cell(row_index, vc_position).value
-
+                        try:
+                            try:
+                                vc = vcname2number[vc]
+                            except KeyError:
+                                vc = 'Unknown'
+                        except TypeError:
+                            pass
+                            
                         if vc not in self.dataset.vicecounties:
                             self.dataset.vicecounties.append(vc)
                         self.dataset.use_vcs = True
