@@ -1815,10 +1815,9 @@ class Atlas(gobject.GObject):
                     #only show the abbreviation if we're showing the latest records
                     if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
                         contribname = ''.join([name, ' (', contrib_data[name], ')'])
-                        print "mark" ########this isn't working
                     else:
                         contribname = name
-                    contrib_blurb.append(name)
+                    contrib_blurb.append(contribname)
     
             doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
 
