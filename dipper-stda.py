@@ -909,7 +909,7 @@ class Run():
                 except KeyError:
                     parent_iter = None
                     
-                this_iter = store.append(parent_iter, [order, 'order'])
+                this_iter = store.append(parent_iter, [order, 'order_'])
                 self.dataset.orders[order][1] = this_iter
 
                 if ['order_', order] in selected_taxa:
