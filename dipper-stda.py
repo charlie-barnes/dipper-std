@@ -1503,10 +1503,19 @@ class Run():
         widget.set_sensitive(True)
         
     def change_type(self, widget):
-        '''Set the data source type'''
-        print self, widget
-        if widget.get_active()[3] == 0:
-            widget.get_children()[3].visible = False
+        '''Set the data source type'''  
+        if widget.get_children()[0].get_active() == 1:
+            widget.get_children()[1].set_visible(False)
+            widget.get_children()[2].set_visible(True)
+            widget.get_children()[3].set_visible(False)
+        elif widget.get_children()[0].get_active() == 2:
+            widget.get_children()[1].set_visible(True)
+            widget.get_children()[2].set_visible(False)
+            widget.get_children()[3].set_visible(False)
+        else:    
+            widget.get_children()[1].set_visible(False)
+            widget.get_children()[2].set_visible(False)
+            widget.get_children()[3].set_visible(True)
     
     def new_file(self, widget):
         '''Create a new file'''
@@ -1521,18 +1530,6 @@ class Run():
                   }
         builder.connect_signals(signals)
 
-        combobox = builder.get_object('combobox1')
-        liststore = gtk.ListStore(str)
-        cell = gtk.CellRendererText()
-        combobox.pack_start(cell)
-        combobox.add_attribute(cell, 'text', 0)
-        combobox.set_model(liststore)         
-        
-        for option in ['Atlas', 'Checklist', 'Single Species']:
-            liststore.append([option])
-
-        combobox.set_active(0) 
-
         combobox = builder.get_object('combobox2')
         liststore = gtk.ListStore(str)
         cell = gtk.CellRendererText()
@@ -1544,6 +1541,18 @@ class Run():
             liststore.append([option])
 
         combobox.set_active(0)
+
+        combobox = builder.get_object('combobox1')
+        liststore = gtk.ListStore(str)
+        cell = gtk.CellRendererText()
+        combobox.pack_start(cell)
+        combobox.add_attribute(cell, 'text', 0)
+        combobox.set_model(liststore)         
+        
+        for option in ['Atlas', 'Checklist', 'Single Species']:
+            liststore.append([option])
+
+        combobox.set_active(0) 
         
         filechooserbutton = builder.get_object('filechooserbutton1')
         
