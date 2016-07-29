@@ -224,10 +224,11 @@ class Read(gobject.GObject):
                     location = sheet.cell(row_index, location_position).value
                     grid_reference = sheet.cell(row_index, grid_reference_position).value
 
+
                     #get the date; if it fails try and decode an NBN exchange format date instead
-                    try:                            
+                    try:
                         parseddate = sheet.cell(row_index, date_position).value
-                        
+
                         #check to see if we have an excel date integer - if so convert to a date string
                         if sheet.cell(row_index, date_position).ctype == 3:                        
                             tupledate = xlrd.xldate_as_tuple(parseddate, book.datemode)
@@ -239,8 +240,8 @@ class Read(gobject.GObject):
                         startdate = sheet.cell(row_index, start_date_position).value
                         enddate = sheet.cell(row_index, end_date_position).value
                         datetype = sheet.cell(row_index, date_type_position).value
-                        
-                        if datetype == 'D':      
+
+                        if datetype.lower() in ('d', 'day'):      
                                 
                             if sheet.cell(row_index, start_date_position).ctype == 3:   
                                 tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)                                
@@ -249,7 +250,7 @@ class Read(gobject.GObject):
                             else:
                                 parseddate = startdate            
                                          
-                        elif datetype == 'DD':    
+                        elif datetype.lower() in ('dd', 'day range'):
                         
                             if sheet.cell(row_index, start_date_position).ctype == 3:                    
                                 tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
@@ -263,7 +264,7 @@ class Read(gobject.GObject):
                                                     
                             parseddate = '-'.join([startdate, endate])
                             
-                        elif datetype == 'O':            
+                        elif datetype.lower() in ('o', 'month'):        
                         
                             if sheet.cell(row_index, start_date_position).ctype == 3:      
                                 tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
@@ -273,7 +274,7 @@ class Read(gobject.GObject):
                                 pdate = datetime.strptime(startdate, '%d/%m/%Y')
                                 parseddate = pdate.strftime("%m %Y")
                         
-                        elif datetype == 'OO':
+                        elif datetype.lower() in ('oo', 'month range'):  
                         
                             if sheet.cell(row_index, start_date_position).ctype == 3:      
                                 tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
@@ -293,7 +294,7 @@ class Read(gobject.GObject):
                                                     
                             parseddate = '-'.join([startdate, endate])
                             
-                        elif datetype == 'Y':
+                        elif datetype.lower() in ('y', 'year'):  
                         
                             if sheet.cell(row_index, start_date_position).ctype == 3:      
                                 tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
@@ -303,7 +304,7 @@ class Read(gobject.GObject):
                                 pdate = datetime.strptime(startdate, '%d/%m/%Y')
                                 parseddate = pdate.strftime("%Y")
                     
-                        elif datetype == 'YY':
+                        elif datetype.lower() in ('yy', 'year range'):  
                         
                             if sheet.cell(row_index, start_date_position).ctype == 3:      
                                 tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
@@ -323,7 +324,7 @@ class Read(gobject.GObject):
                                                     
                             parseddate = '-'.join([startdate, endate])
                             
-                        elif datetype == '-Y':
+                        elif datetype.lower() in ('-y', 'before year'):  
                         
                             if sheet.cell(row_index, start_date_position).ctype == 3:   
                                 tupledate = xlrd.xldate_as_tuple(enddate, book.datemode)
@@ -333,10 +334,7 @@ class Read(gobject.GObject):
                                 pdate = datetime.strptime(enddate, '%d/%m/%Y')
                                 parseddate = pdate.strftime("-%Y")
                                                                          
-                        elif datetype == 'ND':
-                            parseddate = 'Unknown'
-                            
-                        elif datetype == 'U':
+                        elif datetype.lower() in ('nd', 'u', 'no date', 'unknown'):
                             parseddate = 'Unknown'
                         
 
