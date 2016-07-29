@@ -112,11 +112,16 @@ class Atlas(gobject.GObject):
             
             base_map.paste(region, (0, 0, (int(xdist*scalefactor)+1)+width_hack_diff, (int(ydist*scalefactor)+1)+height_hack_diff  ))
 
+        if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
+            self.dataset.use_vcs = True
+        else:
+            self.dataset.use_vcs = False
+            
         if self.dataset.use_vcs:
             vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
         else:
             vcs_sql = ''
-
+            
         #add the total coverage & calc first and date band 2 grid arrays
         #this purposely doesn't include a taxon restriction as we may want to split up an atlas into volumes.
         #this should probably be a user option
@@ -242,6 +247,11 @@ class Atlas(gobject.GObject):
         #generate the base map
         self.scalefactor = 0.01
 
+        if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
+            self.dataset.use_vcs = True
+        else:
+            self.dataset.use_vcs = False
+            
         if self.dataset.use_vcs:
             vcs_sql = ''.join(['WHERE data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ')'])
         else:
@@ -412,7 +422,7 @@ class Atlas(gobject.GObject):
         self.base_map.paste(mask, (0,0), mask)
 
     def generate(self):
-            
+
         if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
             self.dataset.use_vcs = True
         else:
