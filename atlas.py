@@ -435,7 +435,11 @@ class Atlas(gobject.GObject):
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    species_data.description, \
-                                   species_data.common_name \
+                                   species_data.common_name, \
+                                   species_data.order_, \
+                                   species_data.class_, \
+                                   species_data.phylum, \
+                                   species_data.kingdom \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
@@ -455,6 +459,10 @@ class Atlas(gobject.GObject):
             taxa_statistics[stats[0]]['national_designation'] = str(stats[2])
             taxa_statistics[stats[0]]['local_designation'] = str(stats[3])
             taxa_statistics[stats[0]]['count'] = str(stats[4])
+            taxa_statistics[stats[0]]['order'] = str(stats[13])
+            taxa_statistics[stats[0]]['class'] = str(stats[14])
+            taxa_statistics[stats[0]]['phylum'] = str(stats[15])
+            taxa_statistics[stats[0]]['kingdom'] = str(stats[16])
             
             if stats[11] == None:
                 taxa_statistics[stats[0]]['description'] = ''
@@ -1316,7 +1324,18 @@ class Atlas(gobject.GObject):
         for item in data:
             taxon_recent_records = ''
 
-            doc.section = ''.join(['Family ', taxa_statistics[item[0]]['family']])
+            if taxa_statistics[item[0]]['family'] != 'None':
+                doc.section = ''.join(['Family ', taxa_statistics[item[0]]['family']])
+            elif taxa_statistics[item[0]]['order'] != 'None':
+                doc.section = ''.join(['Order ', taxa_statistics[item[0]]['order']])
+            elif taxa_statistics[item[0]]['class'] != 'None':
+                doc.section = ''.join(['Class ', taxa_statistics[item[0]]['class']])
+            elif taxa_statistics[item[0]]['phylum'] != 'None':
+                doc.section = ''.join(['Phylum ', taxa_statistics[item[0]]['phylum']])
+            elif taxa_statistics[item[0]]['kingdom'] != 'None':
+                doc.section = ''.join(['Kingdom ', taxa_statistics[item[0]]['kingdom']])
+            else:
+                doc.section = ''
 
             if region_count > max_region_count:
                 region_count = 1
