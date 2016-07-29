@@ -223,7 +223,7 @@ class Read(gobject.GObject):
                         
                         #check to see if we have an excel date integer - if so convert to a date string
                         if sheet.cell(row_index, date_position).ctype == 3:                        
-                            tupledate = xlrd.xldate_as_tuple(date, book.datemode)
+                            tupledate = xlrd.xldate_as_tuple(parseddate, book.datemode)
                             pdate = datetime(tupledate[0],tupledate[1],tupledate[2])
                             parseddate = pdate.strftime("%d/%m/%Y")
                     
