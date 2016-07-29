@@ -192,13 +192,13 @@ class Read(gobject.GObject):
                 
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
-                    if sheet.cell(0, col_index).value.lower().strip() in ['taxon name', 'taxon', 'recommended taxon name', 'species']:
+                    if sheet.cell(0, col_index).value.lower().strip() in ['taxon name', 'taxon', 'recommended taxon name', 'species', 'taxonname']:
                         taxon_position = col_index
-                    elif sheet.cell(0, col_index).value.lower().strip() in ['grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['grid reference', 'grid ref', 'grid ref.', 'gridref', 'sample spatial reference', 'gridreference']:
                         grid_reference_position = col_index
                     elif sheet.cell(0, col_index).value.lower().strip() in ['date', 'sample date']:
                         date_position = col_index
-                    elif sheet.cell(0, col_index).value.lower().strip() in ['location', 'site', 'site name']:
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['location', 'site', 'site name', 'sitename']:
                         location_position = col_index
                     elif sheet.cell(0, col_index).value.lower().strip() in ['recorder', 'recorders']:
                         recorder_position = col_index
