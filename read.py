@@ -144,11 +144,12 @@ vcname2number = {
 
 class Read(gobject.GObject):
 
-    def __init__(self, filename, dataset):
+    def __init__(self, filename, dataset, progressbar):
         gobject.GObject.__init__(self)
 
         self.filename = filename
         self.dataset = dataset
+        self.progressbar = progressbar
 
 
     def read(self):
@@ -186,10 +187,20 @@ class Read(gobject.GObject):
                 sheets.append(book.sheet_by_name(sheet))
 
         try:
+            sheetnum = 0
+            totalrecords = 0
+            row_count = 0
+            
+            for sheet in sheets:
+                sheetnum = sheetnum + 1
+                totalrecords = totalrecords + sheet.nrows
+                
             #loop through the selected sheets of the workbook
             for sheet in sheets:
+                self.progressbar.set_text(''.join(['Reading ', sheet.name]))
+
                 #self.dataset.sheet = ' + '.join([self.dataset.sheet, sheet.name])
-                
+
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
                     if sheet.cell(0, col_index).value.lower().strip() in ['taxon name', 'taxon', 'recommended taxon name', 'species', 'taxonname']:
@@ -220,6 +231,15 @@ class Read(gobject.GObject):
 
                 #loop through each row, skipping the header (first) row
                 for row_index in range(1, sheet.nrows):
+                    row_count = row_count + 1
+                    
+                    if row_index % 10 == 0:
+                        self.progressbar.set_fraction(float(row_count)/float(totalrecords))
+                        self.progressbar.set_text(''.join(['Parsing ', sheet.name, ', row ', str(row_index), ' of ', str(sheet.nrows)]))
+
+                    while gtk.events_pending():
+                        gtk.main_iteration(False)
+                    
                     taxa = sheet.cell(row_index, taxon_position).value
                     location = sheet.cell(row_index, location_position).value
                     grid_reference = sheet.cell(row_index, grid_reference_position).value

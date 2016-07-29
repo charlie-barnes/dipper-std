@@ -454,6 +454,14 @@ class Run():
     def open_dataset(self, widget, filename=None, type=None, config=None):
         """Open a data file."""
         self.builder.get_object('notebook1').set_sensitive(False)
+        self.builder.get_object('progressbar1').show()
+        self.builder.get_object('vbox2').set_sensitive(False)
+        
+        watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+        self.builder.get_object('window1').window.set_cursor(watch) 
+        
+        while gtk.events_pending():
+            gtk.main_iteration(False)
 
         #if this isn't the first dataset we've opened this session,
         #delete the preceeding temp directory
@@ -481,8 +489,8 @@ class Run():
         else:
             self.dataset.set_type(type)
             self.dataset.set_source(filename)
-        
-        self.dataset.parse()
+
+        self.dataset.parse(self.builder.get_object('progressbar1'))
         
         store = self.builder.get_object('treeview5').get_model()
         store.clear()
@@ -549,7 +557,8 @@ class Run():
                 self.builder.get_object('notebook1').set_sensitive(True)
 
 
-                self.builder.get_object('hbox1').show()
+                self.builder.get_object('vbox3').show()
+                self.builder.get_object('notebook1').show()
                 self.builder.get_object('menuitem7').set_sensitive(True)
                 self.builder.get_object('menuitem8').set_sensitive(True)
                 self.builder.get_object('toolbutton5').set_sensitive(True)
@@ -582,6 +591,10 @@ class Run():
                 gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
             md.run()
             md.destroy()
+      
+        self.builder.get_object('progressbar1').hide()
+        self.builder.get_object('vbox2').set_sensitive(True)
+        self.builder.get_object('window1').window.set_cursor(None) 
 
 
     def quit(self, widget, third=None):
@@ -1559,25 +1572,27 @@ class Run():
         
     def change_type(self, widget):
         '''Set the data source type'''  
-        if widget.get_children()[0].get_active() == 1:
-            widget.get_children()[1].set_visible(False)
-            widget.get_children()[2].set_visible(True)
-            widget.get_children()[3].set_visible(False)
-        elif widget.get_children()[0].get_active() == 2:
-            widget.get_children()[1].set_visible(True)
-            widget.get_children()[2].set_visible(False)
-            widget.get_children()[3].set_visible(False)
-        else:    
-            widget.get_children()[1].set_visible(False)
-            widget.get_children()[2].set_visible(False)
-            widget.get_children()[3].set_visible(True)
-    
+
+        if widget.get_children()[2].get_active() == 0:
+            widget.get_children()[1].get_children()[0].set_visible(True)
+            widget.get_children()[1].get_children()[1].set_visible(False)
+            widget.get_children()[1].get_children()[2].set_visible(False)
+        elif widget.get_children()[2].get_active() == 2:
+            widget.get_children()[1].get_children()[0].set_visible(False)
+            widget.get_children()[1].get_children()[1].set_visible(False)
+            widget.get_children()[1].get_children()[2].set_visible(True)    
+        elif widget.get_children()[2].get_active() == 1:
+            widget.get_children()[1].get_children()[0].set_visible(False)
+            widget.get_children()[1].get_children()[1].set_visible(True)
+            widget.get_children()[1].get_children()[2].set_visible(False)
+            
     def new_file(self, widget):
         '''Create a new file'''
 
         builder = gtk.Builder()
         builder.add_from_file('./gui/new_dialog.glade')
         dialog = builder.get_object('dialog')
+        dialog.set_transient_for(self.builder.get_object('window1'))
           
         signals = {
                    'new_file_set':self.new_file_set,
@@ -1644,11 +1659,15 @@ class Run():
             pass
         
         response = dialog.run()
+        filen = filechooserbutton.get_filename()
+        dialog.destroy()        
+
+        while gtk.events_pending():
+            gtk.main_iteration(False)
 
         if response == 1:
-            self.open_dataset(widget, filechooserbutton.get_filename(), combobox.get_active_text())
+            self.open_dataset(widget, filen, combobox.get_active_text())
 
-        dialog.destroy()        
     
     def open_file(self, widget):
         '''Open a dataset file'''

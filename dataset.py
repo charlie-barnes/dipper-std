@@ -25,6 +25,8 @@ import ConfigParser
 import read
 import pyodbc
 from subprocess import call
+import os
+import gtk
 
 class Dataset(gobject.GObject):
 
@@ -188,12 +190,12 @@ class Dataset(gobject.GObject):
                                                     
             self.config.filename = None
 
-    def parse(self):
+    def parse(self, progressbar):    
         #guess the mimetype of the file
         self.mime = mimetypes.guess_type(self.config.get('DEFAULT', 'source'))[0]
-
+        
         if self.mime == 'application/vnd.ms-excel':
-            self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self)
+            self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self, progressbar)
         elif self.mime == 'application/vnd.ms-access' or self.mime == 'application/msaccess':
             
             DBfile = self.config.get('DEFAULT', 'source')
@@ -209,10 +211,15 @@ class Dataset(gobject.GObject):
             temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
 
             try:
+                progressbar.set_text(''.join(['Converting ', os.path.basename(self.config.get('DEFAULT', 'source')), '...']))
+
+                while gtk.events_pending():
+                    gtk.main_iteration(False)
+                    
                 returncode = call(["ssconvert", self.config.get('DEFAULT', 'source'), ''.join([temp_file, '.xls'])])
 
                 if returncode == 0:
-                    self.data_source = read.Read(''.join([temp_file, '.xls']), self)
+                    self.data_source = read.Read(''.join([temp_file, '.xls']), self, progressbar)
             except OSError:
                 pass
     
