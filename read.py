@@ -170,10 +170,17 @@ class Read(gobject.GObject):
             if name[:2] != '--' and name [-2:] != '--':
                 self.dataset.available_sheets.append(name)
 
-        #load the data from the config'd sheets
-        if self.dataset.config.get('DEFAULT', 'sheets') != '-- all sheets --':
+        #load the data from the config'd sheets, else do all sheets
+        try:
             sheets = [(book.sheet_by_name(self.dataset.config.get('DEFAULT', 'sheets')))]
-        else:
+        except xlrd.biffh.XLRDError:
+            if self.dataset.config.get('DEFAULT', 'sheets') != '-- all sheets --':
+                md = gtk.MessageDialog(None,
+                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                    gtk.BUTTONS_CLOSE, ''.join(['Specified sheet \'', self.dataset.config.get('DEFAULT', 'sheets'), '\' not found in the source file. Defaulting to all sheets.']))
+                md.run()
+                md.destroy()
+                
             sheets = []
             for sheet in self.dataset.available_sheets:
                 sheets.append(book.sheet_by_name(sheet))
