@@ -471,9 +471,13 @@ class Run():
                 config[0].get('DEFAULT', 'type')
                 self.dataset.config.filename = config[1]
                 self.dataset.config = config[0]
+                    
             except AttributeError:
                 self.dataset.config.read([config])
                 self.dataset.config.filename = config
+
+                if filename is not None:
+                    self.dataset.set_source(filename)
         else:
             self.dataset.set_type(type)
             self.dataset.set_source(filename)
@@ -1649,16 +1653,75 @@ class Run():
         if response == -5:
             try:
                 self.open_dataset(widget, filename=None, type=None, config=config_file)
-            except IOError as e:             
+            except IOError as e:
+                self.dataset = None
+                
                 self.builder.get_object('menuitem7').set_sensitive(False)
                 self.builder.get_object('menuitem8').set_sensitive(False)
                 self.builder.get_object('toolbutton5').set_sensitive(False)
                 self.builder.get_object('toolbutton3').set_sensitive(False)
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                    gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
+                    gtk.BUTTONS_OK, ''.join([str(e), '\n\nPlease locate it.']))
                 md.run()
                 md.destroy()
+                    
+                #if the file is missing, perhaps we moved it?
+                tryagaindialog = gtk.FileChooserDialog('Locate missing data source...',
+                               None,
+                               gtk.FILE_CHOOSER_ACTION_OPEN,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+                tryagaindialog.set_default_response(gtk.RESPONSE_OK)
+        
+                #filter for the data file filechooser
+                filter = gtk.FileFilter()
+                filter.set_name("Supported data files")
+                filter.add_pattern("*.xls")
+                filter.add_mime_type("application/vnd.ms-excel")
+                filter.add_pattern("*.mdb")
+                filter.add_mime_type("application/x-msaccess")
+                tryagaindialog.add_filter(filter)
+                tryagaindialog.set_filter(filter)
+                        
+                #if we can run ssconvert, add ssconvert-able filter to the data file filechooser
+                try:
+                    returncode = call(["ssconvert"])
+        
+                    if returncode == 1:
+                        filter = gtk.FileFilter()
+                        filter.set_name("ssconvert-able data files")
+                        filter.add_pattern("*.csv")
+                        filter.add_pattern("*.txt")
+                        filter.add_pattern("*.xlsx")
+                        filter.add_pattern("*.gnumeric")
+                        filter.add_pattern("*.ods")
+                        filter.add_mime_type("text/csv")
+                        filter.add_mime_type("text/plain")
+                        filter.add_mime_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        filter.add_mime_type("application/x-gnumeric")
+                        filter.add_mime_type("application/vnd.oasis.opendocument.spreadsheet")
+                        tryagaindialog.add_filter(filter)
+                except OSError:
+                    print "ssconvert isn't available - you're limited to reading XLS files. Install Gnumeric to make use of ssconvert."
+                    pass
+                
+                response = tryagaindialog.run()
+                datasource = tryagaindialog.get_filename()
+                tryagaindialog.destroy()            
+                         
+                try:
+                    self.open_dataset(widget, filename=datasource, type=None, config=config_file)
+                except  IOError as e:
+                    self.builder.get_object('menuitem7').set_sensitive(False)
+                    self.builder.get_object('menuitem8').set_sensitive(False)
+                    self.builder.get_object('toolbutton5').set_sensitive(False)
+                    self.builder.get_object('toolbutton3').set_sensitive(False)
+                    md = gtk.MessageDialog(None,
+                        gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                        gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
+                    md.run()
+                    md.destroy()
 
 
 
