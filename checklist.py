@@ -82,10 +82,14 @@ class Checklist(gobject.GObject):
                                    COUNT(data.taxon) AS records, \
                                    MAX(data.year) AS year, \
                                    ' + vcs_sql_sel + ' AS VC \
+                                   species_data.order_, \
+                                   species_data.class_, \
+                                   species_data.phylum, \
+                                   species_data.kingdom \
                                    FROM data \
                                    JOIN species_data ON data.taxon = species_data.taxon \
                                    WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
-                                   GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, data.vc \
+                                   GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, ' + vcs_sql_sel + ' \
                                    ORDER BY species_data.sort_order, species_data.family, data.taxon')
 
         data = self.dataset.cursor.fetchall()
@@ -169,7 +173,20 @@ class Checklist(gobject.GObject):
             doc.multi_cell(0, 6, self.dataset.config.get('Checklist', 'introduction'), 0, 0, 'L')
             doc.ln()
         else:
-            doc.section = (' '.join(['Family', data[0][1].upper()]))     
+            
+            if data[0][1] != 'None':
+                doc.section = ''.join(['Family ', data[0][1].upper()])
+            elif data[0][8] != 'None':
+                doc.section = ''.join(['Order ', data[0][8].upper()])
+            elif data[0][9] != 'None':
+                doc.section = ''.join(['Class ', data[0][9].upper()])
+            elif data[0][10] != 'None':
+                doc.section = ''.join(['Phylum ', data[0][10].upper()])
+            elif data[0][11] != 'None':
+                doc.section = ''.join(['Kingdom ', data[0][11].upper()])
+            else:
+                doc.section = ''
+                
             doc.p_add_page()
             doc.ln()
             
