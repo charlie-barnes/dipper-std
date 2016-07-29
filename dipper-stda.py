@@ -623,7 +623,7 @@ class Run():
                 dialog.set_do_overwrite_confirmation(True)
 
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.config.get('DEFAULT', 'source'))))
-                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.get('DEFAULT', 'source')))[0], '_map.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '.pdf']))
 
                 dialog.set_property('skip-taskbar-hint', True)
         
@@ -698,7 +698,7 @@ class Run():
                 dialog.set_do_overwrite_confirmation(True)
 
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.config.get('DEFAULT', 'source'))))
-                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.get('DEFAULT', 'source')))[0], '_atlas.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '.pdf']))
 
                 dialog.set_property('skip-taskbar-hint', True)
                 
@@ -771,7 +771,7 @@ class Run():
                 dialog.set_do_overwrite_confirmation(True)
 
                 dialog.set_current_folder(os.path.dirname(os.path.abspath(self.dataset.config.get('DEFAULT', 'source'))))
-                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.get('DEFAULT', 'source')))[0], '_checklist.pdf']))
+                dialog.set_current_name(''.join([os.path.splitext(os.path.basename(self.dataset.config.filename))[0], '.pdf']))
 
                 dialog.set_property('skip-taskbar-hint', True)
                 
