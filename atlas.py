@@ -1725,7 +1725,7 @@ class Atlas(gobject.GObject):
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
+                doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[item[0]]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
 
             taxon_parts = item[0].split(' ')
 
