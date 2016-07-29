@@ -226,7 +226,8 @@ class Read(gobject.GObject):
                             tupledate = xlrd.xldate_as_tuple(date, book.datemode)
                             pdate = datetime(tupledate[0],tupledate[1],tupledate[2])
                             parseddate = pdate.strftime("%d/%m/%Y")
-                            
+                    
+                    #decode the NBN exchange format date        
                     except UnboundLocalError:
                         startdate = sheet.cell(row_index, start_date_position).value
                         enddate = sheet.cell(row_index, end_date_position).value
