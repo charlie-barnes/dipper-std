@@ -451,7 +451,7 @@ class Read(gobject.GObject):
                 # try and match up the column headings
                 for col_index in range(sheet.ncols):
 
-                    if sheet.cell(0, col_index).value.lower() in ['taxon', 'taxon name']:
+                    if sheet.cell(0, col_index).value.lower() in ['taxon', 'taxon name', 'species']:
                         taxon_position = col_index
                     elif sheet.cell(0, col_index).value.lower() in ['kingdom']:
                         kingdom_position = col_index
