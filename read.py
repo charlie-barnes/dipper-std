@@ -22,7 +22,7 @@ import xlrd
 import os
 import gtk
 import json
-import datetime
+from datetime import datetime
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
@@ -201,6 +201,12 @@ class Read(gobject.GObject):
                         vc_position = col_index
                     elif sheet.cell(0, col_index).value.lower().strip() in ['voucher', 'voucher status']:
                         voucher_position = col_index
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['start date', 'startdate']:
+                        start_date_position = col_index
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['end date', 'enddate']:
+                        end_date_position = col_index
+                    elif sheet.cell(0, col_index).value.lower().strip() in ['date type', 'datetype']:
+                        date_type_position = col_index
 
                 rec_names = []
                 det_names = []
@@ -210,18 +216,122 @@ class Read(gobject.GObject):
                     taxa = sheet.cell(row_index, taxon_position).value
                     location = sheet.cell(row_index, location_position).value
                     grid_reference = sheet.cell(row_index, grid_reference_position).value
+
+                    #get the date; if it fails try and decode an NBN exchange format date instead
+                    try:                            
+                        parseddate = sheet.cell(row_index, date_position).value
+                        
+                        #check to see if we have an excel date integer - if so convert to a date string
+                        if sheet.cell(row_index, date_position).ctype == 3:                        
+                            tupledate = xlrd.xldate_as_tuple(date, book.datemode)
+                            pdate = datetime(tupledate[0],tupledate[1],tupledate[2])
+                            parseddate = pdate.strftime("%d/%m/%Y")
                             
-                    date = sheet.cell(row_index, date_position).value
+                    except UnboundLocalError:
+                        startdate = sheet.cell(row_index, start_date_position).value
+                        enddate = sheet.cell(row_index, end_date_position).value
+                        datetype = sheet.cell(row_index, date_type_position).value
+                        
+                        if datetype == 'D':      
+                                
+                            if sheet.cell(row_index, start_date_position).ctype == 3:   
+                                tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)                                
+                                pdate = datetime(tupledate[0],tupledate[1],tupledate[2])
+                                parseddate = pdate.strftime('%d/%m/%Y')
+                            else:
+                                parseddate = startdate            
+                                         
+                        elif datetype == 'DD':    
+                        
+                            if sheet.cell(row_index, start_date_position).ctype == 3:                    
+                                tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
+                                pdate = datetime(tupledate[0],tupledate[1],tupledate[2])
+                                startdate = pdate.strftime('%d/%m/%Y')
+                                      
+                            if sheet.cell(row_index, end_date_position).ctype == 3:       
+                                tupledate = xlrd.xldate_as_tuple(enddate, book.datemode)
+                                pdate = datetime(tupledate[0],tupledate[1],tupledate[2])
+                                enddate = pdate.strftime('%d/%m/%Y')
+                                                    
+                            parseddate = '-'.join([startdate, endate])
+                            
+                        elif datetype == 'O':            
+                        
+                            if sheet.cell(row_index, start_date_position).ctype == 3:      
+                                tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                parseddate = pdate.strftime("%m %Y")
+                            else:
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                parseddate = pdate.strftime("%m %Y")
+                        
+                        elif datetype == 'OO':
+                        
+                            if sheet.cell(row_index, start_date_position).ctype == 3:      
+                                tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                startdate = pdate.strftime("%m %Y")
+                            else:
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                startdate = pdate.strftime("%m %Y")
+                                
+                            if sheet.cell(row_index, end_date_position).ctype == 3:      
+                                tupledate = xlrd.xldate_as_tuple(enddate, book.datemode)
+                                pdate = datetime.strptime(enddate, '%d/%m/%Y')
+                                enddate = pdate.strftime("%m %Y")
+                            else:
+                                pdate = datetime.strptime(enddate, '%d/%m/%Y')
+                                enddate = pdate.strftime("%m %Y")
+                                                    
+                            parseddate = '-'.join([startdate, endate])
+                            
+                        elif datetype == 'Y':
+                        
+                            if sheet.cell(row_index, start_date_position).ctype == 3:      
+                                tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                parseddate = pdate.strftime("%Y")
+                            else:
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                parseddate = pdate.strftime("%Y")
                     
-                    #check to see if we have an excel date integer - if so convert to a date string
-                    try:
-                        date+0
-                        tupledate = xlrd.xldate_as_tuple(date, book.datemode)
-                        pdate = datetime.datetime(tupledate[0],tupledate[1],tupledate[2])
-                        date = pdate.strftime("%d-%m-%Y")
-                    except TypeError:
-                        pass
-                     
+                        elif datetype == 'YY':
+                        
+                            if sheet.cell(row_index, start_date_position).ctype == 3:      
+                                tupledate = xlrd.xldate_as_tuple(startdate, book.datemode)
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                startdate = pdate.strftime("%Y")
+                            else:
+                                pdate = datetime.strptime(startdate, '%d/%m/%Y')
+                                startdate = pdate.strftime("%Y")
+                                
+                            if sheet.cell(row_index, end_date_position).ctype == 3:      
+                                tupledate = xlrd.xldate_as_tuple(enddate, book.datemode)
+                                pdate = datetime.strptime(enddate, '%d/%m/%Y')
+                                enddate = pdate.strftime("%Y")
+                            else:
+                                pdate = datetime.strptime(enddate, '%d/%m/%Y')
+                                enddate = pdate.strftime("%Y")
+                                                    
+                            parseddate = '-'.join([startdate, endate])
+                            
+                        elif datetype == '-Y':
+                        
+                            if sheet.cell(row_index, start_date_position).ctype == 3:   
+                                tupledate = xlrd.xldate_as_tuple(enddate, book.datemode)
+                                pdate = datetime.strptime(enddate, '%d/%m/%Y')
+                                parseddate = pdate.strftime("%Y")
+                            else:
+                                pdate = datetime.strptime(enddate, '%d/%m/%Y')
+                                parseddate = pdate.strftime("-%Y")
+                                                                         
+                        elif datetype == 'ND':
+                            parseddate = 'Unknown'
+                            
+                        elif datetype == 'U':
+                            parseddate = 'Unknown'
+                        
+
                     recorder = sheet.cell(row_index, recorder_position).value
                     
                     try:
@@ -238,7 +348,7 @@ class Read(gobject.GObject):
                     except UnboundLocalError:
                         determiner = None
                     
-                    vaguedate = VagueDate(date)
+                    vaguedate = VagueDate(parseddate)
                     decade, year, month, day, decade_from, year_from, month_from, day_from, decade_to, year_to, month_to, day_to = vaguedate.decade, vaguedate.year, vaguedate.month,  vaguedate.day, vaguedate.decade_from, vaguedate.year_from, vaguedate.month_from,  vaguedate.day_from, vaguedate.decade_to, vaguedate.year_to, vaguedate.month_to,  vaguedate.day_to
 
                     #stats
@@ -317,7 +427,7 @@ class Read(gobject.GObject):
                                                      grid_reference,
                                                      grid_100km, grid_10km, grid_5km, grid_2km,
                                                      grid_1km, grid_100m, grid_10m, grid_1m,
-                                                     easting, northing, accuracy, date,
+                                                     easting, northing, accuracy, parseddate,
                                                      decade, year, month, day,
                                                      decade_from, year_from, month_from, day_from,
                                                      decade_to, year_to, month_to, day_to,
