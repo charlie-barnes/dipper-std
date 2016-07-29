@@ -430,6 +430,14 @@ class Atlas(gobject.GObject):
 
         restriction_sql = restriction_sql[4:]
         
+        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS squares \
+                                     FROM data \
+                                     JOIN species_data ON data.taxon = species_data.taxon \
+                                     WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
+        
+        data = self.dataset.cursor.fetchall()        
+        occupied_squares = len(data)
+        
         self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
                                    COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS squares, \
                                    COUNT(data.taxon) AS records, \
@@ -482,6 +490,8 @@ class Atlas(gobject.GObject):
                 taxa_statistics[stats[0]]['latest'] = stats[6]
 
             taxa_statistics[stats[0]]['dist_count'] = stats[7]
+            
+            
 
         #calculate the toc length
         families = []
@@ -1112,7 +1122,7 @@ class Atlas(gobject.GObject):
                 doc.set_text_color(0)
                 doc.set_fill_color(255, 255, 255)
                 doc.set_line_width(0.1)
-                doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/float(len(self.dataset.occupied_squares[self.dataset.config.get('Atlas', 'distribution_unit')])))*100, 1)) , '%)']), 0, 'R', False)
+                doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
 
             #### the explanations
             doc.set_font('Helvetica', '', 9)
