@@ -521,8 +521,11 @@ class Atlas(gobject.GObject):
             if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
                 toc_listing = toc_listing + len(families)
     
-            toc_length = int(math.ceil(float(toc_listing)/43.0))
-    
+            toc_length = int(math.ceil(float(toc_listing)/46.0))
+
+            if toc_listing > 42 and toc_length == 1:
+                toc_length = 2
+            
             if toc_length%2 != 0:
                 toc_length = toc_length + 1
     
