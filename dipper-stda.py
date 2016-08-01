@@ -747,10 +747,14 @@ class Run():
 
                     atlasobj.generate()
                     
+                    
                     if sys.platform == 'linux2':
                         call(["xdg-open", output])
                     else:
-                        os.startfile(output)
+                        try:
+                            os.startfile(output)
+                        except WindowsError:
+                            pass
                     
             selection = self.builder.get_object('treeview5').get_selection()
             #self.pre_generate = selection.get_selected()
