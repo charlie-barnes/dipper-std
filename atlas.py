@@ -279,8 +279,7 @@ class Atlas(gobject.GObject):
 
         for tup in data:
             grids.append(tup[0])
-            #print tup[0]
-
+            
         self.bounds_bottom_x = 700000
         self.bounds_bottom_y = 1300000
         self.bounds_top_x = 0
@@ -470,8 +469,7 @@ class Atlas(gobject.GObject):
         
             record_count = 0
             taxa_statistics = {}
-            print vcs_sql
-    
+                
             for stats in data:
                 record_count = record_count + stats[4]
     
@@ -781,8 +779,7 @@ class Atlas(gobject.GObject):
                 selected_explanation_species = self.dataset.config.get('Atlas', 'species_accounts_explanation_species')
     
                 #if for some reason the explanation species isn't in our species to map, use the first one by default
-                if selected_explanation_species not in list(taxa_statistics.keys()):
-                    print selected_explanation_species, list(taxa_statistics.keys())
+                if selected_explanation_species not in list(taxa_statistics.keys()):                    
                     selected_explanation_species = sorted(list(taxa_statistics.keys()))[0]
     
                 designation = taxa_statistics[selected_explanation_species]['national_designation']
