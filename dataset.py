@@ -18,13 +18,12 @@
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import gobject
-import tempfile
 import sqlite3
 import ConfigParser
 import read
-from subprocess import call
 import os
 import gtk
+import tempfile
 
 class Dataset(gobject.GObject):
 
@@ -73,6 +72,7 @@ class Dataset(gobject.GObject):
 
         if self.connection is None:
             self.connection = sqlite3.connect(temp_file)
+            self.connection.isolation_level = None
             self.cursor = self.connection.cursor()
 
             #create the table to store the records

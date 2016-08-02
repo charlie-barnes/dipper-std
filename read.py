@@ -25,6 +25,8 @@ import json
 from datetime import datetime
 import mimetypes
 import pyodbc
+import tempfile
+from subprocess import call
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
@@ -162,10 +164,10 @@ class Read(gobject.GObject):
             if self.mime == 'application/vnd.ms-excel':
                 return self.query_xls()
             else:
-                temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
+                temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
     
                 try:
-                    progressbar.set_text(''.join(['Converting ', os.path.basename(self.source), '...']))
+                    self.progressbar.set_text(''.join(['Converting ', os.path.basename(self.source), '...']))
     
                     while gtk.events_pending():
                         gtk.main_iteration(False)
@@ -173,6 +175,7 @@ class Read(gobject.GObject):
                     returncode = call(["ssconvert", self.source, ''.join([temp_file, '.xls'])])
     
                     if returncode == 0:
+                        self.source = ''.join([temp_file, '.xls'])
                         return self.query_xls()
                 except OSError:
                     pass
@@ -239,7 +242,10 @@ class Read(gobject.GObject):
                 
             #loop through the selected sheets of the workbook
             for sheet in sheets:
-                self.progressbar.set_text(''.join(['Reading ', sheet.name]))
+
+                self.dataset.cursor.execute("begin")
+                
+                self.progressbar.set_text(''.join(['Reading sheet ', sheet.name]))
 
                 #self.dataset.sheet = ' + '.join([self.dataset.sheet, sheet.name])
 
@@ -277,7 +283,7 @@ class Read(gobject.GObject):
                     
                     if row_index % 10 == 0:
                         self.progressbar.set_fraction(float(row_count)/float(totalrecords))
-                        self.progressbar.set_text(''.join(['Parsing ', sheet.name, ', row ', str(row_index), ' of ', str(sheet.nrows)]))
+                        self.progressbar.set_text(''.join(['Parsing row ', str(row_index), '/', str(sheet.nrows), ' of sheet ', sheet.name, ]))
 
                     while gtk.events_pending():
                         gtk.main_iteration(False)
@@ -508,6 +514,8 @@ class Read(gobject.GObject):
 
                 self.dataset.recorders = len(rec_names)
                 self.dataset.determiners = len(det_names)
+                self.progressbar.set_text(''.join(['Committing data from sheet ', sheet.name]))
+                self.dataset.cursor.execute("commit")                
 
             self.dataset.sheet = self.dataset.sheet[3:]
             
