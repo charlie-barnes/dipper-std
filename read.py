@@ -207,12 +207,13 @@ class Read(gobject.GObject):
         temp_taxa_list = []
 
         #do we have a data sheet?
-        for name in book.sheet_names():
-            if name == '--data--':
-                has_data = True
-            else:
-                has_data = False
-                
+        if '--data--' in book.sheet_names():
+            has_data = True
+        else:
+            has_data = False
+        
+        #set available sheets
+        for name in book.sheet_names():                
             if name[:2] != '--' and name [-2:] != '--':
                 self.dataset.available_sheets.append(name)
 
@@ -552,102 +553,105 @@ class Read(gobject.GObject):
                 #loop through each row, skipping the header (first) row
                 for row_index in range(1, sheet.nrows):
 
-                    taxa = sheet.cell(row_index, taxon_position).value
-                    genus = taxa.split()[0]
-                    
-                    if taxa in temp_taxa_list:
-                        try:
-                            kingdom = sheet.cell(row_index, kingdom_position).value
-                                                        
-                            if kingdom not in self.dataset.kingdoms.keys():
-                                self.dataset.kingdoms[kingdom] = ['', None]
-                        except UnboundLocalError:
-                            kingdom = ''
-                            
-                        try:
-                            phylum = sheet.cell(row_index, phylum_position).value                            
+                    try:
+                        taxa = sheet.cell(row_index, taxon_position).value
+                        genus = taxa.split()[0]
+                        
+                        if taxa in temp_taxa_list:
+                            try:
+                                kingdom = sheet.cell(row_index, kingdom_position).value
+                                                            
+                                if kingdom not in self.dataset.kingdoms.keys():
+                                    self.dataset.kingdoms[kingdom] = ['', None]
+                            except UnboundLocalError:
+                                kingdom = ''
+                                
+                            try:
+                                phylum = sheet.cell(row_index, phylum_position).value                            
 
-                            if phylum not in self.dataset.phyla.keys():
-                                self.dataset.phyla[phylum] = [kingdom, None]
-                        except UnboundLocalError:
-                            phylum = ''
-                            
-                        try:
-                            class_ = sheet.cell(row_index, class_position).value
-                            
-                            if class_ not in self.dataset.classes.keys():
-                                self.dataset.classes[class_] = [phylum, None]
-                        except UnboundLocalError:
-                            class_ = ''
-                            
-                        try:
-                            order = sheet.cell(row_index, order_position).value
-                            
-                            if order not in self.dataset.orders.keys():
-                                self.dataset.orders[order] = [class_, None]                                
-                        except UnboundLocalError:
-                            order = ''
-                            
-                        try:
-                            family = sheet.cell(row_index, family_position).value
-                            
-                            if family not in self.dataset.families.keys():
-                                self.dataset.families[family] = [order, None]
-                        except UnboundLocalError:
-                            family = ''
+                                if phylum not in self.dataset.phyla.keys():
+                                    self.dataset.phyla[phylum] = [kingdom, None]
+                            except UnboundLocalError:
+                                phylum = ''
+                                
+                            try:
+                                class_ = sheet.cell(row_index, class_position).value
+                                
+                                if class_ not in self.dataset.classes.keys():
+                                    self.dataset.classes[class_] = [phylum, None]
+                            except UnboundLocalError:
+                                class_ = ''
+                                
+                            try:
+                                order = sheet.cell(row_index, order_position).value
+                                
+                                if order not in self.dataset.orders.keys():
+                                    self.dataset.orders[order] = [class_, None]                                
+                            except UnboundLocalError:
+                                order = ''
+                                
+                            try:
+                                family = sheet.cell(row_index, family_position).value
+                                
+                                if family not in self.dataset.families.keys():
+                                    self.dataset.families[family] = [order, None]
+                            except UnboundLocalError:
+                                family = ''
 
-                        try:
-                            sort_order = sheet.cell(row_index, sort_order_position).value
-                        except UnboundLocalError:
-                            sort_order = ''
+                            try:
+                                sort_order = sheet.cell(row_index, sort_order_position).value
+                            except UnboundLocalError:
+                                sort_order = ''
 
-                        try:
-                            nbn_key = sheet.cell(row_index, nbn_key_position).value
-                        except UnboundLocalError:
-                            nbn_key = ''
+                            try:
+                                nbn_key = sheet.cell(row_index, nbn_key_position).value
+                            except UnboundLocalError:
+                                nbn_key = ''
 
-                        try:
-                            national_status = sheet.cell(row_index, national_status_position).value
-                        except UnboundLocalError:
-                            national_status = ''
+                            try:
+                                national_status = sheet.cell(row_index, national_status_position).value
+                            except UnboundLocalError:
+                                national_status = ''
 
-                        try:
-                            description = sheet.cell(row_index, description_position).value
-                        except UnboundLocalError:
-                            description = ''
+                            try:
+                                description = sheet.cell(row_index, description_position).value
+                            except UnboundLocalError:
+                                description = ''
 
-                        try:
-                            common_name = sheet.cell(row_index, common_name_position).value
-                        except UnboundLocalError:
-                            common_name = ''
+                            try:
+                                common_name = sheet.cell(row_index, common_name_position).value
+                            except UnboundLocalError:
+                                common_name = ''
 
-                        if genus not in self.dataset.genera.keys():
-                            self.dataset.genera[genus] = [family, None]
+                            if genus not in self.dataset.genera.keys():
+                                self.dataset.genera[genus] = [family, None]
 
-                        if taxa not in self.dataset.specie.keys():
-                            self.dataset.specie[taxa] = [genus, None]
-                        ### some duplication here - clean it up
-                        if taxa not in self.dataset.taxa.keys():
-                            self.dataset.taxa[taxa] = {'kingdom': kingdom, 'phylum': phylum, 'class': class_, 'order': order, 'family': family}
-                            
-                        if taxa not in self.dataset.species:
-                            self.dataset.species.append(taxa)
+                            if taxa not in self.dataset.specie.keys():
+                                self.dataset.specie[taxa] = [genus, None]
+                            ### some duplication here - clean it up
+                            if taxa not in self.dataset.taxa.keys():
+                                self.dataset.taxa[taxa] = {'kingdom': kingdom, 'phylum': phylum, 'class': class_, 'order': order, 'family': family}
+                                
+                            if taxa not in self.dataset.species:
+                                self.dataset.species.append(taxa)
 
-                        self.dataset.cursor.execute('INSERT INTO species_data \
-                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                                                     [taxa,
-                                                     sort_order,
-                                                     nbn_key,
-                                                     national_status,
-                                                     None,
-                                                     description,
-                                                     common_name,
-                                                     kingdom,
-                                                     phylum,
-                                                     class_,
-                                                     order,
-                                                     family,
-                                                     genus])
+                            self.dataset.cursor.execute('INSERT INTO species_data \
+                                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                                         [taxa,
+                                                         sort_order,
+                                                         nbn_key,
+                                                         national_status,
+                                                         None,
+                                                         description,
+                                                         common_name,
+                                                         kingdom,
+                                                         phylum,
+                                                         class_,
+                                                         order,
+                                                         family,
+                                                         genus])
+                    except IndexError:
+                        pass
 
             else:
                 #if we dont have species data sheet, just create the data using distinct taxa
