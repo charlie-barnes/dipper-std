@@ -23,6 +23,8 @@ import os
 import gtk
 import json
 from datetime import datetime
+import mimetypes
+import pyodbc
 
 from vaguedateparse import VagueDate
 from geographiccoordinatesystem import Coordinate
@@ -151,8 +153,49 @@ class Read(gobject.GObject):
         self.dataset = dataset
         self.progressbar = progressbar
 
-
+    
     def read(self):
+        if os.path.isfile(self.source):
+            #guess the mimetype of the file   
+            self.mime = mimetypes.guess_type(self.source)[0]
+                    
+            if self.mime == 'application/vnd.ms-excel':
+                return self.query_xls()
+            else:
+                temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
+    
+                try:
+                    progressbar.set_text(''.join(['Converting ', os.path.basename(self.source), '...']))
+    
+                    while gtk.events_pending():
+                        gtk.main_iteration(False)
+                        
+                    returncode = call(["ssconvert", self.source, ''.join([temp_file, '.xls'])])
+    
+                    if returncode == 0:
+                        return self.query_xls()
+                except OSError:
+                    pass
+        elif os.path.isdir(self.source):
+            return self.query_mapmate()
+            
+            #DBfile = self.source
+            #conn = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ='+DBfile)
+            #cursor = conn.cursor()
+            
+        else:
+            return self.query_sql()
+        
+            
+    def query_mapmate(self):
+        return False
+        
+        
+    def query_sql(self):
+        print self.source
+    
+    
+    def query_xls(self):
         '''Read the file and insert the data into the sqlite database.'''
         book = xlrd.open_workbook(self.source)
 

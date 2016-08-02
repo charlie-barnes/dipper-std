@@ -524,71 +524,69 @@ class Run():
        
         try:
 
-            if self.dataset.data_source.read() == True:
-        
-                self.update_widgets()
+            self.dataset.data_source.read()
+    
+            self.update_widgets()
 
-                self.dataset.builder = self.builder
-                self.builder.get_object('treeview4').set_sensitive(self.dataset.use_vcs)
-                
-                if self.dataset.use_vcs:
-                    self.builder.get_object('label61').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
-                    self.builder.get_object('label37').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
-                    self.builder.get_object('label38').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
-                    self.builder.get_object('treeview1').set_sensitive(True)
-                    self.builder.get_object('treeview4').set_sensitive(True)
-                    self.builder.get_object('treeview8').set_sensitive(True)
-                else:
-                    self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file</i>')
-                    self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file</i>')
-                    self.builder.get_object('label38').set_markup('<i>Vice-county information is not present in the source file</i>')
-                    self.builder.get_object('treeview1').set_sensitive(False)
-                    self.builder.get_object('treeview4').set_sensitive(False)
-                    self.builder.get_object('treeview8').set_sensitive(False)
-
-                while gtk.events_pending():
-                    gtk.main_iteration_do(True)
-
-                try:
-                    self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
-                except AttributeError:
-                    self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
-                    
-                self.builder.get_object('notebook1').set_sensitive(True)
-
-
-                self.builder.get_object('vbox3').show()
-                self.builder.get_object('notebook1').show()
-                self.builder.get_object('menuitem7').set_sensitive(True)
-                self.builder.get_object('menuitem8').set_sensitive(True)
-                self.builder.get_object('toolbutton5').set_sensitive(True)
-                self.builder.get_object('toolbutton3').set_sensitive(True)
-                
-                #populate the stats panel
-                treeview = self.builder.get_object('treeview11')
-                store = treeview.get_model()
-                store.clear()
-
-                for stat in [['Records', self.dataset.records], ['Species', len(self.dataset.species)], ['Families',  len(self.dataset.families)], ['Earliest', self.dataset.earliest], ['Latest', self.dataset.latest], ['Recorders', self.dataset.recorders], ['Determiners', self.dataset.determiners], ['Vice-counties', len(self.dataset.vicecounties)], ['Recorded 100km squares', len(self.dataset.occupied_squares['100km'])], ['Recorded 10km squares', len(self.dataset.occupied_squares['10km'])], ['Recorded 5km squares', len(self.dataset.occupied_squares['5km'])], ['Recorded 2km squares', len(self.dataset.occupied_squares['2km'])], ['Recorded 1km squares', len(self.dataset.occupied_squares['1km'])], ['Recorded 100m squares', len(self.dataset.occupied_squares['100m'])], ['Recorded 10m squares', len(self.dataset.occupied_squares['10m'])], ['Recorded 1m squares', len(self.dataset.occupied_squares['1m'])]   ]:
-                    store.append(stat)
-                
-                #populate the sheet combobox                
-                initialize.setup_combo_box(self.builder.get_object('combobox17'), ['-- all sheets --'] + self.dataset.available_sheets)
-                
-                try:
-                    self.builder.get_object('combobox17').set_active(self.dataset.available_sheets.index(self.dataset.config.get('DEFAULT', 'sheets'))+1)
-                except ValueError:
-                    self.builder.get_object('combobox17').set_active(0)
-                
+            self.dataset.builder = self.builder
+            self.builder.get_object('treeview4').set_sensitive(self.dataset.use_vcs)
             
-        except AttributeError as e:
+            if self.dataset.use_vcs:
+                self.builder.get_object('label61').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
+                self.builder.get_object('label37').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
+                self.builder.get_object('label38').set_markup('<i>Data will be grouped as one if no vice-counties are selected</i>')
+                self.builder.get_object('treeview1').set_sensitive(True)
+                self.builder.get_object('treeview4').set_sensitive(True)
+                self.builder.get_object('treeview8').set_sensitive(True)
+            else:
+                self.builder.get_object('label61').set_markup('<i>Vice-county information is not present in the source file</i>')
+                self.builder.get_object('label37').set_markup('<i>Vice-county information is not present in the source file</i>')
+                self.builder.get_object('label38').set_markup('<i>Vice-county information is not present in the source file</i>')
+                self.builder.get_object('treeview1').set_sensitive(False)
+                self.builder.get_object('treeview4').set_sensitive(False)
+                self.builder.get_object('treeview8').set_sensitive(False)
+
+            while gtk.events_pending():
+                gtk.main_iteration_do(True)
+
+            try:
+                self.builder.get_object('window1').set_title(''.join([os.path.basename(self.dataset.config.filename), ' (',  os.path.dirname(self.dataset.config.filename), ') - dipper-stda',]) )
+            except AttributeError:
+                self.builder.get_object('window1').set_title(' '.join(['Unsaved', self.dataset.config.get('DEFAULT', 'type'), '-','dipper-stda']))
+                
+            self.builder.get_object('notebook1').set_sensitive(True)
+
+            self.builder.get_object('vbox3').show()
+            self.builder.get_object('notebook1').show()
+            self.builder.get_object('menuitem7').set_sensitive(True)
+            self.builder.get_object('menuitem8').set_sensitive(True)
+            self.builder.get_object('toolbutton5').set_sensitive(True)
+            self.builder.get_object('toolbutton3').set_sensitive(True)
+            
+            #populate the stats panel
+            treeview = self.builder.get_object('treeview11')
+            store = treeview.get_model()
+            store.clear()
+
+            for stat in [['Records', self.dataset.records], ['Species', len(self.dataset.species)], ['Families',  len(self.dataset.families)], ['Earliest', self.dataset.earliest], ['Latest', self.dataset.latest], ['Recorders', self.dataset.recorders], ['Determiners', self.dataset.determiners], ['Vice-counties', len(self.dataset.vicecounties)], ['Recorded 100km squares', len(self.dataset.occupied_squares['100km'])], ['Recorded 10km squares', len(self.dataset.occupied_squares['10km'])], ['Recorded 5km squares', len(self.dataset.occupied_squares['5km'])], ['Recorded 2km squares', len(self.dataset.occupied_squares['2km'])], ['Recorded 1km squares', len(self.dataset.occupied_squares['1km'])], ['Recorded 100m squares', len(self.dataset.occupied_squares['100m'])], ['Recorded 10m squares', len(self.dataset.occupied_squares['10m'])], ['Recorded 1m squares', len(self.dataset.occupied_squares['1m'])]   ]:
+                store.append(stat)
+            
+            #populate the sheet combobox                
+            initialize.setup_combo_box(self.builder.get_object('combobox17'), ['-- all sheets --'] + self.dataset.available_sheets)
+            
+            try:
+                self.builder.get_object('combobox17').set_active(self.dataset.available_sheets.index(self.dataset.config.get('DEFAULT', 'sheets'))+1)
+            except ValueError:
+                self.builder.get_object('combobox17').set_active(0)
+                        
+        except (AttributeError, TypeError) as e:
             self.builder.get_object('menuitem7').set_sensitive(False)
             self.builder.get_object('menuitem8').set_sensitive(False)
             self.builder.get_object('toolbutton5').set_sensitive(False)
             self.builder.get_object('toolbutton3').set_sensitive(False)
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                gtk.BUTTONS_CLOSE, ''.join(['Unable to open data file: ', str(e)]))
+                gtk.BUTTONS_OK, ''.join(['Unable to open data source: ', str(e)]))
             md.run()
             md.destroy()
       

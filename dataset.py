@@ -20,10 +20,8 @@
 import gobject
 import tempfile
 import sqlite3
-import mimetypes
 import ConfigParser
 import read
-import pyodbc
 from subprocess import call
 import os
 import gtk
@@ -191,37 +189,8 @@ class Dataset(gobject.GObject):
             self.config.filename = None
 
     def parse(self, progressbar):
-        if os.path.isfile(self.config.get('DEFAULT', 'source')):
-            #guess the mimetype of the file   
-            self.mime = mimetypes.guess_type(self.config.get('DEFAULT', 'source'))[0]
-                    
-            if self.mime == 'application/vnd.ms-excel':
-                self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self, progressbar)
-            else:
-                temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir).name
-    
-                try:
-                    progressbar.set_text(''.join(['Converting ', os.path.basename(self.config.get('DEFAULT', 'source')), '...']))
-    
-                    while gtk.events_pending():
-                        gtk.main_iteration(False)
-                        
-                    returncode = call(["ssconvert", self.config.get('DEFAULT', 'source'), ''.join([temp_file, '.xls'])])
-    
-                    if returncode == 0:
-                        self.data_source = read.Read(''.join([temp_file, '.xls']), self, progressbar)
-                except OSError:
-                    pass
-        elif os.path.isdir(self.config.get('DEFAULT', 'source')):
-            print "mapmate"
-            
-            #DBfile = self.config.get('DEFAULT', 'source')
-            #conn = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb)};DBQ='+DBfile)
-            #cursor = conn.cursor()
-            
-        else:
-            #self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self, progressbar)
-    
+        self.data_source = read.Read(self.config.get('DEFAULT', 'source'), self, progressbar)
+
     def set_type(self, type):
         self.config.set('DEFAULT', 'type', type)
         self.config.add_section(self.config.get('DEFAULT', 'type'))
