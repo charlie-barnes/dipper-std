@@ -144,20 +144,19 @@ vcname2number = {
 
 class Read(gobject.GObject):
 
-    def __init__(self, filename, dataset, progressbar):
+    def __init__(self, source, dataset, progressbar):
         gobject.GObject.__init__(self)
 
-        self.filename = filename
+        self.source = source
         self.dataset = dataset
         self.progressbar = progressbar
 
 
     def read(self):
         '''Read the file and insert the data into the sqlite database.'''
+        book = xlrd.open_workbook(self.source)
 
-        book = xlrd.open_workbook(self.filename)
-
-        text = ''.join(['Opening <b>', os.path.basename(self.filename) ,'</b>', ' from ', '<b>', os.path.dirname(os.path.abspath(self.filename)), '</b>'])
+        text = ''.join(['Opening <b>', os.path.basename(self.source) ,'</b>', ' from ', '<b>', os.path.dirname(os.path.abspath(self.source)), '</b>'])
 
         temp_taxa_list = []
 

@@ -1573,22 +1573,27 @@ class Run():
     def new_file_set(self, widget):
         '''Set the widget sensitivity to true'''
         widget.set_sensitive(True)
-        
+                
     def change_type(self, widget):
-        '''Set the data source type'''  
-
-        if widget.get_children()[2].get_active() == 0:
-            widget.get_children()[1].get_children()[0].set_visible(True)
-            widget.get_children()[1].get_children()[1].set_visible(False)
-            widget.get_children()[1].get_children()[2].set_visible(False)
-        elif widget.get_children()[2].get_active() == 2:
-            widget.get_children()[1].get_children()[0].set_visible(False)
-            widget.get_children()[1].get_children()[1].set_visible(False)
-            widget.get_children()[1].get_children()[2].set_visible(True)    
-        elif widget.get_children()[2].get_active() == 1:
-            widget.get_children()[1].get_children()[0].set_visible(False)
-            widget.get_children()[1].get_children()[1].set_visible(True)
-            widget.get_children()[1].get_children()[2].set_visible(False)
+        '''Set the data source type'''        
+        table = widget.get_parent()
+            
+        for child_widget in table.get_children():
+            if isinstance(child_widget, gtk.Table):
+                settings_table = child_widget
+                                
+        if widget.get_active() == 0:
+            settings_table.get_children()[0].set_visible(True)
+            settings_table.get_children()[1].set_visible(False)
+            settings_table.get_children()[2].set_visible(False)
+        elif widget.get_active() == 2:
+            settings_table.get_children()[0].set_visible(False)
+            settings_table.get_children()[1].set_visible(False)
+            settings_table.get_children()[2].set_visible(True)    
+        elif widget.get_active() == 1:
+            settings_table.get_children()[0].set_visible(False)
+            settings_table.get_children()[1].set_visible(True)
+            settings_table.get_children()[2].set_visible(False)
             
     def new_file(self, widget):
         '''Create a new file'''
@@ -1604,29 +1609,29 @@ class Run():
                   }
         builder.connect_signals(signals)
 
-        combobox = builder.get_object('combobox2')
+        combobox_source = builder.get_object('combobox2')
         liststore = gtk.ListStore(str)
         cell = gtk.CellRendererText()
-        combobox.pack_start(cell)
-        combobox.add_attribute(cell, 'text', 0)
-        combobox.set_model(liststore)        
+        combobox_source.pack_start(cell)
+        combobox_source.add_attribute(cell, 'text', 0)
+        combobox_source.set_model(liststore)        
         
         for option in ['File', 'MapMate', 'Recorder 6']:
             liststore.append([option])
 
-        combobox.set_active(0)
+        combobox_source.set_active(0)
 
-        combobox = builder.get_object('combobox1')
+        combobox_type = builder.get_object('combobox1')
         liststore = gtk.ListStore(str)
         cell = gtk.CellRendererText()
-        combobox.pack_start(cell)
-        combobox.add_attribute(cell, 'text', 0)
-        combobox.set_model(liststore)         
+        combobox_type.pack_start(cell)
+        combobox_type.add_attribute(cell, 'text', 0)
+        combobox_type.set_model(liststore)         
         
         for option in ['Atlas', 'Checklist', 'Single Species']:
             liststore.append([option])
 
-        combobox.set_active(0) 
+        combobox_type.set_active(0) 
         
         filechooserbutton = builder.get_object('filechooserbutton1')
         
@@ -1661,16 +1666,29 @@ class Run():
         except OSError:
             print "ssconvert isn't available - you're limited to reading XLS files. Install Gnumeric to make use of ssconvert."
             pass
+            
+        folderchooserbutton = builder.get_object('filechooserbutton2')
         
         response = dialog.run()
-        filen = filechooserbutton.get_filename()
+        
+        if combobox_source.get_active_text() == 'File':
+            source = filechooserbutton.get_filename()
+        elif combobox_source.get_active_text() == 'MapMate':
+            source= folderchooserbutton.get_filename()
+        elif combobox_source.get_active_text() == 'Recorder 6':
+            server = builder.get_object('entry1').get_text()
+            database = builder.get_object('entry4').get_text()
+            user = builder.get_object('entry2').get_text()
+            password = builder.get_object('entry3').get_text()
+            source = ''.join(['DRIVER={SQL Server};SERVER=',server,';DATABASE=',database,';UID=',user,';PWD=',password])
+
         dialog.destroy()        
 
         while gtk.events_pending():
             gtk.main_iteration(False)
 
         if response == 1:
-            self.open_dataset(widget, filen, combobox.get_active_text())
+            self.open_dataset(widget, source, combobox_type.get_active_text())
 
     
     def open_file(self, widget):
