@@ -650,7 +650,7 @@ class Read(gobject.GObject):
                                                          order,
                                                          family,
                                                          genus])
-                    except IndexError:
+                    except (IndexError, AttributeError):
                         pass
 
             else:
