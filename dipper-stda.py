@@ -1565,7 +1565,6 @@ class Run():
         if self.dataset.config.get('DEFAULT', 'sheets') != store[index][0]:
             self.dataset.config.set('DEFAULT', 'sheets', store[index][0])
 
-            #self.open_dataset(widget, filename=None, type=None, config=config_file)
             self.open_dataset(widget, self.dataset.config.get('DEFAULT', 'source'), self.dataset.config.get('DEFAULT', 'type'), [self.dataset.config, self.dataset.config.filename])
 
     def new_file_set(self, widget):
