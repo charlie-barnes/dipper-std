@@ -422,1481 +422,1488 @@ class Atlas(gobject.GObject):
 
     def generate(self):
 
-        if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
-            self.dataset.use_vcs = True
-        else:
-            self.dataset.use_vcs = False
+        try:
+            if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
+                self.dataset.use_vcs = True
+            else:
+                self.dataset.use_vcs = False
 
-        if self.dataset.use_vcs == True:
-            vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ') AND'])
-        else:
-            vcs_sql = ''
+            if self.dataset.use_vcs == True:
+                vcs_sql = ''.join(['data.vc IN (', self.dataset.config.get('Atlas', 'vice-counties'), ') AND'])
+            else:
+                vcs_sql = ''
 
-        restriction_sql = ''
+            restriction_sql = ''
 
-        for restriction in json.loads(self.dataset.config.get('Atlas', 'families')):
-            restriction_sql = ' or '.join([restriction_sql, ''.join(['species_data.' , restriction[0] , ' = "' , restriction[1] + '"'])])
+            for restriction in json.loads(self.dataset.config.get('Atlas', 'families')):
+                restriction_sql = ' or '.join([restriction_sql, ''.join(['species_data.' , restriction[0] , ' = "' , restriction[1] + '"'])])
 
-        restriction_sql = restriction_sql[4:]
-        
-        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS squares \
-                                     FROM data \
-                                     JOIN species_data ON data.taxon = species_data.taxon \
-                                     WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
-        
-        data = self.dataset.cursor.fetchall()        
-        occupied_squares = len(data)
-        
-        self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
-                                   COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS squares, \
-                                   COUNT(data.taxon) AS records, \
-                                   MAX(data.year) AS year, \
-                                   species_data.description, \
-                                   species_data.common_name, \
-                                   species_data.order_, \
-                                   species_data.class_, \
-                                   species_data.phylum, \
-                                   species_data.kingdom \
-                                   FROM data \
-                                   JOIN species_data ON data.taxon = species_data.taxon \
-                                   WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
-                                   GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, species_data.description, species_data.common_name \
-                                   ORDER BY species_data.sort_order, species_data.family, data.taxon')
-        
-        data = self.dataset.cursor.fetchall()
-        
-        if len(data) > 0:
-        
-            record_count = 0
-            taxa_statistics = {}
-                
-            for stats in data:
-                record_count = record_count + stats[4]
-    
-                taxa_statistics[stats[0]] = {}
-                taxa_statistics[stats[0]]['family'] = str(stats[1])
-                taxa_statistics[stats[0]]['national_designation'] = str(stats[2])
-                taxa_statistics[stats[0]]['local_designation'] = str(stats[3])
-                taxa_statistics[stats[0]]['count'] = str(stats[4])
-                taxa_statistics[stats[0]]['order'] = str(stats[13])
-                taxa_statistics[stats[0]]['class'] = str(stats[14])
-                taxa_statistics[stats[0]]['phylum'] = str(stats[15])
-                taxa_statistics[stats[0]]['kingdom'] = str(stats[16])
-                
-                if stats[11] == None:
-                    taxa_statistics[stats[0]]['description'] = ''
-                else:            
-                    taxa_statistics[stats[0]]['description'] = str(stats[11])
+            restriction_sql = restriction_sql[4:]
+            
+            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS squares \
+                                         FROM data \
+                                         JOIN species_data ON data.taxon = species_data.taxon \
+                                         WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
+            
+            data = self.dataset.cursor.fetchall()        
+            occupied_squares = len(data)
+            
+            self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
+                                       COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS squares, \
+                                       COUNT(data.taxon) AS records, \
+                                       MAX(data.year) AS year, \
+                                       species_data.description, \
+                                       species_data.common_name, \
+                                       species_data.order_, \
+                                       species_data.class_, \
+                                       species_data.phylum, \
+                                       species_data.kingdom \
+                                       FROM data \
+                                       JOIN species_data ON data.taxon = species_data.taxon \
+                                       WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
+                                       GROUP BY data.taxon, species_data.family, species_data.national_status, species_data.local_status, species_data.description, species_data.common_name \
+                                       ORDER BY species_data.sort_order, species_data.family, data.taxon')
+            
+            data = self.dataset.cursor.fetchall()
+            
+            if len(data) > 0:
+            
+                record_count = 0
+                taxa_statistics = {}
                     
-                taxa_statistics[stats[0]]['common_name'] = str(stats[12])
-    
-                if stats[5] == None:
-                    taxa_statistics[stats[0]]['earliest'] = 'Unknown'
-                else:
-                    taxa_statistics[stats[0]]['earliest'] = stats[5]
-    
-                if stats[6] == None:
-                    taxa_statistics[stats[0]]['latest'] = 'Unknown'
-                else:
-                    taxa_statistics[stats[0]]['latest'] = stats[6]
-    
-                taxa_statistics[stats[0]]['dist_count'] = stats[7]
-                
-                
-    
-            #calculate the toc length
-            families = []
-            species = []
-            for item in data:
-                if item[0] not in species:
-                    species.append(item[0])
-                if taxa_statistics[item[0]]['family'] not in families:
-                    families.append(taxa_statistics[item[0]]['family'])
-    
-            toc_listing = 0
-            
-            if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') or self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                toc_listing = toc_listing + len(species)
-    
-            if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
-                toc_listing = toc_listing + len(families)
-    
-            toc_length = int(math.ceil(float(toc_listing)/46.0))
-
-            if toc_listing > 42 and toc_length == 1:
-                toc_length = 2
-            
-            if toc_length%2 != 0:
-                toc_length = toc_length + 1
-    
-            #grab the voucher status of each taxa
-            self.dataset.cursor.execute('SELECT DISTINCT data.taxon, GROUP_CONCAT(DISTINCT data.voucher) AS voucherlocation \
-                                         FROM data \
-                                         JOIN species_data ON data.taxon = species_data.taxon \
-                                         WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
-                                         GROUP BY data.taxon')
-            
-            vdata = self.dataset.cursor.fetchall()
-    
-            for vtaxon in vdata:
-                taxa_statistics[vtaxon[0]]['voucher'] = vtaxon[1]
-    
-            
-    
-            #contributors        
-            contrib_data = {}
-    
-            self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
-                                         FROM data \
-                                         JOIN species_data ON data.taxon = species_data.taxon \
-                                         WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
-    
-            recorder_data = self.dataset.cursor.fetchall()
-    
-            for recorders in recorder_data:
-                names = recorders[0].split(',')
-                for name in names:
-                    if name.strip() not in contrib_data.keys():
-                        parts = name.strip().split()
-    
-                        if len(name) > 0:
-                            initials = []
-    
-                            if parts[0].strip() == 'Mr':
-                                initials.append('Mr')
-                            elif parts[0].strip() == 'Mrs':
-                                initials.append('Mrs')
-                            elif parts[0].strip() == 'Dr':
-                                initials.append('Dr')
-    
-                            for qwert in parts[len(initials):]:
-                                initials.append(qwert[0:1])
-    
-                            working_part = len(parts)-1
-                            check_val = 1
-    
-                            while ''.join(initials) in contrib_data.values():
-                                if check_val <= len(parts[working_part]):
-                                        initials[working_part] = parts[working_part][0:check_val]
-                                        check_val = check_val + 1
-                                elif check_val > len(parts[working_part]):
-                                    working_part = working_part - 1
-                                    check_val = 1
-    
-                            contrib_data[name.strip()] = ''.join(initials)
-    
-            self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
-                                         FROM data \
-                                         JOIN species_data ON data.taxon = species_data.taxon \
-                                         WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
-    
-            determiner_data = self.dataset.cursor.fetchall()
+                for stats in data:
+                    record_count = record_count + stats[4]
         
-            for determiner in determiner_data:
-                try:
-                    names = determiner[0].split(',')
+                    taxa_statistics[stats[0]] = {}
+                    taxa_statistics[stats[0]]['family'] = str(stats[1])
+                    taxa_statistics[stats[0]]['national_designation'] = str(stats[2])
+                    taxa_statistics[stats[0]]['local_designation'] = str(stats[3])
+                    taxa_statistics[stats[0]]['count'] = str(stats[4])
+                    taxa_statistics[stats[0]]['order'] = str(stats[13])
+                    taxa_statistics[stats[0]]['class'] = str(stats[14])
+                    taxa_statistics[stats[0]]['phylum'] = str(stats[15])
+                    taxa_statistics[stats[0]]['kingdom'] = str(stats[16])
+                    
+                    if stats[11] == None:
+                        taxa_statistics[stats[0]]['description'] = ''
+                    else:            
+                        taxa_statistics[stats[0]]['description'] = str(stats[11])
+                        
+                    taxa_statistics[stats[0]]['common_name'] = str(stats[12])
+        
+                    if stats[5] == None:
+                        taxa_statistics[stats[0]]['earliest'] = 'Unknown'
+                    else:
+                        taxa_statistics[stats[0]]['earliest'] = stats[5]
+        
+                    if stats[6] == None:
+                        taxa_statistics[stats[0]]['latest'] = 'Unknown'
+                    else:
+                        taxa_statistics[stats[0]]['latest'] = stats[6]
+        
+                    taxa_statistics[stats[0]]['dist_count'] = stats[7]
+                    
+                    
+        
+                #calculate the toc length
+                families = []
+                species = []
+                for item in data:
+                    if item[0] not in species:
+                        species.append(item[0])
+                    if taxa_statistics[item[0]]['family'] not in families:
+                        families.append(taxa_statistics[item[0]]['family'])
+        
+                toc_listing = 0
+                
+                if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') or self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                    toc_listing = toc_listing + len(species)
+        
+                if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
+                    toc_listing = toc_listing + len(families)
+        
+                toc_length = int(math.ceil(float(toc_listing)/46.0))
+
+                if toc_listing > 42 and toc_length == 1:
+                    toc_length = 2
+                
+                if toc_length%2 != 0:
+                    toc_length = toc_length + 1
+        
+                #grab the voucher status of each taxa
+                self.dataset.cursor.execute('SELECT DISTINCT data.taxon, GROUP_CONCAT(DISTINCT data.voucher) AS voucherlocation \
+                                             FROM data \
+                                             JOIN species_data ON data.taxon = species_data.taxon \
+                                             WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
+                                             GROUP BY data.taxon')
+                
+                vdata = self.dataset.cursor.fetchall()
+        
+                for vtaxon in vdata:
+                    taxa_statistics[vtaxon[0]]['voucher'] = vtaxon[1]
+        
+                
+        
+                #contributors        
+                contrib_data = {}
+        
+                self.dataset.cursor.execute('SELECT DISTINCT(data.recorder) \
+                                             FROM data \
+                                             JOIN species_data ON data.taxon = species_data.taxon \
+                                             WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
+        
+                recorder_data = self.dataset.cursor.fetchall()
+        
+                for recorders in recorder_data:
+                    names = recorders[0].split(',')
                     for name in names:
                         if name.strip() not in contrib_data.keys():
                             parts = name.strip().split()
-      
-                            initials = []
-    
+        
                             if len(name) > 0:
+                                initials = []
+        
                                 if parts[0].strip() == 'Mr':
                                     initials.append('Mr')
                                 elif parts[0].strip() == 'Mrs':
                                     initials.append('Mrs')
                                 elif parts[0].strip() == 'Dr':
                                     initials.append('Dr')
-      
+        
                                 for qwert in parts[len(initials):]:
                                     initials.append(qwert[0:1])
-      
+        
                                 working_part = len(parts)-1
                                 check_val = 1
-      
+        
                                 while ''.join(initials) in contrib_data.values():
                                     if check_val <= len(parts[working_part]):
-                                        initials[working_part] = parts[working_part][0:check_val]
-                                        check_val = check_val + 1
+                                            initials[working_part] = parts[working_part][0:check_val]
+                                            check_val = check_val + 1
                                     elif check_val > len(parts[working_part]):
                                         working_part = working_part - 1
                                         check_val = 1
-      
+        
                                 contrib_data[name.strip()] = ''.join(initials)
-                except AttributeError:
-                    pass
-    
-            #the pdf
-            doc = pdf.PDF(orientation=self.dataset.config.get('Atlas', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
-            doc.type = 'atlas'
-            doc.toc_length = toc_length
-    
-            doc.col = 0
-            doc.y0 = 0
-            doc.set_title(self.dataset.config.get('Atlas', 'title'))
-            doc.set_author(self.dataset.config.get('Atlas', 'author'))
-            doc.set_creator(' '.join(['dipper-stda', version.__version__])) 
-            doc.section = ''
-    
-            #title page
-            doc.p_add_page()
-    
-            if self.dataset.config.get('Atlas', 'cover_image') is not None and os.path.isfile(self.dataset.config.get('Atlas', 'cover_image')):
-                doc.image(self.dataset.config.get('Atlas', 'cover_image'), 0, 0, doc.w, doc.h)
-    
-            doc.set_text_color(0)
-            doc.set_fill_color(255, 255, 255)
-            doc.set_font('Helvetica', '', 28)
-            doc.ln(15)
-            doc.multi_cell(0, 10, doc.title, 0, 'L', False)
-    
-            doc.ln(20)
-            doc.set_font('Helvetica', '', 18)
-            doc.multi_cell(0, 10, ''.join([doc.author, '\n',datetime.now().strftime('%B %Y')]), 0, 'L', False)
-    
-            #inside cover
-            doc.p_add_page()
-            doc.set_font('Helvetica', '', 12)
-            doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover').replace('\n<nl>\n','\n\n'), 0, 'J', False)
-            doc.set_y(270)
-            doc.set_font('Helvetica', '', 8)
-                    
-            for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
-                if layer[0] == 'vice-counties':
-                    tyblurb = 'Vice-county boundaries provided by the National Biodiversity Network.'
-                
-            doc.multi_cell(0, 6, ' '.join([tyblurb, 'Contains Ordnance Survey data (C) Crown copyright and database right', ''.join([str(datetime.now().year), '.'])]), 0, 'J', False)
-            doc.set_font('Helvetica', '', 12)
-    
-            doc.do_header = True
-    
-            #introduction
-            if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
-                doc.section = ('Introduction')
+        
+                self.dataset.cursor.execute('SELECT DISTINCT(data.determiner) \
+                                             FROM data \
+                                             JOIN species_data ON data.taxon = species_data.taxon \
+                                             WHERE ' + vcs_sql + ' (' + restriction_sql + ')')
+        
+                determiner_data = self.dataset.cursor.fetchall()
+
+                for determiner in determiner_data:
+                    try:
+                        names = determiner[0].split(',')
+                        for name in names:
+                            if name.strip() not in contrib_data.keys():
+                                parts = name.strip().split()
+          
+                                initials = []
+
+                                if len(name) > 0:
+                                    if parts[0].strip() == 'Mr':
+                                        initials.append('Mr')
+                                    elif parts[0].strip() == 'Mrs':
+                                        initials.append('Mrs')
+                                    elif parts[0].strip() == 'Dr':
+                                        initials.append('Dr')
+          
+                                    for qwert in parts[len(initials):]:
+                                        initials.append(qwert[0:1])
+          
+                                    working_part = len(parts)-1
+                                    check_val = 1
+          
+                                    while ''.join(initials) in contrib_data.values():
+                                        if check_val <= len(parts[working_part]):
+                                            initials[working_part] = parts[working_part][0:check_val]
+                                            check_val = check_val + 1
+                                        elif check_val > len(parts[working_part]):
+                                            working_part = working_part - 1
+                                            check_val = 1
+          
+                                    contrib_data[name.strip()] = ''.join(initials)
+                    except AttributeError:
+                        pass
+        
+                #the pdf
+                doc = pdf.PDF(orientation=self.dataset.config.get('Atlas', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
+                doc.type = 'atlas'
+                doc.toc_length = toc_length
+        
+                doc.col = 0
+                doc.y0 = 0
+                doc.set_title(self.dataset.config.get('Atlas', 'title'))
+                doc.set_author(self.dataset.config.get('Atlas', 'author'))
+                doc.set_creator(' '.join(['dipper-stda', version.__version__])) 
+                doc.section = ''
+        
+                #title page
                 doc.p_add_page()
-                doc.set_font('Helvetica', '', 20)
-                doc.multi_cell(0, 20, 'Introduction', 0, 'J', False)
+        
+                if self.dataset.config.get('Atlas', 'cover_image') is not None and os.path.isfile(self.dataset.config.get('Atlas', 'cover_image')):
+                    doc.image(self.dataset.config.get('Atlas', 'cover_image'), 0, 0, doc.w, doc.h)
+        
+                doc.set_text_color(0)
+                doc.set_fill_color(255, 255, 255)
+                doc.set_font('Helvetica', '', 28)
+                doc.ln(15)
+                doc.multi_cell(0, 10, doc.title, 0, 'L', False)
+        
+                doc.ln(20)
+                doc.set_font('Helvetica', '', 18)
+                doc.multi_cell(0, 10, ''.join([doc.author, '\n',datetime.now().strftime('%B %Y')]), 0, 'L', False)
+        
+                #inside cover
+                doc.p_add_page()
                 doc.set_font('Helvetica', '', 12)
-                doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction').replace('\n<nl>\n','\n\n'), 0, 'J', False)
-    
-            #species density map
-            if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
-                doc.section = ('Introduction')
-                doc.p_add_page()
-                doc.set_font('Helvetica', '', 20)
-                doc.multi_cell(0, 20, 'Species density', 0, 'J', False)
-    
-                im = Image.open(self.density_map_filename)
-    
-                width, height = im.size
-    
-                if self.dataset.config.get('Atlas', 'orientation')[0:1] == 'P':
-                    scalefactor = (doc.w-doc.l_margin-doc.r_margin)/width
-                    target_width = width*scalefactor
-                    target_height = height*scalefactor
-    
-                    while target_height >= (doc.h-40-30):
-                        target_height = target_height - 1
-    
-                    scalefactor = target_height/height
-                    target_width = width*scalefactor
-    
-                elif self.dataset.config.get('Atlas', 'orientation')[0:1] == 'L':
-                    scalefactor = (doc.h-40-30)/height
-                    target_width = width*scalefactor
-                    target_height = height*scalefactor
-    
-                    while target_width >= (doc.w-doc.l_margin-doc.r_margin):
-                        target_width = target_width - 1
-    
-                    scalefactor = target_width/width
-                    target_height = height*scalefactor
-    
-                centerer = ((doc.w-doc.l_margin-doc.r_margin)-target_width)/2
-    
-                doc.image(self.density_map_filename, doc.l_margin+centerer, 40, w=target_width, h=target_height, type='PNG')
-    
-                #add the colour swatches
-                
-                #scale down the marker to a sensible size
-                if self.dataset.config.get('Atlas', 'species_density_map_unit') == '100km':
-                    scalefactor = 0.00025
-                elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '10km':
-                    scalefactor = 0.0025
-                elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '5km':
-                    scalefactor = 0.005
-                elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '2km':
-                    scalefactor = 0.0125
-                elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '1km':
-                    scalefactor = 0.025
-                    
-                #draw each band marker in turn and save out
-                #we always show date band 1
-                r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + os.path.sep + self.dataset.config.get('Atlas', 'species_density_map_unit'))
-                shapes = r.shapes()
-                pixels = []
-    
-                #grab the first marker we come to - no need to be fussy
-                for x, y in shapes[0].points:
-                    px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
-                    py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
-                    pixels.append((px,py))
-    
-                count = 0
-    
-                doc.set_font('Helvetica', '', 9)
-                #loop through the grad fills drawing a swatch for each
-                for swatch_ranges in reversed(self.grad_ranges):                
-                    swatch = Image.new('RGB',
-                                         (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
-                                            4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
-                                         'white')
-                    swatch_draw = ImageDraw.Draw(swatch)
-                    swatch_draw.polygon(pixels, fill='rgb(' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].red*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].green*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].blue*255)) + ')', outline='rgb(0, 0, 0)')
-                    swatch_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
-                    swatch.save(swatch_temp_file, format='PNG')
-        
-                    doc.image(swatch_temp_file, 10, (200 + (count*5) + ((14-self.increments)*5)), h=4, type='PNG')
-    
-                    doc.set_y(200 + (count*5) + ((14-self.increments)*5))
-                    doc.cell(4)
-                    
-                    if swatch_ranges[0] == swatch_ranges[1]:
-                        swatch_text = ''.join([str(swatch_ranges[0]), ' (', str(swatch_ranges[2]), ')'])
-                    else:
-                        swatch_text = ''.join([str(swatch_ranges[0]), ' - ', str(swatch_ranges[1]), ' (', str(swatch_ranges[2]), ')'])
+                doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'inside_cover').replace('\n<nl>\n','\n\n'), 0, 'J', False)
+                doc.set_y(270)
+                doc.set_font('Helvetica', '', 8)
                         
-                    doc.cell(10, 5, swatch_text, 0, 1, 'L', True)
+                for layer in json.loads(self.dataset.config.get('Atlas', 'mapping_layers')):
+                    if layer[0] == 'vice-counties':
+                        tyblurb = 'Vice-county boundaries provided by the National Biodiversity Network.'
                     
-                    count = count + 1         
-                    
-    
-            #explanation map
-            if doc.orientation == 'Portrait':
-                #HACK - this really needs converting a function to create the 'species
-                #package' and then choose one at randomn for the explanation, then
-                #loop through for the rest. The only difference is the extra Y padding?
-                #the explanation map#######################
-    
-                selected_explanation_species = self.dataset.config.get('Atlas', 'species_accounts_explanation_species')
-    
-                #if for some reason the explanation species isn't in our species to map, use the first one by default
-                if selected_explanation_species not in list(taxa_statistics.keys()):                    
-                    selected_explanation_species = sorted(list(taxa_statistics.keys()))[0]
-    
-                designation = taxa_statistics[selected_explanation_species]['national_designation']
-                
-                if (designation == '') or (designation == 'None'):
-                    designation = ' '
-    
-                if (taxa_statistics[selected_explanation_species]['common_name'] == '') or (taxa_statistics[selected_explanation_species]['common_name'] == 'None'):
-                    common_name = ''
-                else:
-                    common_name = taxa_statistics[selected_explanation_species]['common_name']
-    
-                doc.section = ('Introduction')
-                doc.p_add_page()
-                doc.set_font('Helvetica', '', 20)
-                doc.multi_cell(0, 20, 'Species account explanation', 0, 'J', False)
-    
-                y_padding = 39#######extra Y padding to centralize
-                y_padding = (5 + (((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding) + ((((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75))/2
-                x_padding = doc.l_margin
-                    
-                #taxon heading
-                doc.set_y(y_padding)
-                doc.set_x(x_padding)
-                doc.set_text_color(255)
-                doc.set_fill_color(59, 59, 59)
-                doc.set_line_width(0.1)
-                doc.set_font('Helvetica', 'BI', 12)
-                doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, ''.join([selected_explanation_species]), 'TLB', 0, 'L', True)
-                doc.set_font('Helvetica', 'B', 12)
-                doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
-                doc.set_x(x_padding)
-    
-                status_text = ''
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
-                    status_text = ''.join([designation])
-    
-                doc.multi_cell(((doc.w)-doc.l_margin-doc.r_margin), 5, status_text, 1, 'L', True)
-    
-                #compile list of last e.g. 10 records for use below
-                self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
-                                            FROM data \
-                                            JOIN species_data ON data.taxon = species_data.taxon \
-                                            WHERE data.taxon = "' + selected_explanation_species + '" \
-                                            AND ' + vcs_sql + ' (' + restriction_sql + ') \
-                                            ORDER BY data.year_to || data.month_to || data.day_to desc')
-    
-                indiv_taxon_data = self.dataset.cursor.fetchall()
-    
-                max_species_records_length = 900
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                    max_species_records_length = max_species_records_length - len(taxa_statistics[selected_explanation_species]['description'])
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
-                    max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[selected_explanation_species]['voucher'])]))
-    
-                remaining_records = 0
-    
-                #there has to be a better way?
-                taxon_recent_records = ''
-                for indiv_record in indiv_taxon_data:
-                    if len(taxon_recent_records) < max_species_records_length:
-    
-                        #if the determiner is different to the recorder, set the
-                        #determinater (!)
-                        try:
-                            if indiv_record[8] != indiv_record[9]:
-    
-                                detees = indiv_record[9].split(',')
-                                deter = ''
-    
-                                for deter_name in sorted(detees):
-                                    if deter_name != '':
-                                        deter = ','.join([deter, contrib_data[deter_name.strip()]])
-    
-                                if deter == 'Unknown' or deter == 'Unknown Unknown' or deter == '':
-                                    det = ' anon.'
-                                else:
-                                    det = ''.join([' det. ', deter[1:]])
-                            else:
-                                det = ''
-                        except AttributeError:
-                            det = ''
-    
-                        if indiv_record[4] == 'Unknown':
-                            date = '[date unknown]'
-                        else:
-                            date = indiv_record[4]
-    
-    
-                        if indiv_record[8] == 'Unknown' or indiv_record[8] == 'Unknown Unknown' or indiv_record[8] == '':
-                            rec = ' anon.'
-                        else:
-                            recs = indiv_record[8].split(',')
-                            rec = ''
-    
-                            for recorder_name in sorted(recs):
-                                rec = ','.join([rec, contrib_data[recorder_name.strip()]])
-    
-                        #limit grid reference to 100m
-                        if len(indiv_record[2]) > 8:
-                            grid = indiv_record[11]
-                        else:
-                            grid = indiv_record[2]
-    
-                        #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
-    
-                        #substitute parameters for record values
-                        #det and loc values can be empty - to remove empty spaces
-                        #we check for preceeeding and trailing spaces first with
-                        #these if they are empty strings
-                        current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
-    
-                        if indiv_record[1] == '':
-                            current_rec = current_rec.replace(' %l', indiv_record[1])
-                            current_rec = current_rec.replace('%l ', indiv_record[1])
-                        else:
-                            current_rec = current_rec.replace('%l', indiv_record[1])
-    
-                        if det == '':
-                            current_rec = current_rec.replace(' %i', det)
-                            current_rec = current_rec.replace('%i ', det)
-                        else:
-                            current_rec = current_rec.replace('%i', det)
-    
-                        current_rec = current_rec.replace('%v', str(indiv_record[10]))
-                        current_rec = current_rec.replace('%g', grid)
-                        current_rec = current_rec.replace('%d', date.replace('/', '.'))
-                        current_rec = current_rec.replace('%r', rec[1:])
-    
-                        #append current record to the output
-                        taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
-                    else:
-                        remaining_records = remaining_records + 1
-    
-                #if any records remain, add a note to the output
-                if remaining_records > 0:
-                    remaining_records_text = ''.join([' [+ ', str(remaining_records), ' more]'])
-                else:
-                    remaining_records_text = ''
-    
-                #taxon blurb
-                doc.set_y(y_padding+12)
-                doc.set_font('Helvetica', '', 10)
-                doc.set_text_color(0)
-                doc.set_fill_color(255, 255, 255)
-                doc.set_line_width(0.1)
+                doc.multi_cell(0, 6, ' '.join([tyblurb, 'Contains Ordnance Survey data (C) Crown copyright and database right', ''.join([str(datetime.now().year), '.'])]), 0, 'J', False)
+                doc.set_font('Helvetica', '', 12)
         
-                add_pad = False
-    
-                if len(taxa_statistics[selected_explanation_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-                    doc.set_font('Helvetica', '', 10)
-                    doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, taxa_statistics[selected_explanation_species]['description'], 0, 'L', False)
-                    add_pad = True
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
-                    
-                    if add_pad:
-                        doc.ln()
-                        
-                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-                    doc.set_font('Helvetica', '', 10)
-                    doc.set_font('Helvetica', '', 10)
-                    doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
-                    add_pad = True
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
-                    
-                    if add_pad:
-                        doc.ln()
-                        
-                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-                    doc.set_font('Helvetica', 'I', 10)                    
-                    doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Vouchers: ', str(taxa_statistics[selected_explanation_species]['voucher'])]), 0, 'L', False)
-    
-                y_for_explanation = doc.get_y()
-    
-                #chart
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-                    chartobj = chart.Chart(self.dataset, selected_explanation_species, self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
-                    if chartobj.temp_filename != None:
-                        doc.image(chartobj.temp_filename, x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75, 'PNG')
-                    doc.rect(x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
-    
-    
-                current_map =  self.base_map.copy()
-                current_map_draw = ImageDraw.Draw(current_map)
-    
-                all_grids = []
-    
-                #loop through each date band, grabbing the records
-                count = 0
-                
-                #if we're overlaying the markers, we draw the date bands backwards (oldest first)
-                if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
-                    treemodel_reversed = []
-                               
-                    for row in self.dataset.builder.get_object('treeview6').get_model():
-                        treemodel_reversed.insert(0, row)
-                    
-                    for row in treemodel_reversed:
-                        fill_colour = row[1].split('"')[1]
-                        border_colour = row[2].split('"')[1]
-                        
-                        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                                    FROM data \
-                                                    WHERE data.taxon = "' + selected_explanation_species + '" \
-                                                    AND data.year_to >= ' + str(row[3]) + '\
-                                                    AND data.year_to < ' + str(row[4]) + ' \
-                                                    AND data.year_from >= ' + str(row[3]) + ' \
-                                                    AND data.year_from < ' + str(row[4]))
+                doc.do_header = True
         
-                        date_b_grids = []
-                        date_band_grids = self.dataset.cursor.fetchall()
-                        for g in date_band_grids:
-                            date_b_grids.append(g[0])
-                            
-                        #loop through each object in the coverage (to save having to loop through ALL objects)
-                        for obj in self.date_band_coverage[count]:
-                            #if the object is in our date band
-                            if obj.record[0] in date_b_grids:
-                                
-                                pixels = []
-                                #loop through each point in the object
-                                for x,y in obj.shape.points:
-                                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                                    py = (self.bounds_top_y - y) * self.scalefactor
-                                    pixels.append((px,py))
-                                current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
-        
-                        count = count + 1
-        
-                #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
-                else:
-                    for row in self.dataset.builder.get_object('treeview6').get_model():
-                        fill_colour = row[1].split('"')[1]
-                        border_colour = row[2].split('"')[1]
-                        
-                        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                                    FROM data \
-                                                    WHERE data.taxon = "' + selected_explanation_species + '" \
-                                                    AND data.year_to >= ' + str(row[3]) + '\
-                                                    AND data.year_to < ' + str(row[4]) + ' \
-                                                    AND data.year_from >= ' + str(row[3]) + ' \
-                                                    AND data.year_from < ' + str(row[4]))
-        
-                        date_b_grids = []
-                        date_band_grids = self.dataset.cursor.fetchall()
-                        for g in date_band_grids:
-                            date_b_grids.append(g[0])
-                            
-                        #loop through each object in the coverage (to save having to loop through ALL objects)
-                        for obj in self.date_band_coverage[count]:
-                            #if the object is in our date band and it's not already been drawn by a more recent date band
-                            if (obj.record[0] in date_b_grids) and (obj.record[0] not in all_grids):
-                                
-                                pixels = []
-                                #loop through each point in the object
-                                for x,y in obj.shape.points:
-                                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                                    py = (self.bounds_top_y - y) * self.scalefactor
-                                    pixels.append((px,py))
-                                current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
-        
-                        count = count + 1
-        
-                        #add the current date band grids for reference next time round
-                        for g in date_band_grids:
-                            all_grids.append(g[0])
-    
-    
-    
-    
-    
-    
-    
-    
-    
-                temp_map_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
-                current_map.save(temp_map_file, format='PNG')
-    
-                (width, height) =  current_map.size
-    
-                max_width = (doc.w / 2)-doc.l_margin-doc.r_margin
-                max_height = (doc.w / 2)-doc.l_margin-doc.r_margin
-    
-                if height > width:
-                    pdfim_height = max_width
-                    pdfim_width = (float(width)/float(height))*max_width
-                else:
-                    pdfim_height = (float(height)/float(width))*max_width
-                    pdfim_width = max_width
-    
-                img_x_cent = ((max_width-pdfim_width)/2)+2
-                img_y_cent = ((max_height-pdfim_height)/2)+12
-    
-                doc.image(temp_map_file, x_padding+img_x_cent, y_padding+img_y_cent, int(pdfim_width), int(pdfim_height), 'PNG')
-    
-    
-                #map container
-                doc.set_text_color(0)
-                doc.set_fill_color(255, 255, 255)
-                doc.set_line_width(0.1)
-                doc.rect(x_padding, 10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3)
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
-    
-                    #from
-                    doc.set_y(11+y_padding)
-                    doc.set_x(1+x_padding)
+                #introduction
+                if len(self.dataset.config.get('Atlas', 'introduction')) > 0:
+                    doc.section = ('Introduction')
+                    doc.p_add_page()
+                    doc.set_font('Helvetica', '', 20)
+                    doc.multi_cell(0, 20, 'Introduction', 0, 'J', False)
                     doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-    
-                    if str(taxa_statistics[selected_explanation_species]['earliest']) == 'Unknown':
-                        val = '?'
-                    else:
-                        val = str(taxa_statistics[selected_explanation_species]['earliest'])
-                    doc.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
-    
-                    #to
-                    doc.set_y(11+y_padding)
-                    doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-    
-                    if str(taxa_statistics[selected_explanation_species]['latest']) == 'Unknown':
-                        val = '?'
-                    else:
-                        val = str(taxa_statistics[selected_explanation_species]['latest'])
-                    doc.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
-    
-                    #records
-                    doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                    doc.set_x(1+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-                    doc.multi_cell(20, 5, ''.join(['R ', str(taxa_statistics[selected_explanation_species]['count'])]), 0, 'L', False)
-    
-                    #squares
-                    doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                    doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-37)+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-                    doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
-    
-                #### the explanations
-                doc.set_font('Helvetica', '', 9)
-                doc.set_draw_color(0,0,0)
-    
-                #species name
-                doc.line(20,
-                         50,
-                         x_padding+7,
-                         y_padding)
-    
-                doc.set_x(1+x_padding +15)
-                doc.set_y(11+y_padding -50)
-                doc.cell(1)
-                doc.cell(10, 5, 'Scientific name', 0, 0, 'L', True)
-    
-                #common name
-                doc.line(doc.w-doc.l_margin-30,
-                         50,
-                         doc.w-doc.l_margin-x_padding-10,
-                         y_padding)
-    
-                doc.set_x(1+x_padding +15)
-                doc.set_y(11+y_padding -48)
-                doc.cell(150)
-                doc.cell(10, 5, 'Common name', 0, 0, 'L', True)
-    
-    
-                doc.set_y(y_padding+12)
-                doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-    
-                #taxon blurb
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') or self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                    doc.line(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5)   +50, #x1
-                             y_for_explanation,                                             #y1
-                             170,                                                           #x2
-                             240)                                                           #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(240)
-    
-                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                        doc.cell(130)
-                        doc.cell(10, 5, 'Species description and most recent records', 0, 0, 'L', True)
-                    elif self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and not self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):                
-                        doc.cell(130)
-                        doc.cell(10, 5, 'Most recent records', 0, 0, 'L', True)
-                    elif not self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                        doc.cell(150)                
-                        doc.cell(10, 5, 'Species description', 0, 0, 'L', True)
-    
-                #phenology chart
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-                    doc.line((   ((doc.w / 2)-doc.l_margin-doc.r_margin)+3     )       / 2, #x1
-                             ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding    +22, #y1
-                             40,                                                            #x2
-                             260)                                                           #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(260)
-                    doc.cell(15)
-                    doc.cell(10, 5, 'Records per month', 0, 0, 'L', True)
-    
-                #status
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
-                    doc.line(1+x_padding                                               +10, #x1
-                             11+y_padding                                              -5,  #y1
-                             1+x_padding                                               +40, #x2
-                             11+y_padding                                              -37) #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(11+y_padding -43)
-                    doc.cell(30)
-                    doc.cell(10, 5, 'Species status', 0, 0, 'L', True)
-    
-                #statistics
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
-                    #earliest
-                    doc.line(1+x_padding                                               +15, #x1
-                             11+y_padding                                              +2,  #y1
-                             1+x_padding                                               +50, #x2
-                             11+y_padding                                              -20) #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(11+y_padding -25)
-                    doc.cell(45)
-                    doc.cell(10, 5, 'Earliest record', 0, 0, 'L', True)
-    
-                    #latest
-                    doc.line((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +10, #x1
-                             11+y_padding,                                                  #y1
-                             (((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +40, #x2
-                             11+y_padding -40)                                              #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(11+y_padding -45)
-                    doc.cell(100)
-                    doc.cell(10, 5, 'Latest record', 0, 0, 'L', True)
-    
-                    #number of records
-                    doc.line(1+x_padding                                               +5,  #x1
-                             (((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding     +5,  #y1
-                             20,                                                            #x2
-                             220)                                                           #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(220)
-                    doc.cell(1)
-                    doc.cell(10, 5, 'Number of records', 0, 0, 'L', True)
-    
-                    #number of squares
-                    doc.line((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +15, #x1
-                             (((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding     +5,  #y1
-                             (((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +30, #x2
-                             240                                                       -20) #y2
-    
-                    doc.set_x(10)
-                    doc.set_y(220)
-                    doc.cell(70)
-                    doc.cell(10, 5, ' '.join(['Number of', self.dataset.config.get('Atlas', 'distribution_unit'), 'squares the species occurs in']), 0, 0, 'L', True)
-    
-    
-                # the date classes
-    
-                doc.line((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    -30, #x1
-                         (((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding     -30, #y1
-                         80, #x2
-                         240                                                          ) #y2            
-                
-                doc.set_font('Helvetica', '', 9)
-                doc.set_x(70)
-                doc.set_y(240)
-                doc.cell(60)
-                doc.cell(10, 5, 'Date classes:', 0, 1, 'L', True)
-    
-                #scale down the marker to a sensible size
-                if self.dataset.config.get('Atlas', 'distribution_unit') == '100km':
-                    scalefactor = 0.00025
-                elif self.dataset.config.get('Atlas', 'distribution_unit') == '10km':
-                    scalefactor = 0.0025
-                elif self.dataset.config.get('Atlas', 'distribution_unit') == '5km':
-                    scalefactor = 0.005
-                elif self.dataset.config.get('Atlas', 'distribution_unit') == '2km':
-                    scalefactor = 0.0125
-                elif self.dataset.config.get('Atlas', 'distribution_unit') == '1km':
-                    scalefactor = 0.025
-    
-                #draw each band marker in turn and save out
-                count = 0
-                for row in self.dataset.builder.get_object('treeview6').get_model():
-                    fill_colour = row[1].split('"')[1]
-                    border_colour = row[2].split('"')[1]
+                    doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'introduction').replace('\n<nl>\n','\n\n'), 0, 'J', False)
+        
+                #species density map
+                if self.dataset.config.getboolean('Atlas', 'species_density_map_visible'):
+                    doc.section = ('Introduction')
+                    doc.p_add_page()
+                    doc.set_font('Helvetica', '', 20)
+                    doc.multi_cell(0, 20, 'Species density', 0, 'J', False)
+        
+                    im = Image.open(self.density_map_filename)
+        
+                    width, height = im.size
+        
+                    if self.dataset.config.get('Atlas', 'orientation')[0:1] == 'P':
+                        scalefactor = (doc.w-doc.l_margin-doc.r_margin)/width
+                        target_width = width*scalefactor
+                        target_height = height*scalefactor
+        
+                        while target_height >= (doc.h-40-30):
+                            target_height = target_height - 1
+        
+                        scalefactor = target_height/height
+                        target_width = width*scalefactor
+        
+                    elif self.dataset.config.get('Atlas', 'orientation')[0:1] == 'L':
+                        scalefactor = (doc.h-40-30)/height
+                        target_width = width*scalefactor
+                        target_height = height*scalefactor
+        
+                        while target_width >= (doc.w-doc.l_margin-doc.r_margin):
+                            target_width = target_width - 1
+        
+                        scalefactor = target_width/width
+                        target_height = height*scalefactor
+        
+                    centerer = ((doc.w-doc.l_margin-doc.r_margin)-target_width)/2
+        
+                    doc.image(self.density_map_filename, doc.l_margin+centerer, 40, w=target_width, h=target_height, type='PNG')
+        
+                    #add the colour swatches
                     
-                    r = shapefile.Reader('./markers/' + row[0] + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
+                    #scale down the marker to a sensible size
+                    if self.dataset.config.get('Atlas', 'species_density_map_unit') == '100km':
+                        scalefactor = 0.00025
+                    elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '10km':
+                        scalefactor = 0.0025
+                    elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '5km':
+                        scalefactor = 0.005
+                    elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '2km':
+                        scalefactor = 0.0125
+                    elif self.dataset.config.get('Atlas', 'species_density_map_unit') == '1km':
+                        scalefactor = 0.025
+                        
+                    #draw each band marker in turn and save out
+                    #we always show date band 1
+                    r = shapefile.Reader('./markers/' + self.dataset.config.get('Atlas', 'species_density_map_style') + os.path.sep + self.dataset.config.get('Atlas', 'species_density_map_unit'))
                     shapes = r.shapes()
                     pixels = []
-    
+        
                     #grab the first marker we come to - no need to be fussy
                     for x, y in shapes[0].points:
                         px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
                         py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
                         pixels.append((px,py))
-                    
-                    date_band = Image.new('RGB',
-                                         (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
-                                            4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
-                                         'white')
-                    date_band_draw = ImageDraw.Draw(date_band)
-                    date_band_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
-                    #and as a line so we can increase the thickness
-                    date_band_draw.line(pixels, width=3, fill='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
-    
-                    date_band_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
-                    date_band.save(date_band_temp_file, format='PNG')
-    
-    
-                    doc.image(date_band_temp_file, 80, 245+(count*5), h=4, type='PNG')
-                    doc.cell(75)
-                    
-                    if row[0] == '1600.0':
-                        date_band_from_text = ' '.join(['before', str(int(float(row[3])))])
-                    else:
-                        date_band_from_text = ' '.join([str(int(float(row[3]))), 'to', str(int(float(row[4])))])
-                    
-                    doc.cell(10, 5, date_band_from_text, 0, 1, 'L', True)
-                    
-                    count = count + 1
-    
-                #### end the explanations
-    
-                #end of explanation map code###############################
-    
-            taxon_count = 0
-            genus_index = {}
-            species_index = {}
-            common_name_index = {}
-    
-            families = []
-            rownum = 0
-    
-            if self.dataset.config.get('Atlas', 'paper_size') == 'A4' and self.dataset.config.get('Atlas', 'orientation') == 'Portrait':
-                max_region_count = 2
-            elif self.dataset.config.get('Atlas', 'paper_size') == 'A4' and self.dataset.config.get('Atlas', 'orientation') == 'Landscape':
-                max_region_count = 1
-                        
-            region_count = 3
-    
-            #we should really use the selection & get unique taxa?
-            for item in data:
-                taxon_recent_records = ''
-    
-                if taxa_statistics[item[0]]['family'] != 'None':
-                    doc.section = ''.join(['Family ', taxa_statistics[item[0]]['family']])
-                elif taxa_statistics[item[0]]['order'] != 'None':
-                    doc.section = ''.join(['Order ', taxa_statistics[item[0]]['order']])
-                elif taxa_statistics[item[0]]['class'] != 'None':
-                    doc.section = ''.join(['Class ', taxa_statistics[item[0]]['class']])
-                elif taxa_statistics[item[0]]['phylum'] != 'None':
-                    doc.section = ''.join(['Phylum ', taxa_statistics[item[0]]['phylum']])
-                elif taxa_statistics[item[0]]['kingdom'] != 'None':
-                    doc.section = ''.join(['Kingdom ', taxa_statistics[item[0]]['kingdom']])
-                else:
-                    doc.section = ''
-    
-                if region_count > max_region_count:
-                    region_count = 1
-                    doc.startPageNums()
-                    doc.p_add_page()
-    
-                if taxa_statistics[item[0]]['family'] not in families:
-    
-                    families.append(taxa_statistics[item[0]]['family'])
-    
-                    if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
-                        doc.TOC_Entry(''.join(['Family ', taxa_statistics[item[0]]['family']]), level=0)
-    
-                if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                    #only show the common name if we have one
-                    if len(taxa_statistics[item[0]]['common_name']) > 0:
-                        doc.TOC_Entry(''.join([item[0], ' - ', taxa_statistics[item[0]]['common_name']]), level=1)
-                    else:
-                        doc.TOC_Entry(''.join([item[0]]), level=1)
-                elif not self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                    doc.TOC_Entry(taxa_statistics[item[0]]['common_name'], level=1)
-                elif self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and not self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
-                    doc.TOC_Entry(item[0], level=1)
-    
-                designation = taxa_statistics[item[0]]['national_designation']
-                if (designation == '') or (designation == 'None'):
-                    designation = ' '
-    
-                if (taxa_statistics[item[0]]['common_name'] == '') or (taxa_statistics[item[0]]['common_name'] == 'None'):
-                    common_name = ''
-                else:
-                    common_name = taxa_statistics[item[0]]['common_name']
-    
-                if item[0] not in taxa_statistics:
-                    taxa_statistics[item[0]] = {}
-                    taxa_statistics[item[0]]['count'] = 0
-                    taxa_statistics[item[0]]['earliest'] = 'N/A'
-                    taxa_statistics[item[0]]['latest'] = 'N/A'
-                    taxa_statistics[item[0]]['dist_count'] = 0
-                    taxa_statistics[item[0]]['description'] = ''
-                    taxa_statistics[item[0]]['common_name'] = ''
-    
-                while gtk.events_pending():
-                    gtk.main_iteration()
-    
-                # calc the positining for the various elements
-                if region_count == 1: # top taxon map
-                    y_padding = 19
-                    x_padding = doc.l_margin
-                elif region_count == 2: # bottom taxon map
-                    y_padding = 5 + (((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding) + ((((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
-                    x_padding = doc.l_margin
-    
-                #taxon heading
-                doc.set_y(y_padding)
-                doc.set_x(x_padding)
-                doc.set_text_color(255)
-                doc.set_fill_color(59, 59, 59)
-                doc.set_line_width(0.1)
-                doc.set_font('Helvetica', 'BI', 12)
-                doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, item[0], 'TLB', 0, 'L', True)
-                doc.set_font('Helvetica', 'B', 12)
-                doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
-                doc.set_x(x_padding)
-    
-                status_text = ''
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
-                    status_text = ''.join([designation])
-    
-                doc.multi_cell(((doc.w)-doc.l_margin-doc.r_margin), 5, status_text, 1, 'L', True)
-    
-                #compile list of last e.g. 10 records for use below
-                self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
-                                            FROM data \
-                                            JOIN species_data ON data.taxon = species_data.taxon \
-                                            WHERE data.taxon = "' + item[0] + '" \
-                                            AND ' + vcs_sql + ' (' + restriction_sql + ') \
-                                            ORDER BY data.year_to || data.month_to || data.day_to desc')
-    
-                indiv_taxon_data = self.dataset.cursor.fetchall()
-    
-                max_species_records_length = 900
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                    max_species_records_length = max_species_records_length - len(taxa_statistics[item[0]]['description'])
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
-                    max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[item[0]]['voucher'])]))
-    
-                remaining_records = 0
-    
-                #there has to be a better way?
-                for indiv_record in indiv_taxon_data:
-                    if len(taxon_recent_records) < max_species_records_length:
-    
-                        #if the determiner is different to the recorder, set the
-                        #determinater (!)
-                        try:
-                            if indiv_record[8] != indiv_record[9]:
         
-                                detees = indiv_record[9].split(',')
-                                deter = ''
+                    count = 0
         
-                                for deter_name in sorted(detees):
-                                    if deter_name != '':
-                                        deter = ','.join([deter, contrib_data[deter_name.strip()]])
+                    doc.set_font('Helvetica', '', 9)
+                    #loop through the grad fills drawing a swatch for each
+                    for swatch_ranges in reversed(self.grad_ranges):                
+                        swatch = Image.new('RGB',
+                                             (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                                4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                             'white')
+                        swatch_draw = ImageDraw.Draw(swatch)
+                        swatch_draw.polygon(pixels, fill='rgb(' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].red*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].green*255)) + ',' + str(int(self.grad_fills[self.grad_ranges.index(swatch_ranges)].blue*255)) + ')', outline='rgb(0, 0, 0)')
+                        swatch_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                        swatch.save(swatch_temp_file, format='PNG')
+            
+                        doc.image(swatch_temp_file, 10, (200 + (count*5) + ((14-self.increments)*5)), h=4, type='PNG')
         
-                                if deter == 'Unknown' or deter == 'Unknown Unknown' or deter == '':
-                                    det = ' anon.'
-                                else:
-                                    det = ''.join([' det. ', deter[1:]])
-                            else:
-                                det = ''
-                        except AttributeError:
-                            det = ''
-    
-                        if indiv_record[4] == 'Unknown':
-                            date = '[date unknown]'
-                        else:
-                            date = indiv_record[4]
-    
-    
-                        if indiv_record[8] == 'Unknown' or indiv_record[8] == 'Unknown Unknown' or indiv_record[8] == '':
-                            rec = ' anon.'
-                        else:
-                            recs = indiv_record[8].split(',')
-                            rec = ''
-    
-                            for recorder_name in sorted(recs):
-                                rec = ','.join([rec, contrib_data[recorder_name.strip()]])
-    
-                        #limit grid reference to 100m
-                        if len(indiv_record[2]) > 8:
-                            grid = indiv_record[11]
-                        else:
-                            grid = indiv_record[2]
-    
-                        #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
-    
-                        #substitute parameters for record values
-                        #det and loc values can be empty - to remove empty spaces
-                        #we check for preceeeding and trailing spaces first with
-                        #these if they are empty strings
-                        current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
-    
-                        if indiv_record[1] == '':
-                            current_rec = current_rec.replace(' %l', indiv_record[1])
-                            current_rec = current_rec.replace('%l ', indiv_record[1])
-                        else:
-                            current_rec = current_rec.replace('%l', indiv_record[1])
-    
-                        if det == '':
-                            current_rec = current_rec.replace(' %i', det)
-                            current_rec = current_rec.replace('%i ', det)
-                        else:
-                            current_rec = current_rec.replace('%i', det)
-    
-                        current_rec = current_rec.replace('%v', str(indiv_record[10]))
-                        current_rec = current_rec.replace('%g', grid)
-                        current_rec = current_rec.replace('%d', date.replace('/', '.'))
-                        current_rec = current_rec.replace('%r', rec[1:])
-    
-                        #append current record to the output
-                        taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
-                    else:
-                        remaining_records = remaining_records + 1
-    
-                #if any records remain, add a note to the output
-                if remaining_records > 0:
-                    remaining_records_text = ''.join([' [+ ', str(remaining_records), ' more]'])
-                else:
-                    remaining_records_text = ''
-    
-                #taxon blurb
-                doc.set_y(y_padding+12)
-                doc.set_font('Helvetica', '', 10)
-                doc.set_text_color(0)
-                doc.set_fill_color(255, 255, 255)
-                doc.set_line_width(0.1)
-                
-                add_pad = False
-    
-                if len(taxa_statistics[item[0]]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
-                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-                    doc.set_font('Helvetica', '', 10)
-                    doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, taxa_statistics[item[0]]['description'], 0, 'L', False)
-                    add_pad = True
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
-                    
-                    if add_pad:
-                        doc.ln()
+                        doc.set_y(200 + (count*5) + ((14-self.increments)*5))
+                        doc.cell(4)
                         
-                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-                    doc.set_font('Helvetica', '', 10)                    
-                    doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
-                    add_pad = True
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
-                    
-                    if add_pad:
-                        doc.ln()
-                        
-                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
-                    doc.set_font('Helvetica', 'I', 10)                    
-                    doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Vouchers: ', str(taxa_statistics[item[0]]['voucher'])]), 0, 'L', False)
-    
-                #chart
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
-                    chartobj = chart.Chart(self.dataset, item[0], self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
-                    if chartobj.temp_filename != None:
-                        doc.image(chartobj.temp_filename, x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75, 'PNG')
-                    doc.rect(x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
-    
-    
-                #do the map
-    
-                current_map =  self.base_map.copy()
-                current_map_draw = ImageDraw.Draw(current_map)
-    
-    
-                #loop through each date band, grabbing the records
-                count = 0
-                all_grids = []
-                
-                #if we're overlaying the markers, we draw the date bands backwards (oldest first)
-                if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
-                    for row in treemodel_reversed:
-                        fill_colour = row[1].split('"')[1]
-                        border_colour = row[2].split('"')[1]
-                        
-                        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                                    FROM data \
-                                                    WHERE data.taxon = "' + item[0] + '" \
-                                                    AND data.year_to >= ' + str(row[3]) + '\
-                                                    AND data.year_to < ' + str(row[4]) + ' \
-                                                    AND data.year_from >= ' + str(row[3]) + ' \
-                                                    AND data.year_from < ' + str(row[4]))
-        
-                        date_b_grids = []
-                        date_band_grids = self.dataset.cursor.fetchall()
-                        for g in date_band_grids:
-                            date_b_grids.append(g[0])
+                        if swatch_ranges[0] == swatch_ranges[1]:
+                            swatch_text = ''.join([str(swatch_ranges[0]), ' (', str(swatch_ranges[2]), ')'])
+                        else:
+                            swatch_text = ''.join([str(swatch_ranges[0]), ' - ', str(swatch_ranges[1]), ' (', str(swatch_ranges[2]), ')'])
                             
-                        #loop through each object in the coverage (to save having to loop through ALL objects)
-                        for obj in self.date_band_coverage[count]:
-                            #if the object is in our date band
-                            if obj.record[0] in date_b_grids:
+                        doc.cell(10, 5, swatch_text, 0, 1, 'L', True)
+                        
+                        count = count + 1         
+                        
+        
+                #explanation map
+                if doc.orientation == 'Portrait':
+                    #HACK - this really needs converting a function to create the 'species
+                    #package' and then choose one at randomn for the explanation, then
+                    #loop through for the rest. The only difference is the extra Y padding?
+                    #the explanation map#######################
+        
+                    selected_explanation_species = self.dataset.config.get('Atlas', 'species_accounts_explanation_species')
+        
+                    #if for some reason the explanation species isn't in our species to map, use the first one by default
+                    if selected_explanation_species not in list(taxa_statistics.keys()):                    
+                        selected_explanation_species = sorted(list(taxa_statistics.keys()))[0]
+        
+                    designation = taxa_statistics[selected_explanation_species]['national_designation']
+                    
+                    if (designation == '') or (designation == 'None'):
+                        designation = ' '
+        
+                    if (taxa_statistics[selected_explanation_species]['common_name'] == '') or (taxa_statistics[selected_explanation_species]['common_name'] == 'None'):
+                        common_name = ''
+                    else:
+                        common_name = taxa_statistics[selected_explanation_species]['common_name']
+        
+                    doc.section = ('Introduction')
+                    doc.p_add_page()
+                    doc.set_font('Helvetica', '', 20)
+                    doc.multi_cell(0, 20, 'Species account explanation', 0, 'J', False)
+        
+                    y_padding = 39#######extra Y padding to centralize
+                    y_padding = (5 + (((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding) + ((((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75))/2
+                    x_padding = doc.l_margin
+                        
+                    #taxon heading
+                    doc.set_y(y_padding)
+                    doc.set_x(x_padding)
+                    doc.set_text_color(255)
+                    doc.set_fill_color(59, 59, 59)
+                    doc.set_line_width(0.1)
+                    doc.set_font('Helvetica', 'BI', 12)
+                    doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, ''.join([selected_explanation_species]), 'TLB', 0, 'L', True)
+                    doc.set_font('Helvetica', 'B', 12)
+                    doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
+                    doc.set_x(x_padding)
+        
+                    status_text = ''
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
+                        status_text = ''.join([designation])
+        
+                    doc.multi_cell(((doc.w)-doc.l_margin-doc.r_margin), 5, status_text, 1, 'L', True)
+        
+                    #compile list of last e.g. 10 records for use below
+                    self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
+                                                FROM data \
+                                                JOIN species_data ON data.taxon = species_data.taxon \
+                                                WHERE data.taxon = "' + selected_explanation_species + '" \
+                                                AND ' + vcs_sql + ' (' + restriction_sql + ') \
+                                                ORDER BY data.year_to || data.month_to || data.day_to desc')
+        
+                    indiv_taxon_data = self.dataset.cursor.fetchall()
+        
+                    max_species_records_length = 900
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                        max_species_records_length = max_species_records_length - len(taxa_statistics[selected_explanation_species]['description'])
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                        max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[selected_explanation_species]['voucher'])]))
+        
+                    remaining_records = 0
+        
+                    #there has to be a better way?
+                    taxon_recent_records = ''
+                    for indiv_record in indiv_taxon_data:
+                        if len(taxon_recent_records) < max_species_records_length:
+        
+                            #if the determiner is different to the recorder, set the
+                            #determinater (!)
+                            try:
+                                if indiv_record[8] != indiv_record[9]:
+        
+                                    detees = indiv_record[9].split(',')
+                                    deter = ''
+        
+                                    for deter_name in sorted(detees):
+                                        if deter_name != '':
+                                            deter = ','.join([deter, contrib_data[deter_name.strip()]])
+        
+                                    if deter == 'Unknown' or deter == 'Unknown Unknown' or deter == '':
+                                        det = ' anon.'
+                                    else:
+                                        det = ''.join([' det. ', deter[1:]])
+                                else:
+                                    det = ''
+                            except AttributeError:
+                                det = ''
+        
+                            if indiv_record[4] == 'Unknown':
+                                date = '[date unknown]'
+                            else:
+                                date = indiv_record[4]
+        
+        
+                            if indiv_record[8] == 'Unknown' or indiv_record[8] == 'Unknown Unknown' or indiv_record[8] == '':
+                                rec = ' anon.'
+                            else:
+                                recs = indiv_record[8].split(',')
+                                rec = ''
+        
+                                for recorder_name in sorted(recs):
+                                    rec = ','.join([rec, contrib_data[recorder_name.strip()]])
+        
+                            #limit grid reference to 100m
+                            if len(indiv_record[2]) > 8:
+                                grid = indiv_record[11]
+                            else:
+                                grid = indiv_record[2]
+        
+                            #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
+        
+                            #substitute parameters for record values
+                            #det and loc values can be empty - to remove empty spaces
+                            #we check for preceeeding and trailing spaces first with
+                            #these if they are empty strings
+                            current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
+        
+                            if indiv_record[1] == '':
+                                current_rec = current_rec.replace(' %l', indiv_record[1])
+                                current_rec = current_rec.replace('%l ', indiv_record[1])
+                            else:
+                                current_rec = current_rec.replace('%l', indiv_record[1])
+        
+                            if det == '':
+                                current_rec = current_rec.replace(' %i', det)
+                                current_rec = current_rec.replace('%i ', det)
+                            else:
+                                current_rec = current_rec.replace('%i', det)
+        
+                            current_rec = current_rec.replace('%v', str(indiv_record[10]))
+                            current_rec = current_rec.replace('%g', grid)
+                            current_rec = current_rec.replace('%d', date.replace('/', '.'))
+                            current_rec = current_rec.replace('%r', rec[1:])
+        
+                            #append current record to the output
+                            taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
+                        else:
+                            remaining_records = remaining_records + 1
+        
+                    #if any records remain, add a note to the output
+                    if remaining_records > 0:
+                        remaining_records_text = ''.join([' [+ ', str(remaining_records), ' more]'])
+                    else:
+                        remaining_records_text = ''
+        
+                    #taxon blurb
+                    doc.set_y(y_padding+12)
+                    doc.set_font('Helvetica', '', 10)
+                    doc.set_text_color(0)
+                    doc.set_fill_color(255, 255, 255)
+                    doc.set_line_width(0.1)
+            
+                    add_pad = False
+        
+                    if len(taxa_statistics[selected_explanation_species]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                        doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                        doc.set_font('Helvetica', '', 10)
+                        doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, taxa_statistics[selected_explanation_species]['description'], 0, 'L', False)
+                        add_pad = True
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                        
+                        if add_pad:
+                            doc.ln()
+                            
+                        doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                        doc.set_font('Helvetica', '', 10)
+                        doc.set_font('Helvetica', '', 10)
+                        doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+                        add_pad = True
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                        
+                        if add_pad:
+                            doc.ln()
+                            
+                        doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                        doc.set_font('Helvetica', 'I', 10)                    
+                        doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Vouchers: ', str(taxa_statistics[selected_explanation_species]['voucher'])]), 0, 'L', False)
+        
+                    y_for_explanation = doc.get_y()
+        
+                    #chart
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
+                        chartobj = chart.Chart(self.dataset, selected_explanation_species, self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
+                        if chartobj.temp_filename != None:
+                            doc.image(chartobj.temp_filename, x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75, 'PNG')
+                        doc.rect(x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
+        
+        
+                    current_map =  self.base_map.copy()
+                    current_map_draw = ImageDraw.Draw(current_map)
+        
+                    all_grids = []
+        
+                    #loop through each date band, grabbing the records
+                    count = 0
+                    
+                    #if we're overlaying the markers, we draw the date bands backwards (oldest first)
+                    if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
+                        treemodel_reversed = []
+                                   
+                        for row in self.dataset.builder.get_object('treeview6').get_model():
+                            treemodel_reversed.insert(0, row)
+                        
+                        for row in treemodel_reversed:
+                            fill_colour = row[1].split('"')[1]
+                            border_colour = row[2].split('"')[1]
+                            
+                            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                        FROM data \
+                                                        WHERE data.taxon = "' + selected_explanation_species + '" \
+                                                        AND data.year_to >= ' + str(row[3]) + '\
+                                                        AND data.year_to < ' + str(row[4]) + ' \
+                                                        AND data.year_from >= ' + str(row[3]) + ' \
+                                                        AND data.year_from < ' + str(row[4]))
+            
+                            date_b_grids = []
+                            date_band_grids = self.dataset.cursor.fetchall()
+                            for g in date_band_grids:
+                                date_b_grids.append(g[0])
                                 
-                                pixels = []
-                                #loop through each point in the object
-                                for x,y in obj.shape.points:
-                                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                                    py = (self.bounds_top_y - y) * self.scalefactor
-                                    pixels.append((px,py))
-                                current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+                            #loop through each object in the coverage (to save having to loop through ALL objects)
+                            for obj in self.date_band_coverage[count]:
+                                #if the object is in our date band
+                                if obj.record[0] in date_b_grids:
+                                    
+                                    pixels = []
+                                    #loop through each point in the object
+                                    for x,y in obj.shape.points:
+                                        px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                        py = (self.bounds_top_y - y) * self.scalefactor
+                                        pixels.append((px,py))
+                                    current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+            
+                            count = count + 1
+            
+                    #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
+                    else:
+                        for row in self.dataset.builder.get_object('treeview6').get_model():
+                            fill_colour = row[1].split('"')[1]
+                            border_colour = row[2].split('"')[1]
+                            
+                            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                        FROM data \
+                                                        WHERE data.taxon = "' + selected_explanation_species + '" \
+                                                        AND data.year_to >= ' + str(row[3]) + '\
+                                                        AND data.year_to < ' + str(row[4]) + ' \
+                                                        AND data.year_from >= ' + str(row[3]) + ' \
+                                                        AND data.year_from < ' + str(row[4]))
+            
+                            date_b_grids = []
+                            date_band_grids = self.dataset.cursor.fetchall()
+                            for g in date_band_grids:
+                                date_b_grids.append(g[0])
+                                
+                            #loop through each object in the coverage (to save having to loop through ALL objects)
+                            for obj in self.date_band_coverage[count]:
+                                #if the object is in our date band and it's not already been drawn by a more recent date band
+                                if (obj.record[0] in date_b_grids) and (obj.record[0] not in all_grids):
+                                    
+                                    pixels = []
+                                    #loop through each point in the object
+                                    for x,y in obj.shape.points:
+                                        px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                        py = (self.bounds_top_y - y) * self.scalefactor
+                                        pixels.append((px,py))
+                                    current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+            
+                            count = count + 1
+            
+                            #add the current date band grids for reference next time round
+                            for g in date_band_grids:
+                                all_grids.append(g[0])
         
-                        count = count + 1
         
-                        #add the current date band grids for reference next time round
-                        for g in date_band_grids:
-                            all_grids.append(g[0])
-    
-                #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
-                else:
+        
+        
+        
+        
+        
+        
+        
+                    temp_map_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                    current_map.save(temp_map_file, format='PNG')
+        
+                    (width, height) =  current_map.size
+        
+                    max_width = (doc.w / 2)-doc.l_margin-doc.r_margin
+                    max_height = (doc.w / 2)-doc.l_margin-doc.r_margin
+        
+                    if height > width:
+                        pdfim_height = max_width
+                        pdfim_width = (float(width)/float(height))*max_width
+                    else:
+                        pdfim_height = (float(height)/float(width))*max_width
+                        pdfim_width = max_width
+        
+                    img_x_cent = ((max_width-pdfim_width)/2)+2
+                    img_y_cent = ((max_height-pdfim_height)/2)+12
+        
+                    doc.image(temp_map_file, x_padding+img_x_cent, y_padding+img_y_cent, int(pdfim_width), int(pdfim_height), 'PNG')
+        
+        
+                    #map container
+                    doc.set_text_color(0)
+                    doc.set_fill_color(255, 255, 255)
+                    doc.set_line_width(0.1)
+                    doc.rect(x_padding, 10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3)
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
+        
+                        #from
+                        doc.set_y(11+y_padding)
+                        doc.set_x(1+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+        
+                        if str(taxa_statistics[selected_explanation_species]['earliest']) == 'Unknown':
+                            val = '?'
+                        else:
+                            val = str(taxa_statistics[selected_explanation_species]['earliest'])
+                        doc.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
+        
+                        #to
+                        doc.set_y(11+y_padding)
+                        doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+        
+                        if str(taxa_statistics[selected_explanation_species]['latest']) == 'Unknown':
+                            val = '?'
+                        else:
+                            val = str(taxa_statistics[selected_explanation_species]['latest'])
+                        doc.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
+        
+                        #records
+                        doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
+                        doc.set_x(1+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+                        doc.multi_cell(20, 5, ''.join(['R ', str(taxa_statistics[selected_explanation_species]['count'])]), 0, 'L', False)
+        
+                        #squares
+                        doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
+                        doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-37)+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+                        doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
+        
+                    #### the explanations
+                    doc.set_font('Helvetica', '', 9)
+                    doc.set_draw_color(0,0,0)
+        
+                    #species name
+                    doc.line(20,
+                             50,
+                             x_padding+7,
+                             y_padding)
+        
+                    doc.set_x(1+x_padding +15)
+                    doc.set_y(11+y_padding -50)
+                    doc.cell(1)
+                    doc.cell(10, 5, 'Scientific name', 0, 0, 'L', True)
+        
+                    #common name
+                    doc.line(doc.w-doc.l_margin-30,
+                             50,
+                             doc.w-doc.l_margin-x_padding-10,
+                             y_padding)
+        
+                    doc.set_x(1+x_padding +15)
+                    doc.set_y(11+y_padding -48)
+                    doc.cell(150)
+                    doc.cell(10, 5, 'Common name', 0, 0, 'L', True)
+        
+        
+                    doc.set_y(y_padding+12)
+                    doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+        
+                    #taxon blurb
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') or self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                        doc.line(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5)   +50, #x1
+                                 y_for_explanation,                                             #y1
+                                 170,                                                           #x2
+                                 240)                                                           #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(240)
+        
+                        if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                            doc.cell(130)
+                            doc.cell(10, 5, 'Species description and most recent records', 0, 0, 'L', True)
+                        elif self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and not self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):                
+                            doc.cell(130)
+                            doc.cell(10, 5, 'Most recent records', 0, 0, 'L', True)
+                        elif not self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest') and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                            doc.cell(150)                
+                            doc.cell(10, 5, 'Species description', 0, 0, 'L', True)
+        
+                    #phenology chart
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
+                        doc.line((   ((doc.w / 2)-doc.l_margin-doc.r_margin)+3     )       / 2, #x1
+                                 ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding    +22, #y1
+                                 40,                                                            #x2
+                                 260)                                                           #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(260)
+                        doc.cell(15)
+                        doc.cell(10, 5, 'Records per month', 0, 0, 'L', True)
+        
+                    #status
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
+                        doc.line(1+x_padding                                               +10, #x1
+                                 11+y_padding                                              -5,  #y1
+                                 1+x_padding                                               +40, #x2
+                                 11+y_padding                                              -37) #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(11+y_padding -43)
+                        doc.cell(30)
+                        doc.cell(10, 5, 'Species status', 0, 0, 'L', True)
+        
+                    #statistics
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
+                        #earliest
+                        doc.line(1+x_padding                                               +15, #x1
+                                 11+y_padding                                              +2,  #y1
+                                 1+x_padding                                               +50, #x2
+                                 11+y_padding                                              -20) #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(11+y_padding -25)
+                        doc.cell(45)
+                        doc.cell(10, 5, 'Earliest record', 0, 0, 'L', True)
+        
+                        #latest
+                        doc.line((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +10, #x1
+                                 11+y_padding,                                                  #y1
+                                 (((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +40, #x2
+                                 11+y_padding -40)                                              #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(11+y_padding -45)
+                        doc.cell(100)
+                        doc.cell(10, 5, 'Latest record', 0, 0, 'L', True)
+        
+                        #number of records
+                        doc.line(1+x_padding                                               +5,  #x1
+                                 (((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding     +5,  #y1
+                                 20,                                                            #x2
+                                 220)                                                           #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(220)
+                        doc.cell(1)
+                        doc.cell(10, 5, 'Number of records', 0, 0, 'L', True)
+        
+                        #number of squares
+                        doc.line((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +15, #x1
+                                 (((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding     +5,  #y1
+                                 (((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    +30, #x2
+                                 240                                                       -20) #y2
+        
+                        doc.set_x(10)
+                        doc.set_y(220)
+                        doc.cell(70)
+                        doc.cell(10, 5, ' '.join(['Number of', self.dataset.config.get('Atlas', 'distribution_unit'), 'squares the species occurs in']), 0, 0, 'L', True)
+        
+        
+                    # the date classes
+        
+                    doc.line((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding    -30, #x1
+                             (((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding     -30, #y1
+                             80, #x2
+                             240                                                          ) #y2            
+                    
+                    doc.set_font('Helvetica', '', 9)
+                    doc.set_x(70)
+                    doc.set_y(240)
+                    doc.cell(60)
+                    doc.cell(10, 5, 'Date classes:', 0, 1, 'L', True)
+        
+                    #scale down the marker to a sensible size
+                    if self.dataset.config.get('Atlas', 'distribution_unit') == '100km':
+                        scalefactor = 0.00025
+                    elif self.dataset.config.get('Atlas', 'distribution_unit') == '10km':
+                        scalefactor = 0.0025
+                    elif self.dataset.config.get('Atlas', 'distribution_unit') == '5km':
+                        scalefactor = 0.005
+                    elif self.dataset.config.get('Atlas', 'distribution_unit') == '2km':
+                        scalefactor = 0.0125
+                    elif self.dataset.config.get('Atlas', 'distribution_unit') == '1km':
+                        scalefactor = 0.025
+        
+                    #draw each band marker in turn and save out
+                    count = 0
                     for row in self.dataset.builder.get_object('treeview6').get_model():
                         fill_colour = row[1].split('"')[1]
                         border_colour = row[2].split('"')[1]
                         
-                        self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
-                                                    FROM data \
-                                                    WHERE data.taxon = "' + item[0] + '" \
-                                                    AND data.year_to >= ' + str(row[3]) + '\
-                                                    AND data.year_to < ' + str(row[4]) + ' \
-                                                    AND data.year_from >= ' + str(row[3]) + ' \
-                                                    AND data.year_from < ' + str(row[4]))
+                        r = shapefile.Reader('./markers/' + row[0] + os.path.sep + self.dataset.config.get('Atlas', 'distribution_unit'))
+                        shapes = r.shapes()
+                        pixels = []
         
-                        date_b_grids = []
-                        date_band_grids = self.dataset.cursor.fetchall()
-                        for g in date_band_grids:
-                            date_b_grids.append(g[0])
-                            
-                        #loop through each object in the coverage (to save having to loop through ALL objects)
-                        for obj in self.date_band_coverage[count]:
-                            #if the object is in our date band and it's not already been drawn by a more recent date band
-                            if (obj.record[0] in date_b_grids) and (obj.record[0] not in all_grids):
-                                
-                                pixels = []
-                                #loop through each point in the object
-                                for x,y in obj.shape.points:
-                                    px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
-                                    py = (self.bounds_top_y - y) * self.scalefactor
-                                    pixels.append((px,py))
-                                current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+                        #grab the first marker we come to - no need to be fussy
+                        for x, y in shapes[0].points:
+                            px = 2+int(float(x-shapes[0].bbox[0]) * scalefactor)
+                            py = 2+int(float(shapes[0].bbox[3]-y) * scalefactor)
+                            pixels.append((px,py))
+                        
+                        date_band = Image.new('RGB',
+                                             (  4+int(float((shapes[0].bbox[2]-shapes[0].bbox[0])) * scalefactor),
+                                                4+int(float((shapes[0].bbox[3]-shapes[0].bbox[1])) * scalefactor)     ),
+                                             'white')
+                        date_band_draw = ImageDraw.Draw(date_band)
+                        date_band_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+                        #and as a line so we can increase the thickness
+                        date_band_draw.line(pixels, width=3, fill='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
         
+                        date_band_temp_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                        date_band.save(date_band_temp_file, format='PNG')
+        
+        
+                        doc.image(date_band_temp_file, 80, 245+(count*5), h=4, type='PNG')
+                        doc.cell(75)
+                        
+                        if row[0] == '1600.0':
+                            date_band_from_text = ' '.join(['before', str(int(float(row[3])))])
+                        else:
+                            date_band_from_text = ' '.join([str(int(float(row[3]))), 'to', str(int(float(row[4])))])
+                        
+                        doc.cell(10, 5, date_band_from_text, 0, 1, 'L', True)
+                        
                         count = count + 1
         
-                        #add the current date band grids for reference next time round
-                        for g in date_band_grids:
-                            all_grids.append(g[0])
-    
-    
-    
-    
-    
-    
-                temp_map_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
-                current_map.save(temp_map_file, format='PNG')
-    
-                (width, height) =  current_map.size
-    
-                max_width = (doc.w / 2)-doc.l_margin-doc.r_margin
-                max_height = (doc.w / 2)-doc.l_margin-doc.r_margin
-    
-                if height > width:
-                    pdfim_height = max_width
-                    pdfim_width = (float(width)/float(height))*max_width
-                else:
-                    pdfim_height = (float(height)/float(width))*max_width
-                    pdfim_width = max_width
-    
-                img_x_cent = ((max_width-pdfim_width)/2)+2
-                img_y_cent = ((max_height-pdfim_height)/2)+12
-    
-                doc.image(temp_map_file, x_padding+img_x_cent, y_padding+img_y_cent, int(pdfim_width), int(pdfim_height), 'PNG')
-    
-    
-                #map container
-                doc.set_text_color(0)
-                doc.set_fill_color(255, 255, 255)
-                doc.set_line_width(0.1)
-                doc.rect(x_padding, 10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3)
-    
-                if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
-    
-                    #from
-                    doc.set_y(11+y_padding)
-                    doc.set_x(1+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-    
-                    if str(taxa_statistics[item[0]]['earliest']) == 'Unknown':
-                        val = '?'
-                    else:
-                        val = str(taxa_statistics[item[0]]['earliest'])
-                    doc.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
-    
-                    #to
-                    doc.set_y(11+y_padding)
-                    doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-    
-                    if str(taxa_statistics[item[0]]['latest']) == 'Unknown':
-                        val = '?'
-                    else:
-                        val = str(taxa_statistics[item[0]]['latest'])
-                    doc.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
-    
-                    #records
-                    doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                    doc.set_x(1+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-                    doc.multi_cell(20, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
-    
-                    #squares
-                    doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
-                    doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-37)+x_padding)
-                    doc.set_font('Helvetica', '', 12)
-                    doc.set_text_color(0)
-                    doc.set_fill_color(255, 255, 255)
-                    doc.set_line_width(0.1)
-                    doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[item[0]]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
-    
-                taxon_parts = item[0].split(' ')
-    
-                if taxon_parts[0].lower() not in genus_index:
-                    genus_index[taxon_parts[0].lower()] = ['genus', doc.num_page_no()+doc.toc_length]
-    
-                if taxa_statistics[item[0]]['common_name'] not in common_name_index and taxa_statistics[item[0]]['common_name'] != 'None':
-                    common_name_index[taxa_statistics[item[0]]['common_name']] = ['common', doc.num_page_no()+doc.toc_length]
-    
-                if taxon_parts[len(taxon_parts)-1] == 'agg.':
-                    part = ' '.join([taxon_parts[len(taxon_parts)-2], taxon_parts[len(taxon_parts)-1]])
-                else:
-                    part = taxon_parts[len(taxon_parts)-1]
-    
-                if ''.join([part, ' ', taxon_parts[0].lower()]) not in species_index:
-                    species_index[''.join([part, ', ', taxon_parts[0]]).lower()] = ['species', doc.num_page_no()+doc.toc_length]
-    
-                taxon_count = taxon_count + 1
-    
-    
-                rownum = rownum + 1
-    
-                region_count = region_count + 1
-    
-            #doc.section = ''
-            #doc.do_header = False
-    
-            doc.section = ' '
-            doc.p_add_page()
-    
-            #toc
-            doc.insertTOC(3)
-            
-            index = genus_index.copy()
-            index.update(species_index)
-            index.update(common_name_index)
-    
-            #index = sorted(index.iteritems())
-    
-            #doc.p_add_page()
-    
-            #if len(families) > 1:
-            #    family_text = ' '.join([str(len(families)), 'families and'])
-            #else:
-            #    family_text = ''
-    
-            #if len(data) > 1:
-            #    taxa_text = 'taxa'
-            #else:
-            #    taxa_text = 'taxon'
-            #
-            #if record_count > 1:
-            #    record_text = 'records.'
-            #else:
-            #    record_text = 'record'
-    
-            #doc.set_y(19)
-            #doc.set_font('Helvetica', 'I', 10)
-            #doc.multi_cell(0, 5, ' '.join([family_text,
-            #                              ' '.join([str(len(data)), taxa_text]),
-            #                               ' '.join(['mapped from', str(record_count), record_text]),]),
-            #               0, 'J', False)
-    
-            #doc.section = ''
-            #doc.stopPageNums()
-    
-            if self.dataset.config.getboolean('Atlas', 'toc_show_index'):
-                doc.section = 'Index'
-                doc.p_add_page()
-    
-                initial = ''
-    
-                doc.set_y(doc.y0+20)
-                for taxon in sorted(index, key=lambda taxon: taxon.lower()):
-                    try:
-                        if taxon[0].upper() != initial:
-                            if taxon[0].upper() != 'A':
-                                doc.ln(3)
-                            doc.set_font('Helvetica', 'B', 12)
-                            doc.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
-                            initial = taxon[0].upper()
-    
-                        link = doc.add_link()
-                        doc.set_link(link, y=0, page=index[taxon][1])
-                        
-                        if index[taxon][0] == 'species':
-                            pos = taxon.find(', ')
-                            #capitalize the first letter of the genus
-                            display_taxon = list(taxon)
-                            display_taxon[pos+2] = display_taxon[pos+2].upper()
-                            display_taxon = ''.join(display_taxon)
-                            doc.set_font('Helvetica', '', 12)
-                            doc.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0, link)
-                        elif index[taxon][0] == 'genus':
-                            doc.set_font('Helvetica', '', 12)
-                            doc.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0, link)
-                        elif index[taxon][0] == 'common':
-                            doc.set_font('Helvetica', '', 12)
-                            doc.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0, link)
-                    except IndexError:
-                        pass
-    
-                doc.setcol(0)
-    
-            if self.dataset.config.getboolean('Atlas', 'toc_show_contributors'):
-                doc.section = 'Contributors'
-                doc.p_add_page()
-                doc.set_font('Helvetica', '', 20)
-                doc.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
-                doc.set_font('Helvetica', '', 8)
+                    #### end the explanations
         
-                contrib_blurb = []
+                    #end of explanation map code###############################
         
-                for name in sorted(contrib_data.keys()):
-                    if name != 'Unknown' and name != 'Unknown Unknown':
-                        #only show the abbreviation if we're showing the latest records
-                        if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
-                            contribname = ''.join([name, ' (', contrib_data[name], ')'])
+                taxon_count = 0
+                genus_index = {}
+                species_index = {}
+                common_name_index = {}
+        
+                families = []
+                rownum = 0
+        
+                if self.dataset.config.get('Atlas', 'paper_size') == 'A4' and self.dataset.config.get('Atlas', 'orientation') == 'Portrait':
+                    max_region_count = 2
+                elif self.dataset.config.get('Atlas', 'paper_size') == 'A4' and self.dataset.config.get('Atlas', 'orientation') == 'Landscape':
+                    max_region_count = 1
+                            
+                region_count = 3
+        
+                #we should really use the selection & get unique taxa?
+                for item in data:
+                    taxon_recent_records = ''
+        
+                    if taxa_statistics[item[0]]['family'] != 'None':
+                        doc.section = ''.join(['Family ', taxa_statistics[item[0]]['family']])
+                    elif taxa_statistics[item[0]]['order'] != 'None':
+                        doc.section = ''.join(['Order ', taxa_statistics[item[0]]['order']])
+                    elif taxa_statistics[item[0]]['class'] != 'None':
+                        doc.section = ''.join(['Class ', taxa_statistics[item[0]]['class']])
+                    elif taxa_statistics[item[0]]['phylum'] != 'None':
+                        doc.section = ''.join(['Phylum ', taxa_statistics[item[0]]['phylum']])
+                    elif taxa_statistics[item[0]]['kingdom'] != 'None':
+                        doc.section = ''.join(['Kingdom ', taxa_statistics[item[0]]['kingdom']])
+                    else:
+                        doc.section = ''
+        
+                    if region_count > max_region_count:
+                        region_count = 1
+                        doc.startPageNums()
+                        doc.p_add_page()
+        
+                    if taxa_statistics[item[0]]['family'] not in families:
+        
+                        families.append(taxa_statistics[item[0]]['family'])
+        
+                        if self.dataset.config.getboolean('Atlas', 'toc_show_families'):
+                            doc.TOC_Entry(''.join(['Family ', taxa_statistics[item[0]]['family']]), level=0)
+        
+                    if self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                        #only show the common name if we have one
+                        if len(taxa_statistics[item[0]]['common_name']) > 0:
+                            doc.TOC_Entry(''.join([item[0], ' - ', taxa_statistics[item[0]]['common_name']]), level=1)
                         else:
-                            contribname = name
-                        contrib_blurb.append(contribname)
+                            doc.TOC_Entry(''.join([item[0]]), level=1)
+                    elif not self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                        doc.TOC_Entry(taxa_statistics[item[0]]['common_name'], level=1)
+                    elif self.dataset.config.getboolean('Atlas', 'toc_show_species_names') and not self.dataset.config.getboolean('Atlas', 'toc_show_common_names'):
+                        doc.TOC_Entry(item[0], level=1)
         
-                doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
-    
-            if len(self.dataset.config.get('Atlas', 'bibliography')) > 0:
-                doc.section = ('References')
+                    designation = taxa_statistics[item[0]]['national_designation']
+                    if (designation == '') or (designation == 'None'):
+                        designation = ' '
+        
+                    if (taxa_statistics[item[0]]['common_name'] == '') or (taxa_statistics[item[0]]['common_name'] == 'None'):
+                        common_name = ''
+                    else:
+                        common_name = taxa_statistics[item[0]]['common_name']
+        
+                    if item[0] not in taxa_statistics:
+                        taxa_statistics[item[0]] = {}
+                        taxa_statistics[item[0]]['count'] = 0
+                        taxa_statistics[item[0]]['earliest'] = 'N/A'
+                        taxa_statistics[item[0]]['latest'] = 'N/A'
+                        taxa_statistics[item[0]]['dist_count'] = 0
+                        taxa_statistics[item[0]]['description'] = ''
+                        taxa_statistics[item[0]]['common_name'] = ''
+        
+                    while gtk.events_pending():
+                        gtk.main_iteration()
+        
+                    # calc the positining for the various elements
+                    if region_count == 1: # top taxon map
+                        y_padding = 19
+                        x_padding = doc.l_margin
+                    elif region_count == 2: # bottom taxon map
+                        y_padding = 5 + (((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding) + ((((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
+                        x_padding = doc.l_margin
+        
+                    #taxon heading
+                    doc.set_y(y_padding)
+                    doc.set_x(x_padding)
+                    doc.set_text_color(255)
+                    doc.set_fill_color(59, 59, 59)
+                    doc.set_line_width(0.1)
+                    doc.set_font('Helvetica', 'BI', 12)
+                    doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, item[0], 'TLB', 0, 'L', True)
+                    doc.set_font('Helvetica', 'B', 12)
+                    doc.cell(((doc.w)-doc.l_margin-doc.r_margin)/2, 5, common_name, 'TRB', 1, 'R', True)
+                    doc.set_x(x_padding)
+        
+                    status_text = ''
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_status'):
+                        status_text = ''.join([designation])
+        
+                    doc.multi_cell(((doc.w)-doc.l_margin-doc.r_margin), 5, status_text, 1, 'L', True)
+        
+                    #compile list of last e.g. 10 records for use below
+                    self.dataset.cursor.execute('SELECT data.taxon, data.location, data.grid_native, data.grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ', data.date, data.decade_to, data.year_to, data.month_to, data.recorder, data.determiner, data.vc, data.grid_100m \
+                                                FROM data \
+                                                JOIN species_data ON data.taxon = species_data.taxon \
+                                                WHERE data.taxon = "' + item[0] + '" \
+                                                AND ' + vcs_sql + ' (' + restriction_sql + ') \
+                                                ORDER BY data.year_to || data.month_to || data.day_to desc')
+        
+                    indiv_taxon_data = self.dataset.cursor.fetchall()
+        
+                    max_species_records_length = 900
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                        max_species_records_length = max_species_records_length - len(taxa_statistics[item[0]]['description'])
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                        max_species_records_length = max_species_records_length - len(''.join(['Vouchers: ',str(taxa_statistics[item[0]]['voucher'])]))
+        
+                    remaining_records = 0
+        
+                    #there has to be a better way?
+                    for indiv_record in indiv_taxon_data:
+                        if len(taxon_recent_records) < max_species_records_length:
+        
+                            #if the determiner is different to the recorder, set the
+                            #determinater (!)
+                            try:
+                                if indiv_record[8] != indiv_record[9]:
+            
+                                    detees = indiv_record[9].split(',')
+                                    deter = ''
+            
+                                    for deter_name in sorted(detees):
+                                        if deter_name != '':
+                                            deter = ','.join([deter, contrib_data[deter_name.strip()]])
+            
+                                    if deter == 'Unknown' or deter == 'Unknown Unknown' or deter == '':
+                                        det = ' anon.'
+                                    else:
+                                        det = ''.join([' det. ', deter[1:]])
+                                else:
+                                    det = ''
+                            except AttributeError:
+                                det = ''
+        
+                            if indiv_record[4] == 'Unknown':
+                                date = '[date unknown]'
+                            else:
+                                date = indiv_record[4]
+        
+        
+                            if indiv_record[8] == 'Unknown' or indiv_record[8] == 'Unknown Unknown' or indiv_record[8] == '':
+                                rec = ' anon.'
+                            else:
+                                recs = indiv_record[8].split(',')
+                                rec = ''
+        
+                                for recorder_name in sorted(recs):
+                                    rec = ','.join([rec, contrib_data[recorder_name.strip()]])
+        
+                            #limit grid reference to 100m
+                            if len(indiv_record[2]) > 8:
+                                grid = indiv_record[11]
+                            else:
+                                grid = indiv_record[2]
+        
+                            #taxon_recent_records = ''.join([taxon_recent_records, indiv_record[1], ' (VC', str(indiv_record[10]), ') ', grid, ' ', date.replace('/', '.'), ' (', rec[1:], det, '); '])
+        
+                            #substitute parameters for record values
+                            #det and loc values can be empty - to remove empty spaces
+                            #we check for preceeeding and trailing spaces first with
+                            #these if they are empty strings
+                            current_rec = self.dataset.config.get('Atlas', 'species_accounts_latest_format')
+        
+                            if indiv_record[1] == '':
+                                current_rec = current_rec.replace(' %l', indiv_record[1])
+                                current_rec = current_rec.replace('%l ', indiv_record[1])
+                            else:
+                                current_rec = current_rec.replace('%l', indiv_record[1])
+        
+                            if det == '':
+                                current_rec = current_rec.replace(' %i', det)
+                                current_rec = current_rec.replace('%i ', det)
+                            else:
+                                current_rec = current_rec.replace('%i', det)
+        
+                            current_rec = current_rec.replace('%v', str(indiv_record[10]))
+                            current_rec = current_rec.replace('%g', grid)
+                            current_rec = current_rec.replace('%d', date.replace('/', '.'))
+                            current_rec = current_rec.replace('%r', rec[1:])
+        
+                            #append current record to the output
+                            taxon_recent_records = ''.join([taxon_recent_records, current_rec, '; '])
+                        else:
+                            remaining_records = remaining_records + 1
+        
+                    #if any records remain, add a note to the output
+                    if remaining_records > 0:
+                        remaining_records_text = ''.join([' [+ ', str(remaining_records), ' more]'])
+                    else:
+                        remaining_records_text = ''
+        
+                    #taxon blurb
+                    doc.set_y(y_padding+12)
+                    doc.set_font('Helvetica', '', 10)
+                    doc.set_text_color(0)
+                    doc.set_fill_color(255, 255, 255)
+                    doc.set_line_width(0.1)
+                    
+                    add_pad = False
+        
+                    if len(taxa_statistics[item[0]]['description']) > 0 and self.dataset.config.getboolean('Atlas', 'species_accounts_show_descriptions'):
+                        doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                        doc.set_font('Helvetica', '', 10)
+                        doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, taxa_statistics[item[0]]['description'], 0, 'L', False)
+                        add_pad = True
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                        
+                        if add_pad:
+                            doc.ln()
+                            
+                        doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                        doc.set_font('Helvetica', '', 10)                    
+                        doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Records (most recent first): ', taxon_recent_records[:-2], '.', remaining_records_text]), 0, 'L', False)
+                        add_pad = True
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_voucher_status'):
+                        
+                        if add_pad:
+                            doc.ln()
+                            
+                        doc.set_x(x_padding+(((doc.w / 2)-doc.l_margin-doc.r_margin)+3+5))
+                        doc.set_font('Helvetica', 'I', 10)                    
+                        doc.multi_cell((((doc.w / 2)-doc.l_margin-doc.r_margin)+12), 5, ''.join(['Vouchers: ', str(taxa_statistics[item[0]]['voucher'])]), 0, 'L', False)
+        
+                    #chart
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_phenology'):
+                        chartobj = chart.Chart(self.dataset, item[0], self.dataset.config.get('Atlas', 'species_accounts_phenology_type'))
+                        if chartobj.temp_filename != None:
+                            doc.image(chartobj.temp_filename, x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75, 'PNG')
+                        doc.rect(x_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3+10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, (((doc.w / 2)-doc.l_margin-doc.r_margin)+3)/3.75)
+        
+        
+                    #do the map
+        
+                    current_map =  self.base_map.copy()
+                    current_map_draw = ImageDraw.Draw(current_map)
+        
+        
+                    #loop through each date band, grabbing the records
+                    count = 0
+                    all_grids = []
+                    
+                    #if we're overlaying the markers, we draw the date bands backwards (oldest first)
+                    if self.dataset.config.getboolean('Atlas', 'date_band_overlay'):
+                        for row in treemodel_reversed:
+                            fill_colour = row[1].split('"')[1]
+                            border_colour = row[2].split('"')[1]
+                            
+                            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                        FROM data \
+                                                        WHERE data.taxon = "' + item[0] + '" \
+                                                        AND data.year_to >= ' + str(row[3]) + '\
+                                                        AND data.year_to < ' + str(row[4]) + ' \
+                                                        AND data.year_from >= ' + str(row[3]) + ' \
+                                                        AND data.year_from < ' + str(row[4]))
+            
+                            date_b_grids = []
+                            date_band_grids = self.dataset.cursor.fetchall()
+                            for g in date_band_grids:
+                                date_b_grids.append(g[0])
+                                
+                            #loop through each object in the coverage (to save having to loop through ALL objects)
+                            for obj in self.date_band_coverage[count]:
+                                #if the object is in our date band
+                                if obj.record[0] in date_b_grids:
+                                    
+                                    pixels = []
+                                    #loop through each point in the object
+                                    for x,y in obj.shape.points:
+                                        px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                        py = (self.bounds_top_y - y) * self.scalefactor
+                                        pixels.append((px,py))
+                                    current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+            
+                            count = count + 1
+            
+                            #add the current date band grids for reference next time round
+                            for g in date_band_grids:
+                                all_grids.append(g[0])
+        
+                    #if we're not overlaying the markers, we draw the date bands forwards (newest first) and skip any markers that have already been drawn                        
+                    else:
+                        for row in self.dataset.builder.get_object('treeview6').get_model():
+                            fill_colour = row[1].split('"')[1]
+                            border_colour = row[2].split('"')[1]
+                            
+                            self.dataset.cursor.execute('SELECT DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ') AS grids \
+                                                        FROM data \
+                                                        WHERE data.taxon = "' + item[0] + '" \
+                                                        AND data.year_to >= ' + str(row[3]) + '\
+                                                        AND data.year_to < ' + str(row[4]) + ' \
+                                                        AND data.year_from >= ' + str(row[3]) + ' \
+                                                        AND data.year_from < ' + str(row[4]))
+            
+                            date_b_grids = []
+                            date_band_grids = self.dataset.cursor.fetchall()
+                            for g in date_band_grids:
+                                date_b_grids.append(g[0])
+                                
+                            #loop through each object in the coverage (to save having to loop through ALL objects)
+                            for obj in self.date_band_coverage[count]:
+                                #if the object is in our date band and it's not already been drawn by a more recent date band
+                                if (obj.record[0] in date_b_grids) and (obj.record[0] not in all_grids):
+                                    
+                                    pixels = []
+                                    #loop through each point in the object
+                                    for x,y in obj.shape.points:
+                                        px = (self.xdist * self.scalefactor)- (self.bounds_top_x - x) * self.scalefactor
+                                        py = (self.bounds_top_y - y) * self.scalefactor
+                                        pixels.append((px,py))
+                                    current_map_draw.polygon(pixels, fill='rgb(' + str(int(gtk.gdk.color_parse(fill_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(fill_colour).blue_float*255)) + ')', outline='rgb(' + str(int(gtk.gdk.color_parse(border_colour).red_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).green_float*255)) + ',' + str(int(gtk.gdk.color_parse(border_colour).blue_float*255)) + ')')
+            
+                            count = count + 1
+            
+                            #add the current date band grids for reference next time round
+                            for g in date_band_grids:
+                                all_grids.append(g[0])
+        
+        
+        
+        
+        
+        
+                    temp_map_file = tempfile.NamedTemporaryFile(dir=self.dataset.temp_dir).name
+                    current_map.save(temp_map_file, format='PNG')
+        
+                    (width, height) =  current_map.size
+        
+                    max_width = (doc.w / 2)-doc.l_margin-doc.r_margin
+                    max_height = (doc.w / 2)-doc.l_margin-doc.r_margin
+        
+                    if height > width:
+                        pdfim_height = max_width
+                        pdfim_width = (float(width)/float(height))*max_width
+                    else:
+                        pdfim_height = (float(height)/float(width))*max_width
+                        pdfim_width = max_width
+        
+                    img_x_cent = ((max_width-pdfim_width)/2)+2
+                    img_y_cent = ((max_height-pdfim_height)/2)+12
+        
+                    doc.image(temp_map_file, x_padding+img_x_cent, y_padding+img_y_cent, int(pdfim_width), int(pdfim_height), 'PNG')
+        
+        
+                    #map container
+                    doc.set_text_color(0)
+                    doc.set_fill_color(255, 255, 255)
+                    doc.set_line_width(0.1)
+                    doc.rect(x_padding, 10+y_padding, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3, ((doc.w / 2)-doc.l_margin-doc.r_margin)+3)
+        
+                    if self.dataset.config.getboolean('Atlas', 'species_accounts_show_statistics'):
+        
+                        #from
+                        doc.set_y(11+y_padding)
+                        doc.set_x(1+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+        
+                        if str(taxa_statistics[item[0]]['earliest']) == 'Unknown':
+                            val = '?'
+                        else:
+                            val = str(taxa_statistics[item[0]]['earliest'])
+                        doc.multi_cell(18, 5, ''.join(['E ', val]), 0, 'L', False)
+        
+                        #to
+                        doc.set_y(11+y_padding)
+                        doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-15)+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+        
+                        if str(taxa_statistics[item[0]]['latest']) == 'Unknown':
+                            val = '?'
+                        else:
+                            val = str(taxa_statistics[item[0]]['latest'])
+                        doc.multi_cell(18, 5, ''.join(['L ', val]), 0, 'R', False)
+        
+                        #records
+                        doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
+                        doc.set_x(1+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+                        doc.multi_cell(20, 5, ''.join(['R ', str(taxa_statistics[item[0]]['count'])]), 0, 'L', False)
+        
+                        #squares
+                        doc.set_y((((doc.w / 2)-doc.l_margin-doc.r_margin)+7)+y_padding)
+                        doc.set_x((((doc.w / 2)-doc.l_margin-doc.r_margin)-37)+x_padding)
+                        doc.set_font('Helvetica', '', 12)
+                        doc.set_text_color(0)
+                        doc.set_fill_color(255, 255, 255)
+                        doc.set_line_width(0.1)
+                        doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[item[0]]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
+        
+                    taxon_parts = item[0].split(' ')
+        
+                    if taxon_parts[0].lower() not in genus_index:
+                        genus_index[taxon_parts[0].lower()] = ['genus', doc.num_page_no()+doc.toc_length]
+        
+                    if taxa_statistics[item[0]]['common_name'] not in common_name_index and taxa_statistics[item[0]]['common_name'] != 'None':
+                        common_name_index[taxa_statistics[item[0]]['common_name']] = ['common', doc.num_page_no()+doc.toc_length]
+        
+                    if taxon_parts[len(taxon_parts)-1] == 'agg.':
+                        part = ' '.join([taxon_parts[len(taxon_parts)-2], taxon_parts[len(taxon_parts)-1]])
+                    else:
+                        part = taxon_parts[len(taxon_parts)-1]
+        
+                    if ''.join([part, ' ', taxon_parts[0].lower()]) not in species_index:
+                        species_index[''.join([part, ', ', taxon_parts[0]]).lower()] = ['species', doc.num_page_no()+doc.toc_length]
+        
+                    taxon_count = taxon_count + 1
+        
+        
+                    rownum = rownum + 1
+        
+                    region_count = region_count + 1
+        
+                #doc.section = ''
+                #doc.do_header = False
+        
+                doc.section = ' '
                 doc.p_add_page()
-                doc.set_font('Helvetica', '', 20)
-                doc.multi_cell(0, 20, 'References', 0, 'J', False)
-                doc.set_font('Helvetica', '', 10)
-                doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography').replace('\n<nl>\n','\n\n'), 0, 'J', False)
+        
+                #toc
+                doc.insertTOC(3)
                 
-            #doc.section = ''
-    
-            #doc.set_y(-30)
-            #doc.set_font('Helvetica','',8)
-    
-            #if doc.num_page_no() >= 4 and doc.section != 'Contents':
-            #    doc.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-stda.', 0, 1, 'L')
-            #    doc.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
-    
-            #doc.p_add_page()
-    
-            #output
-            try:
-                doc.output(self.save_in,'F')
-            except IOError:
+                index = genus_index.copy()
+                index.update(species_index)
+                index.update(common_name_index)
+        
+                #index = sorted(index.iteritems())
+        
+                #doc.p_add_page()
+        
+                #if len(families) > 1:
+                #    family_text = ' '.join([str(len(families)), 'families and'])
+                #else:
+                #    family_text = ''
+        
+                #if len(data) > 1:
+                #    taxa_text = 'taxa'
+                #else:
+                #    taxa_text = 'taxon'
+                #
+                #if record_count > 1:
+                #    record_text = 'records.'
+                #else:
+                #    record_text = 'record'
+        
+                #doc.set_y(19)
+                #doc.set_font('Helvetica', 'I', 10)
+                #doc.multi_cell(0, 5, ' '.join([family_text,
+                #                              ' '.join([str(len(data)), taxa_text]),
+                #                               ' '.join(['mapped from', str(record_count), record_text]),]),
+                #               0, 'J', False)
+        
+                #doc.section = ''
+                #doc.stopPageNums()
+        
+                if self.dataset.config.getboolean('Atlas', 'toc_show_index'):
+                    doc.section = 'Index'
+                    doc.p_add_page()
+        
+                    initial = ''
+        
+                    doc.set_y(doc.y0+20)
+                    for taxon in sorted(index, key=lambda taxon: taxon.lower()):
+                        try:
+                            if taxon[0].upper() != initial:
+                                if taxon[0].upper() != 'A':
+                                    doc.ln(3)
+                                doc.set_font('Helvetica', 'B', 12)
+                                doc.cell(0, 5, taxon[0].upper(), 0, 1, 'L', 0)
+                                initial = taxon[0].upper()
+        
+                            link = doc.add_link()
+                            doc.set_link(link, y=0, page=index[taxon][1])
+                            
+                            if index[taxon][0] == 'species':
+                                pos = taxon.find(', ')
+                                #capitalize the first letter of the genus
+                                display_taxon = list(taxon)
+                                display_taxon[pos+2] = display_taxon[pos+2].upper()
+                                display_taxon = ''.join(display_taxon)
+                                doc.set_font('Helvetica', '', 12)
+                                doc.cell(0, 5, '  '.join([display_taxon, str(index[taxon][1])]), 0, 1, 'L', 0, link)
+                            elif index[taxon][0] == 'genus':
+                                doc.set_font('Helvetica', '', 12)
+                                doc.cell(0, 5, '  '.join([taxon.upper(), str(index[taxon][1])]), 0, 1, 'L', 0, link)
+                            elif index[taxon][0] == 'common':
+                                doc.set_font('Helvetica', '', 12)
+                                doc.cell(0, 5, '  '.join([taxon, str(index[taxon][1])]), 0, 1, 'L', 0, link)
+                        except IndexError:
+                            pass
+        
+                    doc.setcol(0)
+        
+                if self.dataset.config.getboolean('Atlas', 'toc_show_contributors'):
+                    doc.section = 'Contributors'
+                    doc.p_add_page()
+                    doc.set_font('Helvetica', '', 20)
+                    doc.multi_cell(0, 20, ''.join(['Contributors', ' (', str(len(contrib_data)), ')']), 0, 'J', False)
+                    doc.set_font('Helvetica', '', 8)
+            
+                    contrib_blurb = []
+            
+                    for name in sorted(contrib_data.keys()):
+                        if name != 'Unknown' and name != 'Unknown Unknown':
+                            #only show the abbreviation if we're showing the latest records
+                            if self.dataset.config.getboolean('Atlas', 'species_accounts_show_latest'):
+                                contribname = ''.join([name, ' (', contrib_data[name], ')'])
+                            else:
+                                contribname = name
+                            contrib_blurb.append(contribname)
+            
+                    doc.multi_cell(0, 5, ''.join([', '.join(contrib_blurb), '.']), 0, 'J', False)
+        
+                if len(self.dataset.config.get('Atlas', 'bibliography')) > 0:
+                    doc.section = ('References')
+                    doc.p_add_page()
+                    doc.set_font('Helvetica', '', 20)
+                    doc.multi_cell(0, 20, 'References', 0, 'J', False)
+                    doc.set_font('Helvetica', '', 10)
+                    doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography').replace('\n<nl>\n','\n\n'), 0, 'J', False)
+                    
+                #doc.section = ''
+        
+                #doc.set_y(-30)
+                #doc.set_font('Helvetica','',8)
+        
+                #if doc.num_page_no() >= 4 and doc.section != 'Contents':
+                #    doc.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-stda.', 0, 1, 'L')
+                #    doc.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
+        
+                #doc.p_add_page()
+        
+                #output
+                try:
+                    doc.output(self.save_in,'F')
+                except IOError:
+                    md = gtk.MessageDialog(None,
+                        gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                        gtk.BUTTONS_OK, 'Unable to write to file. This usually means it''s open - close it and try again.')
+                    md.run()
+                    md.destroy() 
+            else:
                 md = gtk.MessageDialog(None,
                     gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                    gtk.BUTTONS_CLOSE, 'Unable to write to file. This usually means it''s open - close it and try again.')
+                    gtk.BUTTONS_OK, 'No data to map.')
                 md.run()
                 md.destroy() 
-        else:
+
+        except:                
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                gtk.BUTTONS_CLOSE, 'No data to map.')
+                gtk.BUTTONS_OK, 'Error creating atlas.')
             md.run()
-            md.destroy() 
-                  
+            md.destroy()                  
 
