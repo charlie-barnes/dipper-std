@@ -154,6 +154,7 @@ class Read(gobject.GObject):
         self.source = source
         self.dataset = dataset
         self.progressbar = progressbar
+        self.progressbar.set_text('')
 
     
     def read(self):
