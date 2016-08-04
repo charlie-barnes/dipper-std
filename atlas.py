@@ -46,9 +46,15 @@ class Atlas(gobject.GObject):
         self.density_map_filename = None
         self.date_band_coverage = []
         self.increments = 14
+        self.dataset.builder.get_object('progressbar1').show()
             
     def generate_density_map(self):
 
+        self.dataset.builder.get_object('progressbar1').set_text('Generating density map...')
+
+        while gtk.events_pending():
+            gtk.main_iteration_do(True)
+                    
         #generate the base map
         scalefactor = 0.01
 
@@ -244,6 +250,12 @@ class Atlas(gobject.GObject):
 
     def generate_base_map(self):
 
+        self.dataset.builder.get_object('progressbar1').set_text('Generating base map...')
+        self.dataset.builder.get_object('progressbar1').set_fraction(0.0)
+        
+        while gtk.events_pending():
+            gtk.main_iteration_do(True)
+        
         #generate the base map
         self.scalefactor = 0.01
 
@@ -421,7 +433,12 @@ class Atlas(gobject.GObject):
         self.base_map.paste(mask, (0,0), mask)
 
     def generate(self):
-
+                
+        self.dataset.builder.get_object('progressbar1').set_text('Querying data...')
+    
+        while gtk.events_pending():
+            gtk.main_iteration_do(True)
+        
         try:
             if len(self.dataset.config.get('Atlas', 'vice-counties')) > 0:
                 self.dataset.use_vcs = True
@@ -449,9 +466,6 @@ class Atlas(gobject.GObject):
             occupied_squares = len(data)
             
             self.dataset.cursor.execute('SELECT data.taxon, species_data.family, species_data.national_status, species_data.local_status, COUNT(data.taxon), MIN(data.year), MAX(data.year), COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')), \
-                                       COUNT(DISTINCT(grid_' + self.dataset.config.get('Atlas', 'distribution_unit') + ')) AS squares, \
-                                       COUNT(data.taxon) AS records, \
-                                       MAX(data.year) AS year, \
                                        species_data.description, \
                                        species_data.common_name, \
                                        species_data.order_, \
@@ -479,17 +493,17 @@ class Atlas(gobject.GObject):
                     taxa_statistics[stats[0]]['national_designation'] = str(stats[2])
                     taxa_statistics[stats[0]]['local_designation'] = str(stats[3])
                     taxa_statistics[stats[0]]['count'] = str(stats[4])
-                    taxa_statistics[stats[0]]['order'] = str(stats[13])
-                    taxa_statistics[stats[0]]['class'] = str(stats[14])
-                    taxa_statistics[stats[0]]['phylum'] = str(stats[15])
-                    taxa_statistics[stats[0]]['kingdom'] = str(stats[16])
+                    taxa_statistics[stats[0]]['order'] = str(stats[10])
+                    taxa_statistics[stats[0]]['class'] = str(stats[11])
+                    taxa_statistics[stats[0]]['phylum'] = str(stats[12])
+                    taxa_statistics[stats[0]]['kingdom'] = str(stats[13])
                     
                     if stats[11] == None:
                         taxa_statistics[stats[0]]['description'] = ''
                     else:            
-                        taxa_statistics[stats[0]]['description'] = str(stats[11])
+                        taxa_statistics[stats[0]]['description'] = str(stats[8])
                         
-                    taxa_statistics[stats[0]]['common_name'] = str(stats[12])
+                    taxa_statistics[stats[0]]['common_name'] = str(stats[9])
         
                     if stats[5] == None:
                         taxa_statistics[stats[0]]['earliest'] = 'Unknown'
@@ -535,6 +549,7 @@ class Atlas(gobject.GObject):
                                              FROM data \
                                              JOIN species_data ON data.taxon = species_data.taxon \
                                              WHERE ' + vcs_sql + ' (' + restriction_sql + ') \
+                                             AND data.voucher LIKE "in coll%" \
                                              GROUP BY data.taxon')
                 
                 vdata = self.dataset.cursor.fetchall()
@@ -628,6 +643,11 @@ class Atlas(gobject.GObject):
                     except AttributeError:
                         pass
         
+                self.dataset.builder.get_object('progressbar1').set_text('Creating PDF...')
+                
+                while gtk.events_pending():
+                    gtk.main_iteration_do(True)
+                
                 #the pdf
                 doc = pdf.PDF(orientation=self.dataset.config.get('Atlas', 'orientation'),unit=self.page_unit,format=self.dataset.config.get('Atlas', 'paper_size'))
                 doc.type = 'atlas'
@@ -1137,7 +1157,7 @@ class Atlas(gobject.GObject):
                         doc.set_text_color(0)
                         doc.set_fill_color(255, 255, 255)
                         doc.set_line_width(0.1)
-                        doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[selected_explanation_species]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
+                        doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[selected_explanation_species]['dist_count'])]), 0, 'R', False)
         
                     #### the explanations
                     doc.set_font('Helvetica', '', 9)
@@ -1344,9 +1364,18 @@ class Atlas(gobject.GObject):
                     max_region_count = 1
                             
                 region_count = 3
-        
+                        
+                while gtk.events_pending():
+                    gtk.main_iteration_do(True)
+                
                 #we should really use the selection & get unique taxa?
                 for item in data:
+                    self.dataset.builder.get_object('progressbar1').set_text(' '.join(['Mapping', str(taxon_count+1), 'of', str(len(data))]))
+                    self.dataset.builder.get_object('progressbar1').set_fraction((taxon_count+1.0)/len(data))
+                    
+                    while gtk.events_pending():
+                        gtk.main_iteration_do(True)
+                    
                     taxon_recent_records = ''
         
                     if taxa_statistics[item[0]]['family'] != 'None':
@@ -1740,7 +1769,7 @@ class Atlas(gobject.GObject):
                         doc.set_text_color(0)
                         doc.set_fill_color(255, 255, 255)
                         doc.set_line_width(0.1)
-                        doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count']), ' (', str(round((float(taxa_statistics[item[0]]['dist_count'])/occupied_squares)*100, 1)) , '%)']), 0, 'R', False)
+                        doc.multi_cell(40, 5, ''.join(['S ', str(taxa_statistics[item[0]]['dist_count'])]), 0, 'R', False)
         
                     taxon_parts = item[0].split(' ')
         
@@ -1884,13 +1913,18 @@ class Atlas(gobject.GObject):
         
                 #doc.p_add_page()
         
+                self.dataset.builder.get_object('progressbar1').set_text('Saving...')
+                
+                while gtk.events_pending():
+                    gtk.main_iteration_do(True)
+                
                 #output
                 try:
                     doc.output(self.save_in,'F')
                 except IOError:
                     md = gtk.MessageDialog(None,
                         gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                        gtk.BUTTONS_OK, 'Unable to write to file. This usually means it''s open - close it and try again.')
+                        gtk.BUTTONS_OK, 'Unable to write to file. This usually means the PDF is open - close it and try again.')
                     md.run()
                     md.destroy() 
             else:
@@ -1900,10 +1934,14 @@ class Atlas(gobject.GObject):
                 md.run()
                 md.destroy() 
 
-        except:                
+        except IndexError as e:                
             md = gtk.MessageDialog(None,
                 gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                 gtk.BUTTONS_OK, 'Error creating atlas.')
             md.run()
-            md.destroy()                  
+            md.destroy()      
+                        
+        self.dataset.builder.get_object('progressbar1').hide()
+        self.dataset.builder.get_object('progressbar1').set_fraction(0.0)
+        self.dataset.builder.get_object('progressbar1').set_text('')
 
