@@ -1806,36 +1806,7 @@ class Atlas(gobject.GObject):
                 index = genus_index.copy()
                 index.update(species_index)
                 index.update(common_name_index)
-        
-                #index = sorted(index.iteritems())
-        
-                #doc.p_add_page()
-        
-                #if len(families) > 1:
-                #    family_text = ' '.join([str(len(families)), 'families and'])
-                #else:
-                #    family_text = ''
-        
-                #if len(data) > 1:
-                #    taxa_text = 'taxa'
-                #else:
-                #    taxa_text = 'taxon'
-                #
-                #if record_count > 1:
-                #    record_text = 'records.'
-                #else:
-                #    record_text = 'record'
-        
-                #doc.set_y(19)
-                #doc.set_font('Helvetica', 'I', 10)
-                #doc.multi_cell(0, 5, ' '.join([family_text,
-                #                              ' '.join([str(len(data)), taxa_text]),
-                #                               ' '.join(['mapped from', str(record_count), record_text]),]),
-                #               0, 'J', False)
-        
-                #doc.section = ''
-                #doc.stopPageNums()
-        
+                
                 if self.dataset.config.getboolean('Atlas', 'toc_show_index'):
                     doc.section = 'Index'
                     doc.p_add_page()
@@ -1901,18 +1872,7 @@ class Atlas(gobject.GObject):
                     doc.multi_cell(0, 20, 'References', 0, 'J', False)
                     doc.set_font('Helvetica', '', 10)
                     doc.multi_cell(0, 6, self.dataset.config.get('Atlas', 'bibliography').replace('\n<nl>\n','\n\n'), 0, 'J', False)
-                    
-                #doc.section = ''
-        
-                #doc.set_y(-30)
-                #doc.set_font('Helvetica','',8)
-        
-                #if doc.num_page_no() >= 4 and doc.section != 'Contents':
-                #    doc.cell(0, 10, 'Generated in seconds using dipper-stda. For more information, see https://github.com/charlie-barnes/dipper-stda.', 0, 1, 'L')
-                #    doc.cell(0, 10, ''.join(['Vice-county boundaries provided by the National Biodiversity Network. Contains Ordnance Survey data (C) Crown copyright and database right ', str(datetime.now().year), '.']), 0, 1, 'L')
-        
-                #doc.p_add_page()
-        
+                            
                 self.dataset.builder.get_object('progressbar1').set_text('Saving...')
                 
                 while gtk.events_pending():
