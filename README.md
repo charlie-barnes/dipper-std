@@ -7,3 +7,4 @@ dipper-stda creates beautiful atlases and checklists from species occurrence dat
 * pyshp
 * colour
 * pyodbc
+* xlrd
